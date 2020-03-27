@@ -17,7 +17,7 @@ namespace ircd::magick
 	struct transform;
 
 	static void handle_exception(const ExceptionType, const char *, const char *);
-	static void handle_fatal(const ExceptionType, const char *, const char *) noexcept;
+	static void handle_fatal(const ExceptionType, const char *, const char *);
 	static void handle_error(const ExceptionType, const char *, const char *) noexcept;
 	static void handle_warning(const ExceptionType, const char *, const char *) noexcept;
 	static void handle_log(const ExceptionType, const char *) noexcept;
@@ -915,7 +915,6 @@ noexcept
 ircd::magick::handle_fatal(const ExceptionType type,
                            const char *const reason,
                            const char *const description)
-noexcept
 {
 	log::critical
 	{
