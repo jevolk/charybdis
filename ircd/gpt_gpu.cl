@@ -967,10 +967,7 @@ ircd_gpt_lm_select(__global struct ircd_gpt_ctrl *const restrict ctrl_,
 __kernel void
 __attribute__((visibility("protected")))
 __attribute__((reqd_work_group_size(256, 1, 1)))
-ircd_gpt_leave(__global const void *const restrict model,
-               __global void *const restrict state,
-               __global void *const restrict master,
-               __constant const struct ircd_gpt_opts *const opts,
+ircd_gpt_leave(__constant const struct ircd_gpt_opts *const opts,
                __global struct ircd_gpt_ctrl *const ctrl_,
                __global struct ircd_gpt_ctrl *const frame)
 {
