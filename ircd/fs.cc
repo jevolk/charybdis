@@ -954,6 +954,12 @@ ircd::fs::_read_asio(const vector_view<read_op> &op)
 		});
 
 	latch.wait();
+
+	if constexpr(IRCD_DEFINED(VALGRIND))
+		for(const auto &o : op)
+			for(const auto &b : o.bufs)
+				vg::set_defined(b);
+
 	return ret;
 }
 #endif
@@ -1089,6 +1095,14 @@ ircd::fs::_read_asio(const fd &fd,
 	assert(ret || ec == eof || !bytes(iov));
 	if(unlikely(ec && ec != eof))
 		throw_system_error(ec);
+
+	if constexpr(IRCD_DEFINED(VALGRIND))
+		for(const auto &b : buf)
+		{
+			const auto d(static_cast<const char *>(b.data()));
+			const const_buffer buf(d, d + b.size());
+			vg::set_defined(buf);
+		}
 
 	return ret;
 }

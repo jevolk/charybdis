@@ -611,6 +611,9 @@ ircd::net::dns::resolver::handle(const ipport &from,
                                  const mutable_buffer &buf)
 try
 {
+	if constexpr(IRCD_DEFINED(VALGRIND))
+		vg::set_defined(buf);
+
 	if(unlikely(size(buf) < sizeof(rfc1035::header)))
 		throw rfc1035::error
 		{
