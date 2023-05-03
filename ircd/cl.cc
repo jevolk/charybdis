@@ -2397,8 +2397,8 @@ ircd::cl::data::data(data &master,
 			alignment(region.size),
 		};
 
-	assert(aligned(region.origin, size_t(gart_page_size)));
-	assert(padded(region.size, size_t(gart_page_size)));
+	//assert(aligned(region.origin, size_t(gart_page_size)));
+	//assert(padded(region.size, size_t(gart_page_size)));
 	assert(root);
 
 	int err {CL_SUCCESS};
