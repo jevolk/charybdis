@@ -1476,20 +1476,14 @@ command__summarize(const mutable_buffer &buf,
 		index(reply_id)
 	};
 
-	const m::relates relates
+	const m::replaced replaced
 	{
-		.refs = reply_idx,
-		.match_sender = true,
-	};
-
-	const auto replace_idx
-	{
-		relates.latest("m.replace")
+		reply_idx, m::replaced::latest
 	};
 
 	const auto content_idx
 	{
-		replace_idx?: reply_idx
+		m::event::idx(replaced)?: reply_idx
 	};
 
 	const json::object content
