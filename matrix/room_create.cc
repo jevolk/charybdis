@@ -524,8 +524,8 @@ ircd::m::_create_event(const createroom &c)
 // report_error
 //
 
-decltype(ircd::m::report_error::buf)
 thread_local
+decltype(ircd::m::report_error::buf)
 ircd::m::report_error::buf;
 
 template<class... args>

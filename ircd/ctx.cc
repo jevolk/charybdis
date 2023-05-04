@@ -894,8 +894,8 @@ namespace ircd::ctx
 	extern thread_local bool critical_asserted;
 }
 
-decltype(ircd::ctx::critical_asserted)
 thread_local
+decltype(ircd::ctx::critical_asserted)
 ircd::ctx::critical_asserted;
 
 #ifndef NDEBUG

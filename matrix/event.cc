@@ -24,8 +24,8 @@ ircd::m::event::max_size
 };
 
 [[gnu::tls_model("global-dynamic")]]
-decltype(ircd::m::event::buf)
 thread_local
+decltype(ircd::m::event::buf)
 ircd::m::event::buf;
 
 bool

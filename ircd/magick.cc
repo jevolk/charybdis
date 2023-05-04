@@ -610,12 +610,15 @@ struct ircd::magick::job::state
 	uint64_t yield {0};
 	char description[1024];
 }
-thread_local ircd::magick::job::state;
+thread_local
+ircd::magick::job::state;
 
-decltype(ircd::magick::job::cur) thread_local
+thread_local
+decltype(ircd::magick::job::cur)
 ircd::magick::job::cur;
 
-decltype(ircd::magick::job::tot) thread_local
+thread_local
+decltype(ircd::magick::job::tot)
 ircd::magick::job::tot;
 
 uint

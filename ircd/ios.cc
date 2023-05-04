@@ -23,8 +23,8 @@ ircd::ios::main_thread_id
 };
 
 /// True only for the main thread.
-decltype(ircd::ios::is_main_thread)
 thread_local
+decltype(ircd::ios::is_main_thread)
 ircd::ios::is_main_thread;
 
 /// The embedder/executable's (library user) provided executor handle.
@@ -524,12 +524,12 @@ noexcept
 // handler
 //
 
-decltype(ircd::ios::handler::current)
 thread_local
+decltype(ircd::ios::handler::current)
 ircd::ios::handler::current;
 
-decltype(ircd::ios::handler::epoch)
 thread_local
+decltype(ircd::ios::handler::epoch)
 ircd::ios::handler::epoch;
 
 [[gnu::cold]]
