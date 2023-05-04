@@ -794,7 +794,7 @@ try
 		"__kernel void ircd_test() {}"_sv
 	};
 
-	code.compile();
+	code.compile("-opaque-pointers");
 	code.link();
 
 	cl::kern kern
