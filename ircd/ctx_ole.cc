@@ -12,7 +12,6 @@
 
 namespace ircd::ctx::ole
 {
-	static const opts default_opts;
 	extern conf::item<size_t> thread_max;
 
 	static std::mutex mutex;
@@ -69,11 +68,6 @@ noexcept
 //
 // ole::offload
 //
-
-ircd::ctx::ole::offload::offload(const function &func)
-:offload{default_opts, func}
-{
-}
 
 ircd::ctx::ole::offload::offload(const opts &opts,
                                  const function &func)

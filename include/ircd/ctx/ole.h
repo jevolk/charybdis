@@ -55,3 +55,8 @@ ircd::ctx::ole::init
 	init();
 	~init() noexcept;
 };
+
+inline
+ircd::ctx::ole::offload::offload(const function &func)
+:offload{opts{}, func}
+{}
