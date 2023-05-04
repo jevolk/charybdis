@@ -41,8 +41,7 @@ AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 
 AC_LANG(C++)
-AX_CXX_COMPILE_STDCXX([20], [gnu], [optional], 202002)
-AX_CXX_COMPILE_STDCXX([2a], [gnu], [mandatory], 201709)
+AX_CXX_COMPILE_STDCXX([20], [gnu], [mandatory], 202002)
 
 
 dnl ***************************************************************************
