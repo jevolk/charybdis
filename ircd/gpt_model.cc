@@ -507,7 +507,7 @@ ircd::gpt::model::init_wpe_weight(decoder &d,
 		for(const auto &elem : vec)
 			d.embed.pos[i].elem[j++] = lex_cast<float>(elem);
 
-		always_assert(j == sizeof(d.embed.pos[i]) / sizeof(float));
+		always_assert(j == sizeof(d.embed.pos[i].elem) / sizeof(float));
 		++i;
 	}
 }
@@ -525,7 +525,7 @@ ircd::gpt::model::init_wte_weight(decoder &d,
 		for(const auto &elem : vec)
 			d.embed.token[i].elem[j++] = lex_cast<float>(elem);
 
-		always_assert(j == sizeof(d.embed.token[i]) / sizeof(float));
+		always_assert(j == sizeof(d.embed.token[i].elem) / sizeof(float));
 		++i;
 	}
 }
@@ -540,7 +540,7 @@ ircd::gpt::model::init_f_weight(decoder &d,
 	for(const auto &elem : vec)
 		d.embed.norm.weight.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.embed.norm.weight) / sizeof(float));
+	always_assert(i == sizeof(d.embed.norm.weight.elem) / sizeof(float));
 }
 
 void
@@ -553,7 +553,7 @@ ircd::gpt::model::init_f_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.embed.norm.bias.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.embed.norm.bias) / sizeof(float));
+	always_assert(i == sizeof(d.embed.norm.bias.elem) / sizeof(float));
 }
 
 void
@@ -569,7 +569,7 @@ ircd::gpt::model::init_h_ffnn_fc_weight(decoder &d,
 		for(const auto &elem : vec)
 			d.layer[layer].ffnn.fcon_weight[i].fcon[j++] = lex_cast<float>(elem);
 
-		always_assert(j == sizeof(d.layer[layer].ffnn.fcon_weight[i]) / sizeof(float));
+		always_assert(j == sizeof(d.layer[layer].ffnn.fcon_weight[i].fcon) / sizeof(float));
 		++i;
 	}
 
@@ -590,7 +590,7 @@ ircd::gpt::model::init_h_ffnn_fc_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].ffnn.fcon_bias.fcon[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].ffnn.fcon_bias) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].ffnn.fcon_bias.fcon) / sizeof(float));
 }
 
 void
@@ -627,7 +627,7 @@ ircd::gpt::model::init_h_ffnn_proj_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].ffnn.proj_bias.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].ffnn.proj_bias) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].ffnn.proj_bias.elem) / sizeof(float));
 }
 
 void
@@ -640,7 +640,7 @@ ircd::gpt::model::init_h_ln_1_weight(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].attn.norm.weight.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].attn.norm.weight) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].attn.norm.weight.elem) / sizeof(float));
 }
 
 void
@@ -653,7 +653,7 @@ ircd::gpt::model::init_h_ln_1_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].attn.norm.bias.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].attn.norm.bias) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].attn.norm.bias.elem) / sizeof(float));
 }
 
 void
@@ -666,7 +666,7 @@ ircd::gpt::model::init_h_ln_2_weight(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].ffnn.norm.weight.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].ffnn.norm.weight) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].ffnn.norm.weight.elem) / sizeof(float));
 }
 
 void
@@ -679,7 +679,7 @@ ircd::gpt::model::init_h_ln_2_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].ffnn.norm.bias.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].ffnn.norm.bias) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].ffnn.norm.bias.elem) / sizeof(float));
 }
 
 void
@@ -695,7 +695,7 @@ ircd::gpt::model::init_h_attn_attn_weight(decoder &d,
 		for(const auto &elem : vec)
 			d.layer[layer].attn.fcon_weight[i].fcon[j++] = lex_cast<float>(elem);
 
-		always_assert(j == sizeof(d.layer[layer].attn.fcon_weight[i]) / sizeof(float));
+		always_assert(j == sizeof(d.layer[layer].attn.fcon_weight[i].fcon) / sizeof(float));
 		++i;
 	}
 
@@ -716,7 +716,7 @@ ircd::gpt::model::init_h_attn_attn_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].attn.fcon_bias.fcon[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].attn.fcon_bias) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].attn.fcon_bias.fcon) / sizeof(float));
 }
 
 void
@@ -732,7 +732,7 @@ ircd::gpt::model::init_h_attn_proj_weight(decoder &d,
 		for(const auto &elem : vec)
 			d.layer[layer].attn.proj_weight[i].elem[j++] = lex_cast<float>(elem);
 
-		always_assert(j == sizeof(d.layer[layer].attn.proj_weight[i]) / sizeof(float));
+		always_assert(j == sizeof(d.layer[layer].attn.proj_weight[i].elem) / sizeof(float));
 		++i;
 	}
 
@@ -753,5 +753,5 @@ ircd::gpt::model::init_h_attn_proj_bias(decoder &d,
 	for(const auto &elem : vec)
 		d.layer[layer].attn.proj_bias.elem[i++] = lex_cast<float>(elem);
 
-	always_assert(i == sizeof(d.layer[layer].attn.proj_bias) / sizeof(float));
+	always_assert(i == sizeof(d.layer[layer].attn.proj_bias.elem) / sizeof(float));
 }
