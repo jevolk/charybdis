@@ -8,10 +8,15 @@
 // copyright notice and this permission notice is present in all copies. The
 // full license for this software is available in the LICENSE file.
 
-typedef union ircd_gpt_vector_f32x4 ircd_gpt_vectorv __attribute__((aligned(4096)));
-typedef struct ircd_gpt_attn_qkv_f32x4 ircd_gpt_attn_qkvv __attribute__((aligned(4096)));
-typedef union ircd_gpt_attn_aperature_f32x4 ircd_gpt_attn_aperaturev __attribute__((aligned(4096)));
-typedef union ircd_gpt_ffnn_aperature_f32x4 ircd_gpt_ffnn_aperaturev __attribute__((aligned(4096)));
+typedef union ircd_gpt_vector_f32x4 ircd_gpt_vectorv;
+typedef struct ircd_gpt_attn_qkv_f32x4 ircd_gpt_attn_qkvv;
+typedef union ircd_gpt_attn_aperature_f32x4 ircd_gpt_attn_aperaturev;
+typedef union ircd_gpt_ffnn_aperature_f32x4 ircd_gpt_ffnn_aperaturev;
+
+typedef union ircd_gpt_vector ircd_gpt_vector;
+typedef struct ircd_gpt_attn_qkv ircd_gpt_attn_qkv;
+typedef union ircd_gpt_attn_aperature ircd_gpt_attn_aperature;
+typedef union ircd_gpt_ffnn_aperature ircd_gpt_ffnn_aperature;
 
 //
 // Frontside
