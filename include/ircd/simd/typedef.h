@@ -79,3 +79,28 @@ namespace ircd                                                \
                                                               \
     using simd::_T_;                                          \
 }
+
+
+#define IRCD_SIMD_TYPEMAT(_T_, _U_, _V_, _W_)                 \
+namespace ircd                                                \
+{                                                             \
+    namespace simd                                            \
+    {                                                         \
+        using _T_ = _U_                                       \
+        __attribute__((matrix_type((_V_), (_W_))));           \
+                                                              \
+        template<>                                            \
+        constexpr size_t sizeof_lane<_T_, _U_>()              \
+        {                                                     \
+            return sizeof(_U_);                               \
+        }                                                     \
+                                                              \
+        template<>                                            \
+        constexpr bool is<_T_>()                              \
+        {                                                     \
+            return true;                                      \
+        }                                                     \
+    }                                                         \
+                                                              \
+    using simd::_T_;                                          \
+}
