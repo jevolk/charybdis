@@ -12,6 +12,7 @@
 #define HAVE_IRCD_SIMD_H
 
 #include "support.h"
+#include "typedef.h"
 #include "type.h"
 #include "unaligned.h"
 #include "traits.h"
