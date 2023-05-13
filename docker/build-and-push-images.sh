@@ -45,7 +45,7 @@ ctor_repo=${ctor_repo:=$(echo $ctor_id | cut -d"/" -f2)}
 default_ctor_features="base full"
 default_ctor_distros="ubuntu-22.04 ubuntu-22.10 alpine-3.17"
 default_ctor_machines="amd64 amd64-avx amd64-avx512"
-default_ctor_toolchains="gcc-10 gcc-11 gcc-12 clang-14"
+default_ctor_toolchains="gcc-10 gcc-11 gcc-12 clang-14 clang-15"
 
 ctor_features=${ctor_features:=$default_ctor_features}
 ctor_distros=${ctor_distros:=$default_ctor_distros}
@@ -181,6 +181,8 @@ args_dist()
 		esac
 		;;
 	esac
+
+	echo "Missing required distribution handler"
 	return 1
 }
 
