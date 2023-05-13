@@ -1518,8 +1518,6 @@ AM_COND_IF(LINUX,
 	], [
 		aio="yes"
 	])
-
-	AC_MSG_RESULT([$aio])
 ])
 
 AM_CONDITIONAL([AIO], [test "x$aio" = "xyes" ])
@@ -1543,8 +1541,6 @@ AM_COND_IF(LINUX,
 	], [
 		iou="yes"
 	])
-
-	AC_MSG_RESULT([$iou])
 ])
 
 AM_CONDITIONAL([IOU], [test "x$iou" = "xyes" ])
