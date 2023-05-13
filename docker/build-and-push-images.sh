@@ -43,7 +43,7 @@ ctor_repo=${ctor_repo:=$(echo $ctor_id | cut -d"/" -f2)}
 # at a time.
 
 default_ctor_features="base full"
-default_ctor_distros="ubuntu-22.04 ubuntu-22.10 alpine-3.17"
+default_ctor_distros="ubuntu-22.04 ubuntu-22.10 alpine-3.17 archlinux-latest"
 default_ctor_machines="amd64 amd64-avx amd64-avx512"
 default_ctor_toolchains="gcc-10 gcc-11 gcc-12 clang-14 clang-15"
 
@@ -164,6 +164,14 @@ args_dist()
 			;;
 		esac
 		;;
+	archlinux)
+		case $2 in
+		latest)
+			args="$args --build-arg rocksdb_version=8.1.1" #TODO: cut
+			return 0
+			;;
+		esac
+		;;
 	ubuntu)
 		case $2 in
 		22.04)
@@ -210,6 +218,24 @@ args_toolchain()
 			args="$args --build-arg cc=clang --build-arg cxx=clang++"
 			test $3 != "3.16"
 			return $?
+			;;
+		esac
+		;;
+	archlinux)
+		toolchain=$_name
+		case $1 in
+		gcc*)
+			extra_dev="gcc"
+			args="$args --build-arg extra_packages_dev=\"${extra_dev}\""
+			args="$args --build-arg cc=gcc --build-arg cxx=g++"
+			return 0
+			;;
+		clang*)
+			extra_dev="clang"
+			extra_dev="${extra_dev} llvm"
+			args="$args --build-arg extra_packages_dev=\"${extra_dev}\""
+			args="$args --build-arg cc=clang --build-arg cxx=clang++"
+			return 0
 			;;
 		esac
 		;;
