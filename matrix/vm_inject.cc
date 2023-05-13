@@ -10,8 +10,8 @@
 
 namespace ircd::m::vm
 {
-	static fault inject3(eval &, json::iov &, const json::iov &);
-	static fault inject1(eval &, json::iov &, const json::iov &);
+	static fault inject3(eval &, json::iov &, const json::iov &, const string_view &);
+	static fault inject1(eval &, json::iov &, const json::iov &, const string_view &);
 }
 
 ///
@@ -313,6 +313,14 @@ ircd::m::vm::inject(eval &eval,
 		}
 	};
 
+	// Stringify the event content into buffer. Ideally we could leave it
+	// in iov form all the way through but this is simpler for the current
+	// hashing and signing for now.
+	const json::strung content
+	{
+		contents
+	};
+
 	// Add our network name.
 	const json::iov::add origin_
 	{
@@ -343,15 +351,16 @@ ircd::m::vm::inject(eval &eval,
 	};
 
 	return eval.room_version == "1" || eval.room_version == "2"?
-		inject1(eval, event, contents):
-		inject3(eval, event, contents);
+		inject1(eval, event, contents, content):
+		inject3(eval, event, contents, content);
 }
 
 /// Old event branch
 ircd::m::vm::fault
 ircd::m::vm::inject1(eval &eval,
                      json::iov &event,
-                     const json::iov &contents)
+                     const json::iov &contents,
+                     const string_view &content)
 {
 	assert(eval.copts);
 	const auto &opts
@@ -378,12 +387,6 @@ ircd::m::vm::inject1(eval &eval,
 				return event_id;
 			}
 		}
-	};
-
-	// Stringify the event content into buffer
-	const json::strung content
-	{
-		contents
 	};
 
 	// hashes
@@ -456,18 +459,13 @@ ircd::m::vm::inject1(eval &eval,
 ircd::m::vm::fault
 ircd::m::vm::inject3(eval &eval,
                      json::iov &event,
-                     const json::iov &contents)
+                     const json::iov &contents,
+                     const string_view &content)
 {
 	assert(eval.copts);
 	const auto &opts
 	{
 		*eval.copts
-	};
-
-	// Stringify the event content into buffer
-	const json::strung content
-	{
-		contents
 	};
 
 	// Compute the content hash into buffer.
