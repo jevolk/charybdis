@@ -15663,6 +15663,32 @@ console_cmd__feds__send(opt &out, const string_view &line)
 //
 
 bool
+console_cmd__fed__prelink(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"remote",
+	}};
+
+	const auto origin
+	{
+		param.at("origin")
+	};
+
+	const bool prelinked
+	{
+		m::fed::prelink(origin)
+	};
+
+	out
+	<< (prelinked? '-' : '+')
+	<< " "
+	<< origin
+	<< std::endl;
+	return true;
+}
+
+bool
 console_cmd__fed__hierarchy(opt &out, const string_view &line)
 {
 	const params param{line, " ",
