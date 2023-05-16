@@ -18,6 +18,8 @@ namespace ircd::net::dns
 	static bool netdb_ready;
 	extern conf::item<bool> netdb_enable;
 	extern conf::item<bool> netdb_internal;
+	extern conf::item<bool> netdb_external_port;
+	extern conf::item<bool> netdb_external_name;
 	extern const std::map<pair<string_view>, uint16_t> service_ports;
 	extern const std::map<pair<uint16_t, string_view>, string_view> service_names;
 }
@@ -62,6 +64,22 @@ ircd::net::dns::netdb_internal
 {
 	{ "name",     "ircd.net.dns.netdb.internal" },
 	{ "default",  true                          },
+};
+
+[[gnu::visibility("internal")]]
+decltype(ircd::net::dns::netdb_external_port)
+ircd::net::dns::netdb_external_port
+{
+	{ "name",     "ircd.net.dns.netdb.external.port" },
+	{ "default",  true                               },
+};
+
+[[gnu::visibility("internal")]]
+decltype(ircd::net::dns::netdb_external_name)
+ircd::net::dns::netdb_external_name
+{
+	{ "name",     "ircd.net.dns.netdb.external.name" },
+	{ "default",  false                              },
 };
 
 void
@@ -121,12 +139,16 @@ ircd::net::dns::service_port(std::nothrow_t,
                              const string_view &prot)
 try
 {
-	thread_local struct ::servent res, *ent {nullptr};
 	thread_local char _name[32], _prot[32], buf[2048];
+	thread_local struct ::servent res;
+	struct ::servent *ent {nullptr};
 
 	if(likely(netdb_internal))
 		if((res.s_port = _service_port(name, prot)))
 			return res.s_port;
+
+	if(!netdb_external_port || unlikely(!netdb_ready))
+		return 0;
 
 	const mods::ldso::exceptions enable {false};
 	const prof::syscall_usage_warning timer
@@ -136,17 +158,16 @@ try
 
 	strlcpy(_name, name);
 	strlcpy(_prot, prot);
-	if(likely(netdb_ready))
-		syscall
-		(
-			::getservbyname_r,
-			_name,
-			prot? _prot : nullptr,
-			&res,
-			buf,
-			sizeof(buf),
-			&ent
-		);
+	syscall
+	(
+		::getservbyname_r,
+		_name,
+		prot? _prot : nullptr,
+		&res,
+		buf,
+		sizeof(buf),
+		&ent
+	);
 
 	assert(!ent || ent->s_port != 0);
 	assert(!ent || name == ent->s_name);
@@ -155,8 +176,8 @@ try
 		if((res.s_port = _service_port(name, prot)))
 			return res.s_port;
 
-	if(unlikely(!ent || !ent->s_port))
-		log::error
+	if(unlikely(ent && !ent->s_port))
+		log::derror
 		{
 			log, "Uknown service %s/%s; please add port number to /etc/services",
 			name,
@@ -218,10 +239,9 @@ ircd::net::dns::service_name(std::nothrow_t,
                              const string_view &prot)
 try
 {
-
-
-	thread_local struct ::servent res, *ent {nullptr};
 	thread_local char _prot[32], buf[2048];
+	thread_local struct ::servent res;
+	struct ::servent *ent {nullptr};
 
 	if(likely(netdb_internal))
 	{
@@ -230,6 +250,9 @@ try
 			return ret;
 	}
 
+	if(!netdb_external_name || unlikely(!netdb_ready))
+		return {};
+
 	const mods::ldso::exceptions enable {false};
 	const prof::syscall_usage_warning timer
 	{
@@ -237,17 +260,16 @@ try
 	};
 
 	strlcpy(_prot, prot);
-	if(likely(netdb_ready))
-		syscall
-		(
-			::getservbyport_r,
-			ntohs(port),
-			prot? _prot : nullptr,
-			&res,
-			buf,
-			sizeof(buf),
-			&ent
-		);
+	syscall
+	(
+		::getservbyport_r,
+		ntohs(port),
+		prot? _prot : nullptr,
+		&res,
+		buf,
+		sizeof(buf),
+		&ent
+	);
 
 	assert(!ent || ent->s_port == ntohs(port));
 	assert(!ent || !prot || prot == ent->s_proto);
