@@ -14993,6 +14993,49 @@ console_cmd__node__key(opt &out, const string_view &line)
 //
 
 bool
+console_cmd__feds__prelink(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"room_id",
+	}};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::room::origins origins
+	{
+		room_id
+	};
+
+	size_t count[2] {0};
+	origins.for_each([&out, &count]
+	(const string_view &origin)
+	{
+		const bool prelinked
+		{
+			m::fed::prelink(origin)
+		};
+
+		count[prelinked]++;
+
+		out
+		<< (prelinked? '+' : '-')
+		<< " "
+		<< std::setw(40) << std::left << origin
+		<< '\n';
+	});
+
+	out
+	<< '\n'
+	<< count[1] << ':' << count[0]
+	<< std::endl;
+	return true;
+}
+
+bool
 console_cmd__feds__version(opt &out, const string_view &line)
 {
 	const params param{line, " ",
