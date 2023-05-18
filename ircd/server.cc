@@ -3428,19 +3428,23 @@ const
 {
 	assert(request);
 	const auto &req{*request};
+	const auto written
+	{
+		write_completed()
+	};
 
 	return
-		state.written < size(req.out.head)?
-			make_write_head_buffer():
+		written < size(req.out.head)?
+			make_write_head_buffer(written):
 
-		state.written < size(req.out.head) + size(req.out.content)?
-			make_write_content_buffer():
+		written < size(req.out.head) + size(req.out.content)?
+			make_write_content_buffer(written):
 
 		const_buffer{};
 }
 
 ircd::const_buffer
-ircd::server::tag::make_write_head_buffer()
+ircd::server::tag::make_write_head_buffer(const size_t written)
 const
 {
 	assert(request);
@@ -3448,30 +3452,33 @@ const
 
 	const const_buffer window
 	{
-		req.out.head + state.written
+		req.out.head + written
 	};
 
 	return window;
 }
 
 ircd::const_buffer
-ircd::server::tag::make_write_content_buffer()
+ircd::server::tag::make_write_content_buffer(const size_t written)
 const
 {
 	assert(request);
 	const auto &req{*request};
 
-	assert(state.written >= size(req.out.head));
+	assert(written >= size(req.out.head));
 	const size_t content_offset
 	{
-		state.written - size(req.out.head)
+		written - size(req.out.head)
 	};
 
+	assert(written <= size(req.out.head) + size(req.out.content));
 	const size_t remain
 	{
-		size(req.out.head) + size(req.out.content) - state.written
+		size(req.out.head) + size(req.out.content) - written
 	};
 
+	assert(remain <= size(req.out.content));
+	assert(remain <= size(req.out.content) - content_offset);
 	const const_buffer window
 	{
 		req.out.content + content_offset, remain
@@ -4757,6 +4764,7 @@ size_t
 ircd::server::tag::read_remaining()
 const
 {
+	assert(read_size() >= read_completed());
 	return read_size() - read_completed();
 }
 
@@ -4778,6 +4786,7 @@ size_t
 ircd::server::tag::write_remaining()
 const
 {
+	assert(write_size() >= write_completed());
 	return write_size() - write_completed();
 }
 

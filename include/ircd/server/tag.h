@@ -49,8 +49,8 @@ struct ircd::server::tag
 	template<class T, class... args> void set_exception(args&&...);
 	template<class... args> void set_value(args&&...);
 
-	const_buffer make_write_content_buffer() const;
-	const_buffer make_write_head_buffer() const;
+	const_buffer make_write_content_buffer(const size_t written) const;
+	const_buffer make_write_head_buffer(const size_t written) const;
 
 	size_t content_overflow() const;
 	size_t content_remaining() const;
