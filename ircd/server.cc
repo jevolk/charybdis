@@ -2643,43 +2643,38 @@ ircd::server::link::process_write(tag &tag)
 
 	while(tag.write_remaining())
 	{
-		const const_buffer buffer
+		const pair<const const_buffer> buffers
 		{
-			tag.make_write_buffer()
+			tag.make_write_buffers()
 		};
 
-		assert(!empty(buffer));
-		const const_buffer written
+		const auto written
 		{
-			process_write_next(buffer)
+			process_write_next(buffers)
 		};
 
-		tag.wrote_buffer(written);
+		tag.wrote(written);
 		assert(tag_committed() <= tag_commit_max());
-		if(size(written) < size(buffer))
+		if(written < buffers::size(const_buffers(buffers)))
 			return false;
 	}
 
 	return true;
 }
 
-ircd::const_buffer
-ircd::server::link::process_write_next(const const_buffer &buffer)
+size_t
+ircd::server::link::process_write_next(const const_buffers &buffers)
 {
+	assert(buffers::size(buffers));
 	const size_t bytes
 	{
-		write_any(*socket, buffer)
+		write_any(*socket, buffers)
 	};
 
-	assert(bytes <= size(buffer));
-	const const_buffer written
-	{
-		buffer, bytes
-	};
-
+	assert(bytes <= buffers::size(buffers));
 	assert(peer);
 	peer->write_bytes += bytes;
-	return written;
+	return bytes;
 }
 
 void
@@ -3394,6 +3389,45 @@ noexcept
 }
 
 void
+ircd::server::tag::wrote(size_t bytes)
+{
+	assert(request);
+	const auto &req{*request};
+
+	if(state.written < size(req.out.head))
+	{
+		const auto head_bytes
+		{
+			std::min(size(req.out.head), bytes)
+		};
+
+		const const_buffer buffer
+		{
+			req.out.head + state.written, head_bytes
+		};
+
+		wrote_buffer(buffer);
+		bytes -= size(buffer);
+	}
+
+	if(bytes)
+	{
+		assert(state.written >= size(req.out.head));
+		assert(bytes <= size(req.out.content));
+
+		const const_buffer buffer
+		{
+			req.out.content + (state.written - size(req.out.head)), bytes
+		};
+
+		wrote_buffer(buffer);
+		bytes -= size(buffer);
+	}
+
+	assert(!bytes);
+}
+
+void
 ircd::server::tag::wrote_buffer(const const_buffer &buffer)
 {
 	assert(request);
@@ -3410,20 +3444,28 @@ ircd::server::tag::wrote_buffer(const const_buffer &buffer)
 		assert(data(buffer) >= begin(req.out.content));
 		assert(data(buffer) < end(req.out.content));
 		assert(state.written <= write_size());
-
-		// Invoke the user's optional progress callback; this function
-		// should be marked noexcept and has no reason to throw yet.
-		if(req.out.progress)
-			req.out.progress(buffer, const_buffer{req.out.content, state.written});
 	}
 	else
 	{
 		assert(0);
 	}
+
+	// Invoke the user's optional content progress callback; this function
+	// should be marked noexcept and has no reason to throw yet.
+	if(state.written > size(req.out.head) && req.out.progress)
+	{
+		assert(state.written - size(req.out.head) <= size(req.out.content));
+		const const_buffer progress
+		{
+			req.out.content, state.written - size(req.out.head)
+		};
+
+		req.out.progress(buffer, progress);
+	}
 }
 
-ircd::const_buffer
-ircd::server::tag::make_write_buffer()
+ircd::pair<ircd::const_buffer>
+ircd::server::tag::make_write_buffers()
 const
 {
 	assert(request);
@@ -3433,14 +3475,21 @@ const
 		write_completed()
 	};
 
-	return
-		written < size(req.out.head)?
-			make_write_head_buffer(written):
+	if(state.written < size(req.out.head))
+		return pair<const_buffer>
+		{
+			make_write_head_buffer(state.written),
+			make_write_content_buffer(size(req.out.head)),
+		};
 
-		written < size(req.out.head) + size(req.out.content)?
-			make_write_content_buffer(written):
+	if(state.written < size(req.out.head) + size(req.out.content))
+		return pair<const_buffer>
+		{
+			make_write_content_buffer(state.written),
+			const_buffer{},
+		};
 
-		const_buffer{};
+	return {};
 }
 
 ircd::const_buffer
@@ -3479,6 +3528,12 @@ const
 
 	assert(remain <= size(req.out.content));
 	assert(remain <= size(req.out.content) - content_offset);
+	if(empty(req.out.content))
+	{
+		assert(!remain);
+		return {};
+	}
+
 	const const_buffer window
 	{
 		req.out.content + content_offset, remain

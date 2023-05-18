@@ -83,8 +83,9 @@ struct ircd::server::tag
 	bool abandoned() const;                  // User has abandoned their future
 	bool canceled() const;                   // User has abandoned their *request
 
-	const_buffer make_write_buffer() const;
+	pair<const_buffer> make_write_buffers() const;
 	void wrote_buffer(const const_buffer &);
+	void wrote(size_t bytes);
 
 	mutable_buffer make_read_buffer() const;
 	const_buffer read_buffer(const const_buffer &, bool &done, link &);

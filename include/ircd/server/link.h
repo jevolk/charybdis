@@ -15,6 +15,8 @@
 ///
 struct ircd::server::link
 {
+	using const_buffers = net::const_buffers;
+
 	static conf::item<size_t> tag_max_default;
 	static conf::item<size_t> tag_commit_max_default;
 	static uint64_t ids;
@@ -44,7 +46,7 @@ struct ircd::server::link
 	void handle_readable(const error_code &) noexcept;
 	void wait_readable();
 
-	const_buffer process_write_next(const const_buffer &);
+	size_t process_write_next(const const_buffers &);
 	bool process_write(tag &);
 	void handle_writable_success();
 	void handle_writable(const error_code &) noexcept;
