@@ -100,6 +100,12 @@ struct ircd::vector_view
 	:vector_view(std::begin(list), std::end(list))
 	{}
 
+	constexpr
+	vector_view(const std::pair<value_type, value_type> &pair)
+	noexcept
+	:vector_view(std::addressof(pair.first), 2)
+	{}
+
 	template<class U,
 	         class A>
 	vector_view(const std::vector<U, A> &v)
