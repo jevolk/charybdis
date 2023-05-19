@@ -9839,13 +9839,17 @@ console_cmd__room__head__add(opt &out, const string_view &line)
 		"event_id"
 	}};
 
-	const m::event::id &event_id
+	for(size_t i(0); i < param.count(); ++i)
 	{
-		param.at(0)
-	};
+		const m::event::id &event_id
+		{
+			param.at(i)
+		};
 
-	m::room::head::modify(event_id, db::op::SET, true);
-	out << "Added " << event_id << " to head " << std::endl;
+		m::room::head::modify(event_id, db::op::SET, true);
+		out << "Added " << event_id << " to head " << std::endl;
+	}
+
 	return true;
 }
 
@@ -9857,13 +9861,17 @@ console_cmd__room__head__del(opt &out, const string_view &line)
 		"event_id"
 	}};
 
-	const m::event::id &event_id
+	for(size_t i(0); i < param.count(); ++i)
 	{
-		param.at(0)
-	};
+		const m::event::id &event_id
+		{
+			param.at(i)
+		};
 
-	m::room::head::modify(event_id, db::op::DELETE, true);
-	out << "Deleted " << event_id << " from head (if existed)" << std::endl;
+		m::room::head::modify(event_id, db::op::DELETE, true);
+		out << "Deleted " << event_id << " from head (if existed)" << std::endl;
+	}
+
 	return true;
 }
 
