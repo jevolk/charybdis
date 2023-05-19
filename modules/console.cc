@@ -11879,6 +11879,7 @@ console_cmd__room__acquire(opt &out, const string_view &line)
 	opts.rounds = rounds;
 	opts.head = depth_stop == 0;
 	opts.gap.first = gap_min;
+	opts.vmopts.phase.set(m::vm::phase::EFFECTS, false);
 	m::acquire
 	{
 		opts
