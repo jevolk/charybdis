@@ -483,6 +483,11 @@ ircd::net::flushing(const socket &socket)
 // net/read.h
 //
 
+namespace ircd::net
+{
+	static char discard_buffer[4096];
+}
+
 /// Yields ircd::ctx until len bytes have been received and discarded from the
 /// socket.
 ///
@@ -490,13 +495,11 @@ size_t
 ircd::net::discard_all(socket &socket,
                        const size_t &len)
 {
-	static char buffer[512];
-
 	size_t remain{len}; while(remain)
 	{
 		const mutable_buffer mb
 		{
-			buffer, std::min(remain, sizeof(buffer))
+			discard_buffer, std::min(remain, sizeof(discard_buffer))
 		};
 
 		remain -= read_all(socket, mb);
@@ -514,13 +517,11 @@ size_t
 ircd::net::discard_any(socket &socket,
                        const size_t &len)
 {
-	static char buffer[512];
-
 	size_t remain{len}; while(remain)
 	{
 		const mutable_buffer mb
 		{
-			buffer, std::min(remain, sizeof(buffer))
+			discard_buffer, std::min(remain, sizeof(discard_buffer))
 		};
 
 		size_t read;
@@ -781,11 +782,9 @@ ircd::net::check(std::nothrow_t,
                  const ready &type)
 noexcept
 {
-	static char buf[64];
-	static const ilist<mutable_buffer> bufs
-	{
-		buf
-	};
+	static const size_t bufsz{64};
+	static auto &buf{net::discard_buffer};
+	static_assert(sizeof(buf) >= bufsz);
 
 	if(!socket.sd.is_open())
 		return make_error_code(std::errc::bad_file_descriptor);
@@ -794,11 +793,16 @@ noexcept
 		return make_error_code(std::errc::not_connected);
 
 	std::error_code ret;
-	if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, sizeof(buf)) > 0)
+	if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, bufsz) > 0)
 		return ret;
 
 	assert(!blocking(socket));
 	boost::system::error_code ec;
+	const std::array<mutable_buffer, 1> bufs
+	{
+		mutable_buffer{buf, bufsz}
+	};
+
 	if(socket.sd.receive(bufs, socket.sd.message_peek, ec) > 0)
 	{
 		assert(!ec.value());
@@ -960,9 +964,10 @@ try
 		// the wait. ASIO should fix this by adding a ssl::stream.wait() method
 		// which will bail out immediately in this case before passing up to the
 		// real socket wait.
-		static char buf[64];
-		static const ilist<mutable_buffer> bufs{buf};
-		if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, sizeof(buf)) > 0)
+		static const size_t bufsz{64};
+		static auto &buf{net::discard_buffer};
+		static_assert(sizeof(buf) >= bufsz);
+		if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, bufsz) > 0)
 		{
 			ircd::dispatch
 			{
@@ -974,6 +979,11 @@ try
 
 			return;
 		}
+
+		const std::array<mutable_buffer, 1> bufs
+		{
+			mutable_buffer{buf, bufsz}
+		};
 
 		// The problem here is that the wait operation gives ec=success on both a
 		// socket error and when data is actually available. We then have to check
