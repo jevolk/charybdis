@@ -927,12 +927,10 @@ ircd::net::wait(socket &socket,
                 wait_callback_ec callback)
 try
 {
-	assert(!socket.fini);
-	socket.set_timeout(wait_opts.timeout);
-	const unwind_exceptional unset{[&socket]
+	auto &desc
 	{
-		socket.cancel_timeout();
-	}};
+		socket.desc_wait[int(wait_opts.type)]
+	};
 
 	auto handle
 	{
@@ -947,79 +945,65 @@ try
 		)
 	};
 
-	switch(wait_opts.type)
+	assert(!socket.fini);
+	socket.set_timeout(wait_opts.timeout);
+	const unwind_exceptional unset{[&socket]
 	{
-		case ready::READ:
+		socket.cancel_timeout();
+	}};
+
+	if(wait_opts.type == ready::READ)
+	{
+		// The problem here is that waiting on the sd doesn't account for bytes
+		// read into SSL that we didn't consume yet. If something is stuck in
+		// those userspace buffers, the socket won't know about it and perform
+		// the wait. ASIO should fix this by adding a ssl::stream.wait() method
+		// which will bail out immediately in this case before passing up to the
+		// real socket wait.
+		static char buf[64];
+		static const ilist<mutable_buffer> bufs{buf};
+		if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, sizeof(buf)) > 0)
 		{
-			// The problem here is that waiting on the sd doesn't account for bytes
-			// read into SSL that we didn't consume yet. If something is stuck in
-			// those userspace buffers, the socket won't know about it and perform
-			// the wait. ASIO should fix this by adding a ssl::stream.wait() method
-			// which will bail out immediately in this case before passing up to the
-			// real socket wait.
-			static char buf[64];
-			static const ilist<mutable_buffer> bufs{buf};
-			if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, sizeof(buf)) > 0)
+			ircd::dispatch
 			{
-				ircd::dispatch
+				desc, ios::defer, [handle(std::move(handle))]
 				{
-					socket.desc_wait[1], ios::defer, [handle(std::move(handle))]
-					{
-						handle(error_code{});
-					}
-				};
-
-				return;
-			}
-
-			// The problem here is that the wait operation gives ec=success on both a
-			// socket error and when data is actually available. We then have to check
-			// using a non-blocking peek in the handler. By doing it this way here we
-			// just get the error in the handler's ec.
-			//sd.async_wait(bufs, sd.message_peek, ios::handle(desc_wait[1], [handle(std::move(handle))]
-			socket.sd.async_receive(bufs, socket.sd.message_peek, ios::handle
-			{
-				socket.desc_wait[1], [handle(std::move(handle))]
-				(const auto &ec, const size_t bytes)
-				{
-					handle
-					(
-						!ec && bytes?
-							error_code{}:
-						!ec && !bytes?
-							net::eof:
-							make_error_code(ec)
-					);
+					handle(error_code{});
 				}
-			});
+			};
 
 			return;
 		}
 
-		case ready::WRITE:
+		// The problem here is that the wait operation gives ec=success on both a
+		// socket error and when data is actually available. We then have to check
+		// using a non-blocking peek in the handler. By doing it this way here we
+		// just get the error in the handler's ec.
+		//sd.async_wait(bufs, sd.message_peek, ios::handle(desc_wait[1], [handle(std::move(handle))]
+		socket.sd.async_receive(bufs, socket.sd.message_peek, ios::handle
 		{
-			socket.sd.async_wait(socket::wait_type::wait_write, ios::handle
+			desc, [handle(std::move(handle))]
+			(const auto &ec, const size_t bytes)
 			{
-				socket.desc_wait[2], std::move(handle)
-			});
+				handle
+				(
+					!ec && bytes?
+						error_code{}:
+					!ec && !bytes?
+						net::eof:
+						make_error_code(ec)
+				);
+			}
+		});
 
-			return;
-		}
-
-		case ready::ERROR:
-		{
-			socket.sd.async_wait(socket::wait_type::wait_error, ios::handle
-			{
-				socket.desc_wait[3], std::move(handle)
-			});
-
-			return;
-		}
-
-		[[unlikely]]
-		default:
-			throw ircd::not_implemented{};
+		return;
 	}
+
+	assert(wait_opts.type != ready::ANY);
+	socket.sd.async_wait(translate(wait_opts.type), ios::handle
+	{
+		desc, std::move(handle)
+	});
 }
 catch(const boost::system::system_error &e)
 {
