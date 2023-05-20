@@ -274,9 +274,43 @@ ircd::net::flush(socket &socket)
 ///
 size_t
 ircd::net::write_all(socket &socket,
-                     const vector_view<const const_buffer> &buffers)
+                     const vector_view<const const_buffer> &bufs)
+try
 {
-	return socket.write_all(buffers);
+	static const auto completion
+	{
+		asio::transfer_all()
+	};
+
+	assert(!socket.fini);
+	assert(!blocking(socket));
+	const auto interruption{[&socket]
+	(ctx::ctx *const &) noexcept
+	{
+		socket.cancel();
+	}};
+
+	size_t ret{};
+	continuation
+	{
+		continuation::asio_predicate, interruption, [&socket, &ret, &bufs]
+		(auto &yield)
+		{
+			ret = socket.ssl?
+				asio::async_write(*socket.ssl, bufs, completion, yield):
+				asio::async_write(socket.sd, bufs, completion, yield);
+		}
+	};
+
+	++socket.out.calls;
+	socket.out.bytes += ret;
+	++socket.total_calls_out;
+	socket.total_bytes_out += ret;
+	return ret;
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 /// Yields ircd::ctx until at least some buffers are sent.
@@ -292,9 +326,38 @@ ircd::net::write_all(socket &socket,
 ///
 size_t
 ircd::net::write_few(socket &socket,
-                     const vector_view<const const_buffer> &buffers)
+                     const vector_view<const const_buffer> &bufs)
+try
 {
-	return socket.write_few(buffers);
+	assert(!socket.fini);
+	assert(!blocking(socket));
+	const auto interruption{[&socket]
+	(ctx::ctx *const &) noexcept
+	{
+		socket.cancel();
+	}};
+
+	size_t ret{};
+	continuation
+	{
+		continuation::asio_predicate, interruption, [&socket, &ret, &bufs]
+		(auto &yield)
+		{
+			ret = socket.ssl?
+				socket.ssl->async_write_some(bufs, yield):
+				socket.sd.async_write_some(bufs, yield);
+		}
+	};
+
+	++socket.out.calls;
+	socket.out.bytes += ret;
+	++socket.total_calls_out;
+	socket.total_bytes_out += ret;
+	return ret;
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 /// Writes as much as possible until one of the following is true:
@@ -307,9 +370,32 @@ ircd::net::write_few(socket &socket,
 ///
 size_t
 ircd::net::write_any(socket &socket,
-                     const vector_view<const const_buffer> &buffers)
+                     const vector_view<const const_buffer> &bufs)
+try
 {
-	return socket.write_any(buffers);
+	static const auto completion
+	{
+		asio::transfer_all()
+	};
+
+	assert(!socket.fini);
+	assert(!blocking(socket));
+	const size_t ret
+	{
+		socket.ssl?
+			asio::write(*socket.ssl, bufs, completion):
+			asio::write(socket.sd, bufs, completion)
+	};
+
+	++socket.out.calls;
+	socket.out.bytes += ret;
+	++socket.total_calls_out;
+	socket.total_bytes_out += ret;
+	return ret;
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 /// Writes one "unit" of data or less; never more. The size of that unit
@@ -327,9 +413,27 @@ ircd::net::write_any(socket &socket,
 ///
 size_t
 ircd::net::write_one(socket &socket,
-                     const vector_view<const const_buffer> &buffers)
+                     const vector_view<const const_buffer> &bufs)
+try
 {
-	return socket.write_one(buffers);
+	assert(!socket.fini);
+	assert(!blocking(socket));
+	const size_t ret
+	{
+		socket.ssl?
+			socket.ssl->write_some(bufs):
+			socket.sd.write_some(bufs)
+	};
+
+	++socket.out.calls;
+	socket.out.bytes += ret;
+	++socket.total_calls_out;
+	socket.total_bytes_out += ret;
+	return ret;
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 /// Bytes remaining for transmission (in the kernel)
@@ -440,9 +544,48 @@ ircd::net::discard_any(socket &socket,
 ///
 size_t
 ircd::net::read_all(socket &socket,
-                    const vector_view<const mutable_buffer> &buffers)
+                    const vector_view<const mutable_buffer> &bufs)
+try
 {
-	return socket.read_all(buffers);
+	static const auto completion
+	{
+		asio::transfer_all()
+	};
+
+	assert(!socket.fini);
+	const auto interruption{[&socket]
+	(ctx::ctx *const &) noexcept
+	{
+		socket.cancel();
+	}};
+
+	size_t ret{};
+	continuation
+	{
+		continuation::asio_predicate, interruption, [&socket, &ret, &bufs]
+		(auto &yield)
+		{
+			ret = socket.ssl?
+				asio::async_read(*socket.ssl, bufs, completion, yield):
+				asio::async_read(socket.sd, bufs, completion, yield);
+		}
+	};
+
+	if(!ret)
+		throw std::system_error
+		{
+			eof
+		};
+
+	++socket.in.calls;
+	socket.in.bytes += ret;
+	++socket.total_calls_in;
+	socket.total_bytes_in += ret;
+	return ret;
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 /// Yields ircd::ctx until remote has sent at least one frame. The buffers may
@@ -459,9 +602,43 @@ ircd::net::read_all(socket &socket,
 ///
 size_t
 ircd::net::read_few(socket &socket,
-                    const vector_view<const mutable_buffer> &buffers)
+                    const vector_view<const mutable_buffer> &bufs)
+try
 {
-	return socket.read_few(buffers);
+	assert(!socket.fini);
+	const auto interruption{[&socket]
+	(ctx::ctx *const &) noexcept
+	{
+		socket.cancel();
+	}};
+
+	size_t ret{};
+	continuation
+	{
+		continuation::asio_predicate, interruption, [&socket, &ret, &bufs]
+		(auto &yield)
+		{
+			ret = socket.ssl?
+				socket.ssl->async_read_some(bufs, yield):
+				socket.sd.async_read_some(bufs, yield);
+		}
+	};
+
+	if(!ret)
+		throw std::system_error
+		{
+			eof
+		};
+
+	++socket.in.calls;
+	socket.in.bytes += ret;
+	++socket.total_calls_in;
+	socket.total_bytes_in += ret;
+	return ret;
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 /// Reads as much as possible. Non-blocking behavior.
@@ -471,9 +648,36 @@ ircd::net::read_few(socket &socket,
 ///
 size_t
 ircd::net::read_any(socket &socket,
-                    const vector_view<const mutable_buffer> &buffers)
+                    const vector_view<const mutable_buffer> &bufs)
 {
-	return socket.read_any(buffers);
+	static const auto completion
+	{
+		asio::transfer_all()
+	};
+
+	assert(!socket.fini);
+	assert(!blocking(socket));
+	boost::system::error_code ec;
+	const size_t ret
+	{
+		socket.ssl?
+			asio::read(*socket.ssl, bufs, completion, ec):
+			asio::read(socket.sd, bufs, completion, ec)
+	};
+
+	++socket.in.calls;
+	socket.in.bytes += ret;
+	++socket.total_calls_in;
+	socket.total_bytes_in += ret;
+
+	if(likely(!ec))
+		return ret;
+
+	if(ec == boost::system::errc::resource_unavailable_try_again)
+		return ret;
+
+	throw_system_error(ec);
+	__builtin_unreachable();
 }
 
 /// Reads one message or less in a single syscall. Non-blocking behavior.
@@ -483,9 +687,31 @@ ircd::net::read_any(socket &socket,
 ///
 size_t
 ircd::net::read_one(socket &socket,
-                    const vector_view<const mutable_buffer> &buffers)
+                    const vector_view<const mutable_buffer> &bufs)
 {
-	return socket.read_one(buffers);
+	assert(!socket.fini);
+	assert(!blocking(socket));
+	boost::system::error_code ec;
+	const size_t ret
+	{
+		socket.ssl?
+			socket.ssl->read_some(bufs, ec):
+			socket.sd.read_some(bufs, ec)
+	};
+
+	++socket.in.calls;
+	socket.in.bytes += ret;
+	++socket.total_calls_in;
+	socket.total_bytes_in += ret;
+
+	if(likely(!ec))
+		return ret;
+
+	if(ec == boost::system::errc::resource_unavailable_try_again)
+		return ret;
+
+	throw_system_error(ec);
+	__builtin_unreachable();
 }
 
 /// Bytes available for reading (SSL; w/ fallback).
@@ -551,7 +777,39 @@ ircd::net::check(std::nothrow_t,
                  const ready &type)
 noexcept
 {
-	return socket.check(std::nothrow, type);
+	static char buf[64];
+	static const ilist<mutable_buffer> bufs
+	{
+		buf
+	};
+
+	if(!socket.sd.is_open())
+		return make_error_code(std::errc::bad_file_descriptor);
+
+	if(socket.fini)
+		return make_error_code(std::errc::not_connected);
+
+	std::error_code ret;
+	if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, sizeof(buf)) > 0)
+		return ret;
+
+	assert(!blocking(socket));
+	boost::system::error_code ec;
+	if(socket.sd.receive(bufs, socket.sd.message_peek, ec) > 0)
+	{
+		assert(!ec.value());
+		return ret;
+	}
+
+	if(ec.value())
+		ret = make_error_code(ec);
+	else
+		ret = eof;
+
+	if(ret == std::errc::resource_unavailable_try_again)
+		ret = {};
+
+	return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -607,8 +865,40 @@ catch(const std::system_error &e)
 void
 ircd::net::wait(socket &socket,
                 const wait_opts &wait_opts)
+try
 {
-	socket.wait(wait_opts);
+	assert(!socket.fini);
+	const auto interruption{[&socket]
+	(ctx::ctx *const &) noexcept
+	{
+		socket.cancel();
+	}};
+
+	const scope_timeout timeout
+	{
+		socket, wait_opts.timeout
+	};
+
+	const auto wait_cond
+	{
+		translate(wait_opts.type)
+	};
+
+	continuation
+	{
+		continuation::asio_predicate, interruption, [&socket, &wait_cond]
+		(auto &yield)
+		{
+			socket.sd.async_wait(wait_cond, yield);
+		}
+	};
+}
+catch(const boost::system::system_error &e)
+{
+	if(e.code() == boost::system::errc::operation_canceled && socket.timedout)
+		throw_system_error(std::errc::timed_out);
+
+	throw_system_error(e);
 }
 
 /// Wait for socket to become "ready"; callback with exception_ptr
@@ -617,15 +907,119 @@ ircd::net::wait(socket &socket,
                 const wait_opts &wait_opts,
                 wait_callback_eptr callback)
 {
-	socket.wait(wait_opts, std::move(callback));
+	wait(socket, wait_opts, [callback(std::move(callback))]
+	(const error_code &ec)
+	{
+		if(likely(!ec))
+			return callback(std::exception_ptr{});
+
+		callback(make_system_eptr(ec));
+	});
 }
 
 void
 ircd::net::wait(socket &socket,
                 const wait_opts &wait_opts,
                 wait_callback_ec callback)
+try
 {
-	socket.wait(wait_opts, std::move(callback));
+	assert(!socket.fini);
+	socket.set_timeout(wait_opts.timeout);
+	const unwind_exceptional unset{[&socket]
+	{
+		socket.cancel_timeout();
+	}};
+
+	auto handle
+	{
+		std::bind
+		(
+			&socket::handle_ready,
+			&socket,
+			weak_from(socket),
+			wait_opts.type,
+			std::move(callback),
+			ph::_1
+		)
+	};
+
+	switch(wait_opts.type)
+	{
+		case ready::READ:
+		{
+			// The problem here is that waiting on the sd doesn't account for bytes
+			// read into SSL that we didn't consume yet. If something is stuck in
+			// those userspace buffers, the socket won't know about it and perform
+			// the wait. ASIO should fix this by adding a ssl::stream.wait() method
+			// which will bail out immediately in this case before passing up to the
+			// real socket wait.
+			static char buf[64];
+			static const ilist<mutable_buffer> bufs{buf};
+			if(socket.ssl && SSL_peek(socket.ssl->native_handle(), buf, sizeof(buf)) > 0)
+			{
+				ircd::dispatch
+				{
+					socket.desc_wait[1], ios::defer, [handle(std::move(handle))]
+					{
+						handle(error_code{});
+					}
+				};
+
+				return;
+			}
+
+			// The problem here is that the wait operation gives ec=success on both a
+			// socket error and when data is actually available. We then have to check
+			// using a non-blocking peek in the handler. By doing it this way here we
+			// just get the error in the handler's ec.
+			//sd.async_wait(bufs, sd.message_peek, ios::handle(desc_wait[1], [handle(std::move(handle))]
+			socket.sd.async_receive(bufs, socket.sd.message_peek, ios::handle
+			{
+				socket.desc_wait[1], [handle(std::move(handle))]
+				(const auto &ec, const size_t bytes)
+				{
+					handle
+					(
+						!ec && bytes?
+							error_code{}:
+						!ec && !bytes?
+							net::eof:
+							make_error_code(ec)
+					);
+				}
+			});
+
+			return;
+		}
+
+		case ready::WRITE:
+		{
+			socket.sd.async_wait(socket::wait_type::wait_write, ios::handle
+			{
+				socket.desc_wait[2], std::move(handle)
+			});
+
+			return;
+		}
+
+		case ready::ERROR:
+		{
+			socket.sd.async_wait(socket::wait_type::wait_error, ios::handle
+			{
+				socket.desc_wait[3], std::move(handle)
+			});
+
+			return;
+		}
+
+		[[unlikely]]
+		default:
+			throw ircd::not_implemented{};
+	}
+}
+catch(const boost::system::system_error &e)
+{
+	throw_system_error(e);
 }
 
 boost::asio::ip::tcp::socket::wait_type
@@ -1850,502 +2244,6 @@ catch(const std::exception &e)
 	};
 }
 
-bool
-ircd::net::socket::cancel()
-noexcept
-{
-	cancel_timeout();
-
-	boost::system::error_code ec;
-	sd.cancel(ec);
-	if(unlikely(ec))
-	{
-		char ecbuf[64];
-		log::dwarning
-		{
-			log, "socket:%lu cancel :%s",
-			this->id,
-			string(ecbuf, ec)
-		};
-	}
-
-	return !ec;
-}
-
-void
-ircd::net::socket::wait(const wait_opts &opts,
-                        wait_callback_eptr callback)
-{
-	wait(opts, [callback(std::move(callback))]
-	(const error_code &ec)
-	{
-		if(likely(!ec))
-			return callback(std::exception_ptr{});
-
-		callback(make_system_eptr(ec));
-	});
-}
-
-/// Asynchronous callback when the socket is ready
-///
-/// Overload for operator() without a timeout. see: operator()
-///
-void
-ircd::net::socket::wait(const wait_opts &opts)
-try
-{
-	assert(!fini);
-	const auto interruption{[this]
-	(ctx::ctx *const &) noexcept
-	{
-		this->cancel();
-	}};
-
-	const scope_timeout timeout
-	{
-		*this, opts.timeout
-	};
-
-	const auto wait_cond
-	{
-		translate(opts.type)
-	};
-
-	continuation
-	{
-		continuation::asio_predicate, interruption, [this, &wait_cond]
-		(auto &yield)
-		{
-			sd.async_wait(wait_cond, yield);
-		}
-	};
-}
-catch(const boost::system::system_error &e)
-{
-	if(e.code() == boost::system::errc::operation_canceled && timedout)
-		throw_system_error(std::errc::timed_out);
-
-	throw_system_error(e);
-}
-
-/// Asynchronous callback when the socket is ready
-///
-/// This function calls back the handler when the socket is ready
-/// for the operation of the specified type.
-///
-void
-ircd::net::socket::wait(const wait_opts &opts,
-                        wait_callback_ec callback)
-try
-{
-	assert(!fini);
-	set_timeout(opts.timeout);
-	const unwind_exceptional unset{[this]
-	{
-		cancel_timeout();
-	}};
-
-	auto handle
-	{
-		std::bind(&socket::handle_ready, this, weak_from(*this), opts.type, std::move(callback), ph::_1)
-	};
-
-	switch(opts.type)
-	{
-		case ready::READ:
-		{
-			// The problem here is that waiting on the sd doesn't account for bytes
-			// read into SSL that we didn't consume yet. If something is stuck in
-			// those userspace buffers, the socket won't know about it and perform
-			// the wait. ASIO should fix this by adding a ssl::stream.wait() method
-			// which will bail out immediately in this case before passing up to the
-			// real socket wait.
-			static char buf[64];
-			static const ilist<mutable_buffer> bufs{buf};
-			if(ssl && SSL_peek(ssl->native_handle(), buf, sizeof(buf)) > 0)
-			{
-				ircd::dispatch{desc_wait[1], ios::defer, [handle(std::move(handle))]
-				{
-					handle(error_code{});
-				}};
-
-				return;
-			}
-
-			// The problem here is that the wait operation gives ec=success on both a
-			// socket error and when data is actually available. We then have to check
-			// using a non-blocking peek in the handler. By doing it this way here we
-			// just get the error in the handler's ec.
-			//sd.async_wait(bufs, sd.message_peek, ios::handle(desc_wait[1], [handle(std::move(handle))]
-			sd.async_receive(bufs, sd.message_peek, ios::handle(desc_wait[1], [handle(std::move(handle))]
-			(const auto &ec, const size_t bytes)
-			{
-				handle
-				(
-					!ec && bytes?
-						error_code{}:
-					!ec && !bytes?
-						net::eof:
-						make_error_code(ec)
-				);
-			}));
-
-			return;
-		}
-
-		case ready::WRITE:
-		{
-			sd.async_wait(wait_type::wait_write, ios::handle(desc_wait[2], std::move(handle)));
-			return;
-		}
-
-		case ready::ERROR:
-		{
-			sd.async_wait(wait_type::wait_error, ios::handle(desc_wait[3], std::move(handle)));
-			return;
-		}
-
-		[[unlikely]]
-		default:
-			throw ircd::not_implemented{};
-	}
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
-[[gnu::always_inline]]
-inline std::error_code
-ircd::net::socket::check(std::nothrow_t,
-                         const ready &type)
-noexcept
-{
-	static char buf[64];
-	static const ilist<mutable_buffer> bufs
-	{
-		buf
-	};
-
-	if(!sd.is_open())
-		return make_error_code(std::errc::bad_file_descriptor);
-
-	if(fini)
-		return make_error_code(std::errc::not_connected);
-
-	std::error_code ret;
-	if(ssl && SSL_peek(ssl->native_handle(), buf, sizeof(buf)) > 0)
-		return ret;
-
-	assert(!blocking(*this));
-	boost::system::error_code ec;
-	if(sd.receive(bufs, sd.message_peek, ec) > 0)
-	{
-		assert(!ec.value());
-		return ret;
-	}
-
-	if(ec.value())
-		ret = make_error_code(ec);
-	else
-		ret = eof;
-
-	if(ret == std::errc::resource_unavailable_try_again)
-		ret = {};
-
-	return ret;
-}
-
-/// Yields ircd::ctx until buffers are full.
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::read_all(const mutable_buffers &bufs)
-try
-{
-	static const auto completion
-	{
-		asio::transfer_all()
-	};
-
-	assert(!fini);
-	const auto interruption{[this]
-	(ctx::ctx *const &) noexcept
-	{
-		this->cancel();
-	}};
-
-	size_t ret{};
-	continuation
-	{
-		continuation::asio_predicate, interruption, [this, &ret, &bufs]
-		(auto &yield)
-		{
-			ret = ssl?
-				asio::async_read(*ssl, bufs, completion, yield):
-				asio::async_read(sd, bufs, completion, yield);
-		}
-	};
-
-	if(!ret)
-		throw std::system_error
-		{
-			eof
-		};
-
-	++in.calls;
-	in.bytes += ret;
-	++total_calls_in;
-	total_bytes_in += ret;
-	return ret;
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
-/// Yields ircd::ctx until remote has sent at least some data.
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::read_few(const mutable_buffers &bufs)
-try
-{
-	assert(!fini);
-	const auto interruption{[this]
-	(ctx::ctx *const &) noexcept
-	{
-		this->cancel();
-	}};
-
-	size_t ret{};
-	continuation
-	{
-		continuation::asio_predicate, interruption, [this, &ret, &bufs]
-		(auto &yield)
-		{
-			ret = ssl?
-				ssl->async_read_some(bufs, yield):
-				sd.async_read_some(bufs, yield);
-		}
-	};
-
-	if(!ret)
-		throw std::system_error
-		{
-			eof
-		};
-
-	++in.calls;
-	in.bytes += ret;
-	++total_calls_in;
-	total_bytes_in += ret;
-	return ret;
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
-/// Non-blocking; as much as possible without blocking
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::read_any(const mutable_buffers &bufs)
-{
-	static const auto completion
-	{
-		asio::transfer_all()
-	};
-
-	assert(!fini);
-	assert(!blocking(*this));
-	boost::system::error_code ec;
-	const size_t ret
-	{
-		ssl?
-			asio::read(*ssl, bufs, completion, ec):
-			asio::read(sd, bufs, completion, ec)
-	};
-
-	++in.calls;
-	in.bytes += ret;
-	++total_calls_in;
-	total_bytes_in += ret;
-
-	if(likely(!ec))
-		return ret;
-
-	if(ec == boost::system::errc::resource_unavailable_try_again)
-		return ret;
-
-	throw_system_error(ec);
-	__builtin_unreachable();
-}
-
-/// Non-blocking; One system call only; never throws eof;
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::read_one(const mutable_buffers &bufs)
-{
-	assert(!fini);
-	assert(!blocking(*this));
-	boost::system::error_code ec;
-	const size_t ret
-	{
-		ssl?
-			ssl->read_some(bufs, ec):
-			sd.read_some(bufs, ec)
-	};
-
-	++in.calls;
-	in.bytes += ret;
-	++total_calls_in;
-	total_bytes_in += ret;
-
-	if(likely(!ec))
-		return ret;
-
-	if(ec == boost::system::errc::resource_unavailable_try_again)
-		return ret;
-
-	throw_system_error(ec);
-	__builtin_unreachable();
-}
-
-/// Yields ircd::ctx until all buffers are sent.
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::write_all(const const_buffers &bufs)
-try
-{
-	static const auto completion
-	{
-		asio::transfer_all()
-	};
-
-	assert(!fini);
-	assert(!blocking(*this));
-	const auto interruption{[this]
-	(ctx::ctx *const &) noexcept
-	{
-		this->cancel();
-	}};
-
-	size_t ret{};
-	continuation
-	{
-		continuation::asio_predicate, interruption, [this, &ret, &bufs]
-		(auto &yield)
-		{
-			ret = ssl?
-				asio::async_write(*ssl, bufs, completion, yield):
-				asio::async_write(sd, bufs, completion, yield);
-		}
-	};
-
-	++out.calls;
-	out.bytes += ret;
-	++total_calls_out;
-	total_bytes_out += ret;
-	return ret;
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
-/// Yields ircd::ctx until one or more bytes are sent.
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::write_few(const const_buffers &bufs)
-try
-{
-	assert(!fini);
-	assert(!blocking(*this));
-	const auto interruption{[this]
-	(ctx::ctx *const &) noexcept
-	{
-		this->cancel();
-	}};
-
-	size_t ret{};
-	continuation
-	{
-		continuation::asio_predicate, interruption, [this, &ret, &bufs]
-		(auto &yield)
-		{
-			ret = ssl?
-				ssl->async_write_some(bufs, yield):
-				sd.async_write_some(bufs, yield);
-		}
-	};
-
-	++out.calls;
-	out.bytes += ret;
-	++total_calls_out;
-	total_bytes_out += ret;
-	return ret;
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
-/// Non-blocking; writes as much as possible without blocking
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::write_any(const const_buffers &bufs)
-try
-{
-	static const auto completion
-	{
-		asio::transfer_all()
-	};
-
-	assert(!fini);
-	assert(!blocking(*this));
-	const size_t ret
-	{
-		ssl?
-			asio::write(*ssl, bufs, completion):
-			asio::write(sd, bufs, completion)
-	};
-
-	++out.calls;
-	out.bytes += ret;
-	++total_calls_out;
-	total_bytes_out += ret;
-	return ret;
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
-/// Non-blocking; Writes one "unit" of data or less; never more.
-[[gnu::always_inline]]
-inline size_t
-ircd::net::socket::write_one(const const_buffers &bufs)
-try
-{
-	assert(!fini);
-	assert(!blocking(*this));
-	const size_t ret
-	{
-		ssl?
-			ssl->write_some(bufs):
-			sd.write_some(bufs)
-	};
-
-	++out.calls;
-	out.bytes += ret;
-	++total_calls_out;
-	total_bytes_out += ret;
-	return ret;
-}
-catch(const boost::system::system_error &e)
-{
-	throw_system_error(e);
-}
-
 void
 ircd::net::socket::handle_ready(const std::weak_ptr<socket> wp,
                                 const net::ready type,
@@ -2922,6 +2820,28 @@ catch(const std::exception &e)
 	};
 }
 
+bool
+ircd::net::socket::cancel()
+noexcept
+{
+	cancel_timeout();
+
+	boost::system::error_code ec;
+	sd.cancel(ec);
+	if(unlikely(ec))
+	{
+		char ecbuf[64];
+		log::dwarning
+		{
+			log, "socket:%lu cancel :%s",
+			this->id,
+			string(ecbuf, ec)
+		};
+	}
+
+	return !ec;
+}
+
 ircd::milliseconds
 ircd::net::socket::cancel_timeout()
 noexcept
@@ -2942,12 +2862,6 @@ noexcept
 	timer.cancel(ec);
 	assert(!ec);
 	return ret;
-}
-
-void
-ircd::net::socket::set_timeout(const milliseconds &t)
-{
-	set_timeout(t, nullptr);
 }
 
 void

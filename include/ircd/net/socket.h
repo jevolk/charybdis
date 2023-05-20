@@ -95,32 +95,11 @@ ircd::net::socket
 	void set_timeout(const milliseconds &, ec_handler);
 	void set_timeout(const milliseconds &);
 	milliseconds cancel_timeout() noexcept;
-
-	// low level write suite
-	size_t write_one(const const_buffers &);     // non-blocking
-	size_t write_any(const const_buffers &);     // non-blocking
-	size_t write_few(const const_buffers &);     // yielding
-	size_t write_all(const const_buffers &);     // yielding
-
-	// low level read suite
-	size_t read_one(const mutable_buffers &);    // non-blocking
-	size_t read_any(const mutable_buffers &);    // non-blocking
-	size_t read_few(const mutable_buffers &);    // yielding
-	size_t read_all(const mutable_buffers &);    // yielding
-
-	// low level check suite
-	error_code check(std::nothrow_t, const ready &) noexcept;
-
-	// low level wait suite
-	void wait(const wait_opts &);
-	void wait(const wait_opts &, wait_callback_ec);
-	void wait(const wait_opts &, wait_callback_eptr);
-	template<class... args> auto operator()(args&&...); // Alias to wait()
+	bool cancel() noexcept;
 
 	void disconnect(const close_opts &, eptr_handler);
 	void handshake(const open_opts &, eptr_handler);
 	void connect(const endpoint &, const open_opts &, eptr_handler);
-	bool cancel() noexcept;
 
 	socket(asio::ssl::context &);
 	socket();
@@ -131,9 +110,8 @@ ircd::net::socket
 	~socket() noexcept;
 };
 
-template<class... args>
-inline auto
-ircd::net::socket::operator()(args&&... a)
+inline void
+ircd::net::socket::set_timeout(const milliseconds &t)
 {
-	return this->wait(std::forward<args>(a)...);
+	set_timeout(t, nullptr);
 }
