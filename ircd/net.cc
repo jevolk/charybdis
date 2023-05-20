@@ -156,6 +156,7 @@ ircd::net::peer_cert_der(const mutable_buffer &buf,
 	return openssl::i2d(buf, cert);
 }
 
+[[gnu::hot]]
 std::pair<size_t, size_t>
 ircd::net::calls(const socket &socket)
 noexcept
@@ -166,6 +167,7 @@ noexcept
 	};
 }
 
+[[gnu::hot]]
 std::pair<size_t, size_t>
 ircd::net::bytes(const socket &socket)
 noexcept
@@ -227,6 +229,7 @@ catch(...)
 	return {};
 }
 
+[[gnu::hot]]
 bool
 ircd::net::opened(const socket &socket)
 noexcept try
@@ -239,6 +242,7 @@ catch(...)
 	return false;
 }
 
+[[gnu::hot]]
 const uint64_t &
 ircd::net::id(const socket &socket)
 {
@@ -1611,8 +1615,8 @@ ircd::net::nopush(socket &socket,
 /// so we mostly use this function to set it to non-blocking.
 /// ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 ///
-/// The kern argument has been added to decide between native_non_blocking()
-/// (when kern=true) or non_blocking() (when kern=false). These both set
+/// The system_t overload is added to decide between native_non_blocking()
+/// (with system_t) or non_blocking() (without system_t). These both set
 /// different flags in asio but they both result in the same ioctl(FIONBIO)
 /// probably due to third-party libraries flipping FIONBIO outside of asio's
 /// knowledge and naive users complaining too much to the maintainer.
@@ -1761,6 +1765,7 @@ ircd::net::nodelay(const socket &socket,
 	return socket._nodelay;
 }
 
+[[gnu::hot]]
 bool
 ircd::net::nodelay(const socket &socket)
 {
@@ -1790,6 +1795,7 @@ ircd::net::nopush(const socket &socket)
 }
 #endif
 
+[[gnu::hot]]
 bool
 ircd::net::blocking(const socket &socket)
 {
@@ -1797,6 +1803,7 @@ ircd::net::blocking(const socket &socket)
 	return !sd.non_blocking();
 }
 
+[[gnu::hot]]
 bool
 ircd::net::blocking(const socket &socket,
                     system_t)
@@ -2894,25 +2901,6 @@ ircd::net::socket::set_timeout(const milliseconds &t,
 	timer.async_wait(ios::handle(desc_timeout, std::move(handler)));
 }
 
-ircd::net::socket::operator
-SSL &()
-{
-	assert(ssl);
-	assert(ssl->native_handle());
-	return *ssl->native_handle();
-}
-
-ircd::net::socket::operator
-const SSL &()
-const
-{
-	auto &ssl(mutable_cast(this)->ssl);
-
-	assert(ssl);
-	assert(ssl->native_handle());
-	return *ssl->native_handle();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // net/ipport.h
@@ -3457,7 +3445,7 @@ ircd::net::string(const mutable_buffer &out,
 // buffer.h - provide definition for the null buffers and asio conversion
 //
 
-[[gnu::visibility("protected")]]
+[[gnu::visibility("protected"), gnu::hot]]
 ircd::buffer::mutable_buffer::operator
 boost::asio::mutable_buffer()
 const noexcept
@@ -3468,7 +3456,7 @@ const noexcept
 	};
 }
 
-[[gnu::visibility("protected")]]
+[[gnu::visibility("protected"), gnu::hot]]
 ircd::buffer::const_buffer::operator
 boost::asio::const_buffer()
 const noexcept

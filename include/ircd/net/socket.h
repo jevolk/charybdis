@@ -115,3 +115,22 @@ ircd::net::socket::set_timeout(const milliseconds &t)
 {
 	set_timeout(t, nullptr);
 }
+
+inline ircd::net::socket::operator
+SSL &()
+{
+	assert(ssl);
+	assert(ssl->native_handle());
+	return *ssl->native_handle();
+}
+
+inline ircd::net::socket::operator
+const SSL &()
+const
+{
+	auto &ssl(mutable_cast(this)->ssl);
+
+	assert(ssl);
+	assert(ssl->native_handle());
+	return *ssl->native_handle();
+}
