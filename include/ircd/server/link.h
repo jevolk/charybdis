@@ -19,6 +19,7 @@ struct ircd::server::link
 
 	static conf::item<size_t> tag_max_default;
 	static conf::item<size_t> tag_commit_max_default;
+	static conf::item<bool> write_async;
 	static uint64_t ids;
 
 	uint64_t id {++ids};                         ///< unique identifier of link.
@@ -46,8 +47,9 @@ struct ircd::server::link
 	void handle_readable(const error_code &) noexcept;
 	void wait_readable();
 
-	size_t process_write_next(const const_buffers &);
-	bool process_write(tag &);
+	void handle_write_async(tag &, const std::error_code &, const size_t);
+	bool process_write_async(tag &, const const_buffers &);
+	bool process_write_nbio(tag &, const const_buffers &);
 	void handle_writable_success();
 	void handle_writable(const error_code &) noexcept;
 	void wait_writable();

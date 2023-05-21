@@ -2222,6 +2222,13 @@ ircd::server::link::tag_commit_max_default
 	{ "default",  3L                                }
 };
 
+decltype(ircd::server::link::write_async)
+ircd::server::link::write_async
+{
+	{ "name",     "ircd.server.link.write.async" },
+	{ "default",  bool(IRCD_USE_ASIO_IO_URING)   },
+};
+
 decltype(ircd::server::link::ids)
 ircd::server::link::ids;
 
@@ -2596,13 +2603,51 @@ ircd::server::link::handle_writable_success()
 			break;
 		}
 
-		if(tag_committed() == 0)
+		if(!tag_committed())
 			wait_readable();
 
-		if(!process_write(tag))
+		if(!tag.committed())
+			log::debug
+			{
+				log, "%s starting on tag:%lu %zu of %zu: wt:%zu [%s]",
+				loghead(*this),
+				tag.state.id,
+				tag_committed(),
+				tag_count(),
+				tag.write_size(),
+				tag.request?
+					loghead(*tag.request):
+					"<no attached request>"_sv
+			};
+
+		if(!tag.committed())
+			log::debug
+			{
+				request::log[0], "%s wt:%zu on %s",
+				loghead(*tag.request),
+				tag.write_size(),
+				loghead(*this),
+			};
+
+		if(tag.write_remaining())
 		{
-			wait_writable();
-			break;
+			const pair<const const_buffer> buffers
+			{
+				tag.make_write_buffers()
+			};
+
+			const bool complete
+			{
+				write_async?
+					process_write_async(tag, buffers):
+					process_write_nbio(tag, buffers)
+			};
+
+			if(!complete)
+			{
+				wait_writable();
+				break;
+			}
 		}
 
 		// Limits the amount of requests in the pipe.
@@ -2614,67 +2659,89 @@ ircd::server::link::handle_writable_success()
 }
 
 bool
-ircd::server::link::process_write(tag &tag)
+ircd::server::link::process_write_nbio(tag &tag,
+                                       const const_buffers &buffers)
 {
-	if(!tag.committed())
-	{
-		log::debug
-		{
-			log, "%s starting on tag:%lu %zu of %zu: wt:%zu [%s]",
-			loghead(*this),
-			tag.state.id,
-			tag_committed(),
-			tag_count(),
-			tag.write_size(),
-			tag.request?
-				loghead(*tag.request):
-				"<no attached request>"_sv
-		};
-
-		if(tag.request)
-			log::debug
-			{
-				request::log[0], "%s wt:%zu on %s",
-				loghead(*tag.request),
-				tag.write_size(),
-				loghead(*this),
-			};
-	}
-
-	while(tag.write_remaining())
-	{
-		const pair<const const_buffer> buffers
-		{
-			tag.make_write_buffers()
-		};
-
-		const auto written
-		{
-			process_write_next(buffers)
-		};
-
-		tag.wrote(written);
-		assert(tag_committed() <= tag_commit_max());
-		if(written < buffers::size(const_buffers(buffers)))
-			return false;
-	}
-
-	return true;
-}
-
-size_t
-ircd::server::link::process_write_next(const const_buffers &buffers)
-{
-	assert(buffers::size(buffers));
-	const size_t bytes
+	const size_t wrote
 	{
 		write_any(*socket, buffers)
 	};
 
-	assert(bytes <= buffers::size(buffers));
+	assert(wrote <= buffers::size(buffers));
 	assert(peer);
-	peer->write_bytes += bytes;
-	return bytes;
+	peer->write_bytes += wrote;
+	tag.wrote(wrote);
+	assert(tag_committed() <= tag_commit_max());
+	return wrote >= buffers::size(buffers);
+}
+
+bool
+ircd::server::link::process_write_async(tag &tag,
+                                        const const_buffers &buffers)
+{
+	assert(socket);
+	assert(buffers::size(buffers));
+
+	assert(!op_write);
+	op_write = true;
+	const unwind_exceptional unable{[this]
+	{
+		op_write = false;
+	}};
+
+	auto handler
+	{
+		std::bind(&link::handle_write_async, this, std::ref(tag), ph::_1, ph::_2)
+	};
+
+	net::write_few(*socket, buffers, std::move(handler));
+	return false;
+}
+
+void
+ircd::server::link::handle_write_async(tag &tag,
+                                       const std::error_code &ec,
+                                       const size_t wrote)
+{
+	assert(op_write);
+	op_write = false;
+	write_ts = time<seconds>();
+
+	if(unlikely(finished()))
+	{
+		assert(peer);
+		return peer->handle_finished(*this);
+	}
+
+	if(ec)
+	{
+		assert(peer);
+		assert(!wrote);
+		peer->handle_error(*this, ec);
+		return;
+	}
+
+	// tag might have gone away prior to callback
+	const bool tag_ok
+	{
+		!op_fini && !queue.empty()
+	};
+
+	bool more {false};
+	if(likely(tag_ok && tag.request))
+	{
+		tag.wrote(wrote);
+		more |= tag.write_remaining();
+	}
+
+	assert(tag_committed() <= tag_commit_max());
+	more |= tag_uncommitted();
+
+	assert(peer);
+	peer->write_bytes += wrote;
+
+	if(more)
+		wait_writable();
 }
 
 void
@@ -3393,6 +3460,7 @@ ircd::server::tag::wrote(size_t bytes)
 {
 	assert(request);
 	const auto &req{*request};
+	assert(write_remaining() <= bytes);
 
 	if(state.written < size(req.out.head))
 	{
