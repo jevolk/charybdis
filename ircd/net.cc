@@ -264,6 +264,92 @@ ircd::net::flush(socket &socket)
 	nodelay(socket, false);
 }
 
+/// Callback after everything is sent.
+void
+ircd::net::write_all(socket &socket,
+                     const vector_view<const const_buffer> &bufs,
+                     write_handler &&callback)
+try
+{
+	assert(!socket.fini);
+	auto &desc
+	{
+		socket.desc_write
+	};
+
+	auto handle{[&socket, callback(std::move(callback))]
+	(const auto &ec, const size_t bytes)
+	{
+		const auto _ec
+		{
+			!ec && bytes?
+				error_code{}:
+			!ec && !bytes?
+				net::eof:
+				make_error_code(ec)
+		};
+
+		++socket.out.calls;
+		socket.out.bytes += bytes;
+		++socket.total_calls_out;
+		socket.total_bytes_out += bytes;
+		callback(_ec, bytes);
+	}};
+
+	if(socket.ssl)
+		asio::async_write(*socket.ssl, bufs, ios::handle(desc, std::move(handle)));
+	else
+		asio::async_write(socket.sd, bufs, ios::handle(desc, std::move(handle)));
+}
+catch(const boost::system::system_error &e)
+{
+	assert(false);
+	throw_system_error(e);
+}
+
+/// Callback after as much as possible is sent.
+void
+ircd::net::write_few(socket &socket,
+                     const vector_view<const const_buffer> &bufs,
+                     write_handler &&callback)
+try
+{
+	assert(!socket.fini);
+	auto &desc
+	{
+		socket.desc_write
+	};
+
+	auto handle{[&socket, callback(std::move(callback))]
+	(const auto &ec, const size_t bytes)
+	{
+		const auto _ec
+		{
+			!ec && bytes?
+				error_code{}:
+			!ec && !bytes?
+				net::eof:
+				make_error_code(ec)
+		};
+
+		++socket.out.calls;
+		socket.out.bytes += bytes;
+		++socket.total_calls_out;
+		socket.total_bytes_out += bytes;
+		callback(_ec, bytes);
+	}};
+
+	if(socket.ssl)
+		socket.ssl->async_write_some(bufs, ios::handle(desc, std::move(handle)));
+	else
+		socket.sd.async_write_some(bufs, ios::handle(desc, std::move(handle)));
+}
+catch(const boost::system::system_error &e)
+{
+	assert(false);
+	throw_system_error(e);
+}
+
 /// Yields ircd::ctx until all buffers are sent.
 ///
 /// This is blocking behavior; use this if the following are true:
@@ -1986,6 +2072,20 @@ ircd::net::socket::desc_wait
 	{ "ircd.net.socket.wait.ready.READ"  },
 	{ "ircd.net.socket.wait.ready.WRITE" },
 	{ "ircd.net.socket.wait.ready.ERROR" },
+};
+
+[[clang::always_destroy]]
+decltype(ircd::net::socket::desc_write)
+ircd::net::socket::desc_write
+{
+	"ircd.net.socket.write"
+};
+
+[[clang::always_destroy]]
+decltype(ircd::net::socket::desc_read)
+ircd::net::socket::desc_read
+{
+	"ircd.net.socket.read"
 };
 
 decltype(ircd::net::socket::total_bytes_in)

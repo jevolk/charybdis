@@ -62,6 +62,8 @@ ircd::net::socket
 	static ios::descriptor desc_disconnect;
 	static ios::descriptor desc_timeout;
 	static ios::descriptor desc_wait[4];
+	static ios::descriptor desc_write;           // for cb interface only
+	static ios::descriptor desc_read;            // for cb interface only
 
 	uint64_t id {++count};
 	ip::tcp::socket sd;

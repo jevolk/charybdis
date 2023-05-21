@@ -14,6 +14,7 @@
 namespace ircd::net
 {
 	using const_buffers = vector_view<const const_buffer>;
+	using write_handler = std::function<void (const std::error_code &, size_t)>;
 
 	// Observers
 	size_t flushing(const socket &);
@@ -43,8 +44,60 @@ namespace ircd::net
 	size_t write(socket &, const const_buffers &);
 	size_t write(socket &, const const_buffer &);
 
+	// Callback-based interface.
+	void write_few(socket &, const const_buffers &, write_handler &&);
+	void write_few(socket &, const const_buffer &, write_handler &&);
+	void write_all(socket &, const const_buffers &, write_handler &&);
+	void write_all(socket &, const const_buffer &, write_handler &&);
+	void write(socket &, const const_buffers &, write_handler &&);
+	void write(socket &, const const_buffer &, write_handler &&);
+
 	// Toggles nodelay to force a transmission.
 	void flush(socket &);
+}
+
+/// Alias to write_all();
+inline void
+ircd::net::write(socket &socket,
+                 const const_buffer &buffer,
+                 write_handler &&callback)
+{
+	write_all(socket, buffer, std::move(callback));
+}
+
+/// Alias to write_all();
+inline void
+ircd::net::write(socket &socket,
+                 const const_buffers &buffers,
+                 write_handler &&callback)
+{
+	write_all(socket, buffers, std::move(callback));
+}
+
+inline void
+ircd::net::write_all(socket &socket,
+                     const const_buffer &buffer,
+                     write_handler &&callback)
+{
+	const const_buffer buffers[]
+	{
+		buffer
+	};
+
+	write_all(socket, buffers, std::move(callback));
+}
+
+inline void
+ircd::net::write_few(socket &socket,
+                     const const_buffer &buffer,
+                     write_handler &&callback)
+{
+	const const_buffer buffers[]
+	{
+		buffer
+	};
+
+	write_few(socket, buffers, std::move(callback));
 }
 
 /// Alias to write_all();
