@@ -90,9 +90,52 @@ ircd::allocator::je::available
 
 #if defined(IRCD_ALLOCATOR_JEMALLOC)
 bool
-ircd::allocator::trim(const size_t &pad)
-noexcept
+ircd::allocator::trim(const size_t &flag)
+noexcept try
 {
+	if(flag & 1)
+	{
+		static const auto name
+		{
+			"arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".decay"
+		};
+
+		static size_t mib_buf[8];
+		static const auto mib
+		{
+			je::lookup(mib_buf, name)
+		};
+
+		je::set(mib);
+	}
+
+	if(flag & 2 || flag == 0)
+	{
+		static const auto name
+		{
+			"arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".purge"
+		};
+
+		static size_t mib_buf[8];
+		static const auto mib
+		{
+			je::lookup(mib_buf, name)
+		};
+
+		je::set(mib);
+	}
+
+	return true;
+}
+catch(const std::exception &e)
+{
+	log::error
+	{
+		"allocator::trim(%zu) :%s",
+		flag,
+		e.what(),
+	};
+
 	return false;
 }
 #endif
