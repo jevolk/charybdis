@@ -529,8 +529,13 @@ try
 {
 	boost::asio::posix::stream_descriptor fd
 	{
-		ios::get(), dup(STDIN_FILENO)
+		ios::get(), STDIN_FILENO
 	};
+
+	const unwind release{[&fd]
+	{
+		fd.release();
+	}};
 
 	boost::asio::streambuf sb
 	{
