@@ -98,16 +98,42 @@ noexcept
 ircd::string_view
 ircd::allocator::get(const string_view &key_,
                      const mutable_buffer &buf)
+try
 {
 	char key[128];
 	strlcpy(key, key_);
 
 	size_t len(size(buf));
-	syscall(::mallctl, key, data(buf), &len, nullptr, 0UL);
+	const auto err
+	{
+		::mallctl
+		(
+			key,
+			data(buf),
+			&len,
+			nullptr,
+			0UL
+		)
+	};
+
+	if(unlikely(err != 0))
+		throw_system_error(err);
+
 	return string_view
 	{
 		data(buf), std::min(len, size(buf))
 	};
+}
+catch(const std::system_error &e)
+{
+	log::error
+	{
+		"allocator::get('%s') :%s",
+		key_,
+		e.what()
+	};
+
+	throw;
 }
 #endif
 
@@ -116,16 +142,42 @@ ircd::string_view
 ircd::allocator::set(const string_view &key_,
                      const string_view &val,
                      const mutable_buffer &cur)
+try
 {
 	char key[128];
 	strlcpy(key, key_);
 
 	size_t curlen(size(cur));
-	syscall(::mallctl, key, data(cur), &curlen, mutable_cast(data(val)), size(val));
+	const auto err
+	{
+		::mallctl
+		(
+			key,
+			data(cur),
+			&curlen,
+			mutable_cast(data(val)),
+			size(val)
+		)
+	};
+
+	if(unlikely(err != 0))
+		throw_system_error(err);
+
 	return string_view
 	{
 		data(cur), std::min(curlen, size(cur))
 	};
+}
+catch(const std::system_error &e)
+{
+	log::error
+	{
+		"allocator::set('%s') :%s",
+		key_,
+		e.what()
+	};
+
+	throw;
 }
 #endif
 
