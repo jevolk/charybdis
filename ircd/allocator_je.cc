@@ -103,6 +103,7 @@ try
 	char key[128];
 	strlcpy(key, key_);
 
+	assert(!empty(buf));
 	size_t len(size(buf));
 	const auto err
 	{
@@ -153,8 +154,8 @@ try
 		::mallctl
 		(
 			key,
-			data(cur),
-			&curlen,
+			curlen? data(cur): nullptr,
+			curlen? &curlen: nullptr,
 			mutable_cast(data(val)),
 			size(val)
 		)

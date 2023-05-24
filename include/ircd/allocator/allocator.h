@@ -28,7 +28,7 @@ namespace ircd::allocator
 
 	string_view info(const mutable_buffer &, const string_view &opts = {});
 	string_view get(const string_view &var, const mutable_buffer &val);
-	string_view set(const string_view &var, const string_view &val, const mutable_buffer &cur = {});
+	string_view set(const string_view &var, const string_view &val = {}, const mutable_buffer &cur = {});
 	template<class T> T get(const string_view &var);
 	template<class T, class R> R &set(const string_view &var, T val, R &cur);
 	template<class T> T set(const string_view &var, T val);
@@ -143,11 +143,4 @@ ircd::allocator::get(const string_view &var)
 		};
 
 	return val;
-}
-
-template<>
-inline void
-ircd::allocator::get<void>(const string_view &var)
-{
-	get(var, mutable_buffer{});
 }
