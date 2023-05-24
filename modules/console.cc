@@ -1430,7 +1430,43 @@ console_cmd__mem__get(opt &out, const string_view &line)
 		param.at("type", "unsigned"_sv)
 	};
 
-	char buf[512];
+	char _buf[512];
+	mutable_buffer buf;
+	switch(hash(type))
+	{
+		case "void"_:
+			break;
+
+		case "bool"_:
+			buf = { _buf, sizeof(bool) };
+			break;
+
+		case "size_t"_:
+			buf = { _buf, sizeof(size_t) };
+			break;
+
+		case "ssize_t"_:
+			buf = { _buf, sizeof(ssize_t) };
+			break;
+
+		default:
+		case "unsigned"_:
+			buf = { _buf, sizeof(unsigned) };
+			break;
+
+		case "uint64_t"_:
+			buf = { _buf, sizeof(uint64_t) };
+			break;
+
+		case "uint64_t*"_:
+			buf = { _buf, sizeof(uint64_t *) };
+			break;
+
+		case "string"_:
+			buf = { _buf, sizeof(const char *) };
+			break;
+	}
+
 	const string_view &val
 	{
 		allocator::get(key, buf)
@@ -1439,39 +1475,39 @@ console_cmd__mem__get(opt &out, const string_view &line)
 	switch(hash(type))
 	{
 		case "void"_:
-			out << std::endl;
 			break;
 
 		case "bool"_:
-			out << lex_cast(*reinterpret_cast<const bool *>(data(val))) << std::endl;
+			out << lex_cast(*reinterpret_cast<const bool *>(data(val)));
 			break;
 
 		case "size_t"_:
-			out << lex_cast(*reinterpret_cast<const size_t *>(data(val))) << std::endl;
+			out << lex_cast(*reinterpret_cast<const size_t *>(data(val)));
 			break;
 
 		case "ssize_t"_:
-			out << lex_cast(*reinterpret_cast<const ssize_t *>(data(val))) << std::endl;
+			out << lex_cast(*reinterpret_cast<const ssize_t *>(data(val)));
 			break;
 
 		default:
 		case "unsigned"_:
-			out << lex_cast(*reinterpret_cast<const unsigned *>(data(val))) << std::endl;
+			out << lex_cast(*reinterpret_cast<const unsigned *>(data(val)));
 			break;
 
 		case "uint64_t"_:
-			out << lex_cast(*reinterpret_cast<const uint64_t *>(data(val))) << std::endl;
+			out << lex_cast(*reinterpret_cast<const uint64_t *>(data(val)));
 			break;
 
 		case "uint64_t*"_:
-			out << lex_cast(*reinterpret_cast<const uintptr_t *>(data(val))) << std::endl;
+			out << lex_cast(*reinterpret_cast<const uintptr_t *>(data(val)));
 			break;
 
 		case "string"_:
-			out << *reinterpret_cast<const char *const *>(data(val)) << std::endl;
+			out << *reinterpret_cast<const char *const *>(data(val));
 			break;
 	}
 
+	out << std::endl;
 	return true;
 }
 

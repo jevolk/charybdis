@@ -61,7 +61,7 @@ ircd::allocator::je::malloc_version_abi
 		{
 			*reinterpret_cast<const char *const *>
 			(
-				data(allocator::get("version", buf))
+				data(allocator::get("version", mutable_buffer(buf, sizeof(char *))))
 			)
 		};
 
