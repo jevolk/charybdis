@@ -86,6 +86,7 @@ ircd::db::database::allocator::init()
 {
 	#ifdef IRCD_DB_USE_JEMALLOC
 	cache_arena = ircd::allocator::get<unsigned>("arenas.create");
+	assert(cache_arena != 0);
 
 	char extent_hooks_keybuf[32];
 	const string_view cache_arena_hooks_key{fmt::sprintf
@@ -112,18 +113,29 @@ ircd::db::database::allocator::fini()
 noexcept
 {
 	#ifdef IRCD_DB_USE_JEMALLOC
-	if(likely(cache_arena != 0))
+	char keybuf[64];
+	if(likely(cache_arena != 0)) try
 	{
-		char keybuf[64];
-		ircd::allocator::get<void>(string_view(fmt::sprintf
+		ircd::allocator::set(string_view(fmt::sprintf
 		{
 			keybuf, "arena.%u.reset", cache_arena
 		}));
+	}
+	catch(const std::system_error &)
+	{
+		// stop propagation; error is already logged
+	}
 
-		ircd::allocator::get<void>(string_view(fmt::sprintf
+	if(likely(cache_arena != 0)) try
+	{
+		ircd::allocator::set(string_view(fmt::sprintf
 		{
 			keybuf, "arena.%u.destroy", cache_arena
 		}));
+	}
+	catch(const std::system_error &)
+	{
+		// stop propagation; error is already logged
 	}
 	#endif
 }
