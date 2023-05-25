@@ -357,9 +357,9 @@ endif
 if CLANG
 if OPENCL
 
-GPU_OPT = opt-${CXX_EPOCH}
-GPU_LINK = llvm-link-${CXX_EPOCH}
-GPU_SPIRV = llvm-spirv-${CXX_EPOCH}
+GPU_OPT = ${LLVM_OPT}
+GPU_LINK = ${LLVM_LINK}
+GPU_SPIRV = ${LLVM_SPIRV}
 
 GPU_CPPFLAGS =#
 GPU_CPPFLAGS += -Dcl_clang_storage_class_specifiers

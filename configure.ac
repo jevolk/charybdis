@@ -2733,6 +2733,10 @@ AM_COND_IF([OPENCL],
 	IRCD_DEFINE(USE_OPENCL, [0], [OpenCL support is not available])
 ])
 
+AC_PATH_PROGS(LLVM_OPT, [opt-${CXX_EPOCH} opt])
+AC_PATH_PROGS(LLVM_LINK, [llvm-link-${CXX_EPOCH} llvm-link])
+AC_PATH_PROGS(LLVM_SPIRV, [llvm-spirv-${CXX_EPOCH} llvm-spirv])
+
 dnl
 dnl
 dnl Arm NN
