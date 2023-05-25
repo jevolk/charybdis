@@ -88,6 +88,125 @@ ircd::allocator::je::available
 	#endif
 };
 
+//
+// je::cork
+//
+
+[[gnu::visibility("internal")]]
+decltype(ircd::allocator::je::cork::mib)
+ircd::allocator::je::cork::mib
+{
+	{ 0 },
+	{ 0 },
+	{ 0 },
+	{ 0 },
+};
+
+[[gnu::visibility("hidden")]]
+decltype(ircd::allocator::je::cork::dirty_mib)
+ircd::allocator::je::cork::dirty_mib
+{
+	#if defined(IRCD_ALLOCATOR_JEMALLOC)
+	lookup(mib[0], "arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".dirty_decay_ms")
+	#endif
+};
+
+[[gnu::visibility("hidden")]]
+decltype(ircd::allocator::je::cork::muzzy_mib)
+ircd::allocator::je::cork::muzzy_mib
+{
+	#if defined(IRCD_ALLOCATOR_JEMALLOC)
+	lookup(mib[1], "arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".muzzy_decay_ms")
+	#endif
+};
+
+[[gnu::visibility("hidden")]]
+decltype(ircd::allocator::je::cork::purge_mib)
+ircd::allocator::je::cork::purge_mib
+{
+	#if defined(IRCD_ALLOCATOR_JEMALLOC)
+	lookup(mib[2], "arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".purge")
+	#endif
+};
+
+[[gnu::visibility("hidden")]]
+decltype(ircd::allocator::je::cork::decay_mib)
+ircd::allocator::je::cork::decay_mib
+{
+	#if defined(IRCD_ALLOCATOR_JEMALLOC)
+	lookup(mib[2], "arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".decay")
+	#endif
+};
+
+ircd::allocator::je::cork::cork(const opts &opts)
+:purge_post
+{
+	opts.purge_post
+}
+,decay_post
+{
+	opts.decay_post
+}
+{
+	const byte_view<string_view> corked
+	{
+		-1L
+	};
+
+	if(opts.dirty)
+	{
+		const mutable_buffer out
+		{
+			 reinterpret_cast<char *>(&their_dirty), sizeof(their_dirty)
+		};
+
+		set(dirty_mib, corked, out);
+	}
+
+	if(opts.muzzy)
+	{
+		const mutable_buffer out
+		{
+			 reinterpret_cast<char *>(&their_muzzy), sizeof(their_muzzy)
+		};
+
+		set(muzzy_mib, corked, out);
+	}
+
+	if(opts.purge_pre)
+		set(purge_mib);
+}
+
+ircd::allocator::je::cork::~cork()
+noexcept try
+{
+	if(decay_post)
+		set(decay_mib);
+
+	if(purge_post)
+		set(purge_mib);
+
+	if(their_dirty != -2)
+		set(dirty_mib, byte_view<string_view>(their_dirty));
+
+	if(their_muzzy != -2)
+		set(muzzy_mib, byte_view<string_view>(their_muzzy));
+}
+catch(const std::system_error &e)
+{
+	log::error
+	{
+		"allocator::je::~cork() :%s",
+		e.what(),
+	};
+
+	return;
+}
+
+//
+// ircd::allocator
+//
+
 #if defined(IRCD_ALLOCATOR_JEMALLOC)
 bool
 ircd::allocator::trim(const size_t &flag)

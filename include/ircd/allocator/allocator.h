@@ -53,9 +53,13 @@ namespace ircd::allocator
 /// interface has different functionality when je::available.
 namespace ircd::allocator::je
 {
+	struct cork;
+	using mib_vec = vector_view<const size_t>;
+
 	extern const bool available;
 }
 
+#include "je_cork.h"
 #include "profile.h"
 #include "scope.h"
 #include "state.h"
