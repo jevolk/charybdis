@@ -210,7 +210,7 @@ try
 		return false;
 
 	if(peer.links.empty())
-		peer.link_add(1);
+		peer.link_add(true);
 
 	return true;
 }
@@ -1100,7 +1100,7 @@ ircd::server::peer::link_get(const request &request)
 	const auto &prio(request.opt->priority);
 
 	if(links.empty())
-		return &link_add(1);
+		return &link_add();
 
 	// Indicates that we can't add anymore links for this peer and the rest
 	// of the algorithm should consider this.
@@ -1170,10 +1170,10 @@ ircd::server::peer::link_get(const request &request)
 	if(prio == std::numeric_limits<std::remove_reference<decltype(prio)>::type>::min())
 	{
 		if(!best)
-			return &link_add(1);
+			return &link_add();
 
 		if(best->tag_committed())
-			return &link_add(1);
+			return &link_add();
 
 		return best;
 	}
@@ -1199,11 +1199,11 @@ ircd::server::peer::link_get(const request &request)
 }
 
 ircd::server::link &
-ircd::server::peer::link_add(const size_t &num)
+ircd::server::peer::link_add(const bool open)
 {
 	assert(!finished());
 
-	if(e && e->eptr)
+	if(unlikely(e && e->eptr))
 		std::rethrow_exception(e->eptr);
 
 	assert(!e);
@@ -1219,7 +1219,7 @@ ircd::server::peer::link_add(const size_t &num)
 		links.emplace_back(*this)
 	};
 
-	if(remote)
+	if(likely(remote && open))
 		link.open(open_opts);
 
 	return link;

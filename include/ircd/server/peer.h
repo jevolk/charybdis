@@ -111,7 +111,7 @@ struct ircd::server::peer
 	size_t read_total() const;
 
 	// link control panel
-	link &link_add(const size_t &num = 1);
+	link &link_add(const bool open = true);
 	link *link_get(const request &);
 
 	// request panel
