@@ -596,12 +596,12 @@ ircd::allocator::operator+=(profile &a,
 
 #if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_MEMLOCK)
 size_t
-ircd::allocator::rlimit_memlock(const size_t &req)
+ircd::allocator::rlimit::memlock(const size_t &req)
 try
 {
-	rlimit rlim {0};
-	rlim.rlim_cur = req;
-	syscall(setrlimit, RLIMIT_MEMLOCK, &rlim);
+	struct rlimit r {0};
+	r.rlim_cur = req;
+	syscall(setrlimit, RLIMIT_MEMLOCK, &r);
 
 	char pbuf[48];
 	log::info
@@ -612,7 +612,7 @@ try
 			"unlimited"_sv,
 	};
 
-	return rlim.rlim_cur;
+	return r.rlim_cur;
 }
 catch(const std::system_error &e)
 {
@@ -626,11 +626,11 @@ catch(const std::system_error &e)
 		e.what(),
 	};
 
-	return rlimit_memlock();
+	return memlock();
 }
 #else
 size_t
-ircd::allocator::rlimit_memlock(const size_t &req)
+ircd::allocator::rlimit::memlock(const size_t &req)
 {
 	return 0;
 }
@@ -638,15 +638,31 @@ ircd::allocator::rlimit_memlock(const size_t &req)
 
 #if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_MEMLOCK)
 size_t
-ircd::allocator::rlimit_memlock()
+ircd::allocator::rlimit::memlock()
 {
-	rlimit rlim;
-	syscall(getrlimit, RLIMIT_MEMLOCK, &rlim);
-	return rlim.rlim_cur;
+	struct rlimit r;
+	syscall(getrlimit, RLIMIT_MEMLOCK, &r);
+	return r.rlim_cur;
 }
 #else
 size_t
-ircd::allocator::rlimit_memlock()
+ircd::allocator::rlimit::memlock()
+{
+	return 0;
+}
+#endif
+
+#if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_STACK)
+size_t
+ircd::allocator::rlimit::stack()
+{
+	struct rlimit r;
+	syscall(getrlimit, RLIMIT_STACK, &r);
+	return r.rlim_cur;
+}
+#else
+size_t
+ircd::allocator::rlimit::stack()
 {
 	return 0;
 }
@@ -654,15 +670,15 @@ ircd::allocator::rlimit_memlock()
 
 #if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_DATA)
 size_t
-ircd::allocator::rlimit_data()
+ircd::allocator::rlimit::data()
 {
-	rlimit rlim;
-	syscall(getrlimit, RLIMIT_DATA, &rlim);
-	return rlim.rlim_cur;
+	struct rlimit r;
+	syscall(getrlimit, RLIMIT_DATA, &r);
+	return r.rlim_cur;
 }
 #else
 size_t
-ircd::allocator::rlimit_data()
+ircd::allocator::rlimit::data()
 {
 	return 0;
 }
@@ -670,15 +686,15 @@ ircd::allocator::rlimit_data()
 
 #if defined(HAVE_SYS_RESOURCE_H) && defined(RLIMIT_AS)
 size_t
-ircd::allocator::rlimit_as()
+ircd::allocator::rlimit::virt()
 {
-	rlimit rlim;
-	syscall(getrlimit, RLIMIT_AS, &rlim);
-	return rlim.rlim_cur;
+	struct rlimit r;
+	syscall(getrlimit, RLIMIT_AS, &r);
+	return r.rlim_cur;
 }
 #else
 size_t
-ircd::allocator::rlimit_as()
+ircd::allocator::rlimit::virt()
 {
 	return 0;
 }

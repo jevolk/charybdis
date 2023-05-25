@@ -21,11 +21,6 @@ namespace ircd::allocator
 {
 	struct aligned_alloc;
 
-	size_t rlimit_as();
-	size_t rlimit_data();
-	size_t rlimit_memlock();
-	size_t rlimit_memlock(const size_t &request);
-
 	string_view info(const mutable_buffer &, const string_view &opts = {});
 	string_view get(const string_view &var, const mutable_buffer &val);
 	string_view set(const string_view &var, const string_view &val = {}, const mutable_buffer &cur = {});
@@ -59,6 +54,7 @@ namespace ircd::allocator::je
 	extern const bool available;
 }
 
+#include "rlimit.h"
 #include "je_cork.h"
 #include "profile.h"
 #include "scope.h"

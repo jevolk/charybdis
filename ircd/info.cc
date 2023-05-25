@@ -955,7 +955,7 @@ ircd::info::dump_sys_info()
 		iov_max,
 		aio_max,
 		aio_reqprio_max,
-		pretty(buf[0], iec(allocator::rlimit_memlock())),
+		pretty(buf[0], iec(allocator::rlimit::memlock())),
 		clock_source,
 		between(thp_enable, '[', ']'),
 		thp_size,

@@ -61,7 +61,7 @@ ircd::db::database::allocator::ALIGN_DEFAULT
 decltype(ircd::db::database::allocator::mlock_limit)
 ircd::db::database::allocator::mlock_limit
 {
-	ircd::allocator::rlimit_memlock()
+	ircd::allocator::rlimit::memlock()
 };
 
 decltype(ircd::db::database::allocator::mlock_enabled)
