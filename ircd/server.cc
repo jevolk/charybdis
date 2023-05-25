@@ -69,14 +69,14 @@ decltype(ircd::server::wait_all_timeout)
 ircd::server::wait_all_timeout
 {
 	{ "name",     "ircd.server.wait_all.timeout" },
-	{ "default",  5L                             },
+	{ "default",  4L                             },
 };
 
 decltype(ircd::server::wait_all_max)
 ircd::server::wait_all_max
 {
 	{ "name",     "ircd.server.wait_all.max" },
-	{ "default",  9L                         },
+	{ "default",  5L                         },
 };
 
 decltype(ircd::server::peers_alloc)
