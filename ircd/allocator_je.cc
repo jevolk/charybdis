@@ -19,6 +19,9 @@ namespace ircd::allocator::je
 	using callback_prototype = void (std::ostream &, const string_view &);
 
 	static void stats_handler(void *, const char *) noexcept;
+	static mib_vec lookup(const vector_view<size_t> &, const string_view &);
+	static string_view get(const mib_vec &, const mutable_buffer & = {});
+	static string_view set(const mib_vec &, const string_view & = {}, const mutable_buffer & = {});
 
 	static std::function<callback_prototype> stats_callback;
 	extern info::versions malloc_version_api;
@@ -96,42 +99,21 @@ noexcept
 
 #if defined(IRCD_ALLOCATOR_JEMALLOC)
 ircd::string_view
-ircd::allocator::get(const string_view &key_,
+ircd::allocator::set(const string_view &key_,
+                     const string_view &val,
                      const mutable_buffer &buf)
 try
 {
-	char key[128];
-	strlcpy(key, key_);
-
-	assert(!empty(buf));
-	size_t len(size(buf));
-	const auto err
-	{
-		::mallctl
-		(
-			key,
-			data(buf),
-			&len,
-			nullptr,
-			0UL
-		)
-	};
-
-	if(unlikely(err != 0))
-		throw_system_error(err);
-
-	return string_view
-	{
-		data(buf), std::min(len, size(buf))
-	};
+	std::array<size_t, 8> mib;
+	return je::set(je::lookup(mib, key_), val, buf);
 }
 catch(const std::system_error &e)
 {
 	log::error
 	{
-		"allocator::get('%s') :%s",
+		"allocator::set('%s') :%s",
 		key_,
-		e.what()
+		e.what(),
 	};
 
 	throw;
@@ -140,25 +122,49 @@ catch(const std::system_error &e)
 
 #if defined(IRCD_ALLOCATOR_JEMALLOC)
 ircd::string_view
-ircd::allocator::set(const string_view &key_,
-                     const string_view &val,
-                     const mutable_buffer &cur)
+ircd::allocator::get(const string_view &key_,
+                     const mutable_buffer &buf)
 try
 {
-	char key[128];
-	strlcpy(key, key_);
+	std::array<size_t, 8> mib;
+	return je::get(je::lookup(mib, key_), buf);
+}
+catch(const std::system_error &e)
+{
+	log::error
+	{
+		"allocator::get('%s') :%s",
+		key_,
+		e.what(),
+	};
 
+	throw;
+}
+
+#endif
+
+ircd::string_view
+ircd::allocator::je::set(const mib_vec &mib,
+                         const string_view &val,
+                         const mutable_buffer &cur)
+try
+{
 	size_t curlen(size(cur));
 	const auto err
 	{
-		::mallctl
-		(
-			key,
-			curlen? data(cur): nullptr,
-			curlen? &curlen: nullptr,
-			mutable_cast(data(val)),
-			size(val)
-		)
+		#if defined(IRCD_ALLOCATOR_JEMALLOC)
+			::mallctlbymib
+			(
+				data(mib),
+				size(mib),
+				curlen? data(cur): nullptr,
+				curlen? &curlen: nullptr,
+				mutable_cast(data(val)),
+				size(val)
+			)
+		#else
+			int(std::errc::no_link)
+		#endif
 	};
 
 	if(unlikely(err != 0))
@@ -173,14 +179,84 @@ catch(const std::system_error &e)
 {
 	log::error
 	{
-		"allocator::set('%s') :%s",
-		key_,
-		e.what()
+		"allocator::set() :%s",
+		e.what(),
 	};
 
 	throw;
 }
-#endif
+
+ircd::string_view
+ircd::allocator::je::get(const mib_vec &mib,
+                         const mutable_buffer &buf)
+try
+{
+	assert(!empty(buf));
+	size_t len(size(buf));
+	const auto err
+	{
+		#if defined(IRCD_ALLOCATOR_JEMALLOC)
+			::mallctlbymib
+			(
+				data(mib),
+				size(mib),
+				data(buf),
+				&len,
+				nullptr,
+				0UL
+			)
+		#else
+			int(std::errc::no_link)
+		#endif
+	};
+
+	if(unlikely(err != 0))
+		throw_system_error(err);
+
+	return string_view
+	{
+		data(buf), std::min(len, size(buf))
+	};
+}
+catch(const std::system_error &e)
+{
+	log::error
+	{
+		"allocator::get() :%s",
+		e.what(),
+	};
+
+	throw;
+}
+
+ircd::allocator::je::mib_vec
+ircd::allocator::je::lookup(const vector_view<size_t> &out,
+                            const string_view &key_)
+{
+	char buf[128];
+	const string_view key
+	{
+		strlcpy(buf, key_)
+	};
+
+	size_t len(size(out));
+	const auto err
+	{
+		#if defined(IRCD_ALLOCATOR_JEMALLOC)
+			::mallctlnametomib(key.c_str(), data(out), &len)
+		#else
+			int(std::errc::no_link)
+		#endif
+	};
+
+	if(unlikely(err != 0))
+		throw_system_error(err);
+
+	return vector_view<const size_t>
+	{
+		data(out), len
+	};
+}
 
 void
 ircd::allocator::je::stats_handler(void *const ptr,
