@@ -225,10 +225,51 @@ ircd::allocator::flush(const const_buffer &buf,
 }
 
 size_t
-ircd::allocator::evict(const const_buffer &buf)
+ircd::allocator::cold(const const_buffer &buf,
+                      const bool now)
 {
-	#if defined(POSIX_MADV_DONTNEED)
-		return advise(buf, POSIX_MADV_DONTNEED);
+	const auto advice
+	{
+		#if defined(MADV_COLD) && defined(MADV_PAGEOUT)
+			now? MADV_PAGEOUT: MADV_COLD
+		#elif defined(MADV_PAGEOUT)
+			MADV_PAGEOUT
+		#endif
+	};
+
+	#if defined(MADV_PAGEOUT) || defined(MADV_COLD)
+		return advise(buf, advice);
+	#else
+		return 0;
+	#endif
+}
+
+size_t
+ircd::allocator::evict(const const_buffer &buf,
+                       const bool now)
+{
+	const auto advice
+	{
+		#if defined(MADV_FREE) && defined(POSIX_MADV_DONTNEED)
+			now? POSIX_MADV_DONTNEED: MADV_FREE
+		#elif defined(POSIX_MADV_DONTNEED)
+			POSIX_MADV_DONTNEED
+		#endif
+	};
+
+	#if defined(POSIX_MADV_DONTNEED) || defined(MADV_FREE)
+		return advise(buf, advice);
+	#else
+		return 0;
+	#endif
+}
+
+size_t
+ircd::allocator::fetch(const const_buffer &buf,
+                       const bool w)
+{
+	#if defined(MADV_POPULATE_READ) && defined(MADV_POPULATE_WRITE)
+		return advise(buf, w? MADV_POPULATE_WRITE: MADV_POPULATE_READ);
 	#else
 		return 0;
 	#endif
@@ -247,7 +288,7 @@ ircd::allocator::prefetch(const const_buffer &buf)
 #if defined(HAVE_MADVISE)
 size_t
 ircd::allocator::advise(const const_buffer &buf,
-                        const int &advice)
+                        const int advice)
 {
 	assert(aligned(data(buf), info::page_size));
 	switch(const auto r(::madvise(mutable_cast(data(buf)), size(buf), advice)); r)
@@ -266,7 +307,7 @@ ircd::allocator::advise(const const_buffer &buf,
 #elif defined(HAVE_POSIX_MADVISE)
 size_t
 ircd::allocator::advise(const const_buffer &buf,
-                        const int &advice)
+                        const int advice)
 {
 	const auto res
 	{
@@ -279,7 +320,7 @@ ircd::allocator::advise(const const_buffer &buf,
 #warning "posix_madvise(2) not available for this compilation."
 size_t
 ircd::allocator::advise(const const_buffer &buf,
-                        const int &advice)
+                        const int advice)
 {
 	return 0;
 }

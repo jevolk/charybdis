@@ -29,16 +29,18 @@ namespace ircd::allocator
 	template<class T> T set(const string_view &var, T val);
 	bool trim(const size_t &pad = 0) noexcept; // malloc_trim(3)
 
-	size_t incore(const const_buffer &);
-	size_t advise(const const_buffer &, const int &);
-	size_t prefetch(const const_buffer &);
-	size_t evict(const const_buffer &);
-	size_t flush(const const_buffer &, const bool invd = false);
-	size_t sync(const const_buffer &, const bool invd = false);
+	size_t incore(const const_buffer &);                               // fincore
+	size_t advise(const const_buffer &, const int);                    // madvise
+	size_t prefetch(const const_buffer &);                             // WILLNEED
+	size_t fetch(const const_buffer &, const bool w = false);          // POPULATE_*
+	size_t evict(const const_buffer &, const bool now = true);         // FREE / DONTNEED
+	size_t cold(const const_buffer &, const bool now = false);         // COLD / PAGEOUT
+	size_t flush(const const_buffer &, const bool invd = false);       // msync
+	size_t sync(const const_buffer &, const bool invd = false);        // msync
 
-	void lock(const const_buffer &, const bool = true);
-	void protect(const const_buffer &, const bool = true);
-	void readonly(const mutable_buffer &, const bool = true);
+	void lock(const const_buffer &, const bool enable = true);         // mlock
+	void protect(const const_buffer &, const bool enable = true);      // mprotect
+	void readonly(const mutable_buffer &, const bool enable = true);   // mprotect
 
 	[[using gnu: malloc, alloc_align(1), alloc_size(2), returns_nonnull, warn_unused_result]]
 	char *allocate(const size_t align, const size_t size);
