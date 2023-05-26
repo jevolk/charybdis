@@ -81,6 +81,7 @@ noexcept
 {
 	_dns_.reset();
 	wait_close_sockets();
+	assert(!socket::this_sock);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -296,6 +297,12 @@ try
 		callback(_ec, bytes);
 	}};
 
+	assert(!socket::this_sock);
+	const scope_restore desc_sock
+	{
+		socket::this_sock, &socket
+	};
+
 	if(socket.ssl)
 		asio::async_write(*socket.ssl, bufs, ios::handle(desc, std::move(handle)));
 	else
@@ -338,6 +345,12 @@ try
 		socket.total_bytes_out += bytes;
 		callback(_ec, bytes);
 	}};
+
+	assert(!socket::this_sock);
+	const scope_restore desc_sock
+	{
+		socket::this_sock, &socket
+	};
 
 	if(socket.ssl)
 		socket.ssl->async_write_some(bufs, ios::handle(desc, std::move(handle)));
@@ -1041,6 +1054,12 @@ try
 	{
 		socket.cancel_timeout();
 	}};
+
+	assert(!socket::this_sock);
+	const scope_restore desc_sock
+	{
+		socket::this_sock, &socket
+	};
 
 	if(wait_opts.type == ready::READ)
 	{
@@ -2036,6 +2055,10 @@ ircd::net::socket::count;
 decltype(ircd::net::socket::instances)
 ircd::net::socket::instances;
 
+thread_local
+decltype(ircd::net::socket::this_sock)
+ircd::net::socket::this_sock;
+
 [[clang::always_destroy]]
 decltype(ircd::net::socket::desc_connect)
 ircd::net::socket::desc_connect
@@ -2061,31 +2084,108 @@ ircd::net::socket::desc_disconnect
 decltype(ircd::net::socket::desc_timeout)
 ircd::net::socket::desc_timeout
 {
-	"ircd.net.socket.timeout"
+	"ircd.net.socket.timeout",
+	[](ios::handler &handler, const size_t size) -> void *
+	{
+		assert(this_sock);
+		const size_t bufs
+		{
+			util::size(this_sock->desc_buf_timeout)
+		};
+
+		// Ensure there aren't more timers in flight than we have buffers for.
+		assert(this_sock->timer_sem[0] + bufs >= this_sock->timer_sem[1]);
+		const size_t i
+		{
+			this_sock->timer_sem[1] % bufs
+		};
+
+		return desc_alloc(handler, size, this_sock->desc_buf_timeout[i]);
+	},
+	[](ios::handler &handler, void *const ptr, const size_t size)
+	{
+		desc_dealloc(handler, ptr, size);
+	},
 };
 
 [[clang::always_destroy]]
 decltype(ircd::net::socket::desc_wait)
 ircd::net::socket::desc_wait
 {
-	{ "ircd.net.socket.wait.ready.ANY"   },
-	{ "ircd.net.socket.wait.ready.READ"  },
-	{ "ircd.net.socket.wait.ready.WRITE" },
-	{ "ircd.net.socket.wait.ready.ERROR" },
+	{
+		"ircd.net.socket.wait.ready.ANY",
+		[](ios::handler &handler, const size_t size) -> void *
+		{
+			return desc_alloc(handler, size, this_sock->desc_buf_wait[int(ready::ANY)]);
+		},
+		[](ios::handler &handler, void *const ptr, const size_t size)
+		{
+			desc_dealloc(handler, ptr, size);
+		},
+	},
+	{
+		"ircd.net.socket.wait.ready.READ",
+		[](ios::handler &handler, const size_t size) -> void *
+		{
+			return desc_alloc(handler, size, this_sock->desc_buf_wait[int(ready::READ)]);
+		},
+		[](ios::handler &handler, void *const ptr, const size_t size)
+		{
+			desc_dealloc(handler, ptr, size);
+		},
+	},
+	{
+		"ircd.net.socket.wait.ready.WRITE",
+		[](ios::handler &handler, const size_t size) -> void *
+		{
+			return desc_alloc(handler, size, this_sock->desc_buf_wait[int(ready::WRITE)]);
+		},
+		[](ios::handler &handler, void *const ptr, const size_t size)
+		{
+			desc_dealloc(handler, ptr, size);
+		},
+	},
+	{
+		"ircd.net.socket.wait.ready.ERROR",
+		[](ios::handler &handler, const size_t size) -> void *
+		{
+			return desc_alloc(handler, size, this_sock->desc_buf_wait[int(ready::ERROR)]);
+		},
+		[](ios::handler &handler, void *const ptr, const size_t size)
+		{
+			desc_dealloc(handler, ptr, size);
+		},
+	},
 };
 
 [[clang::always_destroy]]
 decltype(ircd::net::socket::desc_write)
 ircd::net::socket::desc_write
 {
-	"ircd.net.socket.write"
+	"ircd.net.socket.write",
+	[](ios::handler &handler, const size_t size) -> void *
+	{
+		return desc_alloc(handler, size, this_sock->desc_buf_write);
+	},
+	[](ios::handler &handler, void *const ptr, const size_t size)
+	{
+		desc_dealloc(handler, ptr, size);
+	},
 };
 
 [[clang::always_destroy]]
 decltype(ircd::net::socket::desc_read)
 ircd::net::socket::desc_read
 {
-	"ircd.net.socket.read"
+	"ircd.net.socket.read",
+	[](ios::handler &handler, const size_t size) -> void *
+	{
+		return desc_alloc(handler, size, this_sock->desc_buf_read);
+	},
+	[](ios::handler &handler, void *const ptr, const size_t size)
+	{
+		desc_dealloc(handler, ptr, size);
+	},
 };
 
 decltype(ircd::net::socket::total_bytes_in)
@@ -2160,16 +2260,15 @@ noexcept try
 	if(unlikely(--instances == 0))
 		net::dock.notify_all();
 
-	if(unlikely(opened(*this)))
-	{
-		char buf[128];
+	if(unlikely(opened(*this) || timer_set))
 		throw panic
 		{
-			"Failed to ensure socket(%p) is disconnected from %s before dtor.",
+			"socket(%p) must be done before dtor; open:%b fini:%b timer:%b",
 			this,
-			string(buf, remote_ipport(*this)),
+			opened(*this),
+			fini,
+			timer_set,
 		};
-	}
 }
 catch(const std::exception &e)
 {
@@ -2214,6 +2313,13 @@ ircd::net::socket::connect(const endpoint &ep,
 
 	this->remote = ep;
 	set_timeout(opts.connect_timeout);
+
+	assert(!this_sock);
+	const scope_restore desc_sock
+	{
+		this_sock, this
+	};
+
 	sd.async_connect(ep, ios::handle(desc_connect, std::move(connect_handler)));
 }
 
@@ -2253,6 +2359,13 @@ ircd::net::socket::handshake(const open_opts &opts,
 		openssl::server_name(*this, server_name(opts));
 
 	ssl->set_verify_callback(std::move(verify_handler));
+
+	assert(!this_sock);
+	const scope_restore desc_sock
+	{
+		this_sock, this
+	};
+
 	ssl->async_handshake(handshake_type::client, ios::handle(desc_handshake, std::move(handshake_handler)));
 }
 
@@ -2309,12 +2422,18 @@ try
 				break;
 			}
 
+			set_timeout(opts.timeout);
 			auto disconnect_handler
 			{
 				std::bind(&socket::handle_disconnect, this, shared_from(*this), std::move(callback), ph::_1)
 			};
 
-			set_timeout(opts.timeout);
+			assert(!this_sock);
+			const scope_restore desc_sock
+			{
+				this_sock, this
+			};
+
 			ssl->async_shutdown(ios::handle(desc_disconnect, std::move(disconnect_handler)));
 			return;
 		}
@@ -2413,14 +2532,11 @@ catch(const std::exception &e)
 }
 
 void
-ircd::net::socket::handle_timeout(const std::weak_ptr<socket> wp,
+ircd::net::socket::handle_timeout(const std::shared_ptr<socket> wp,
                                   ec_handler callback,
                                   error_code ec)
 noexcept try
 {
-	if(unlikely(wp.expired()))
-		return;
-
 	// We increment our end of the timer semaphore. If the count is still
 	// behind the other end of the semaphore, this callback was sitting in
 	// the ios queue while the timer was given a new task; any effects here
@@ -2975,7 +3091,7 @@ ircd::net::socket::set_timeout(const milliseconds &t,
 
 	auto handler
 	{
-		std::bind(&socket::handle_timeout, this, weak_from(*this), std::move(callback), ph::_1)
+		std::bind(&socket::handle_timeout, this, shared_from(*this), std::move(callback), ph::_1)
 	};
 
 	// The sending-side of the semaphore is incremented here to invalidate any
@@ -2992,7 +3108,36 @@ ircd::net::socket::set_timeout(const milliseconds &t,
 	};
 
 	timer.expires_from_now(pt);
+	assert(!this_sock);
+	const scope_restore desc_sock
+	{
+		this_sock, this
+	};
+
 	timer.async_wait(ios::handle(desc_timeout, std::move(handler)));
+}
+
+[[gnu::visibility("internal")]]
+void *
+ircd::net::socket::desc_alloc(ios::handler &h,
+                              const size_t &size,
+                              unique_mutable_buffer &buf)
+{
+	assert(this_sock);
+	if(buffer::size(buf) < size)
+		buf = unique_mutable_buffer{size};
+
+	assert(buffer::size(buf) >= size);
+	return data(buf);
+}
+
+[[gnu::visibility("internal")]]
+void
+ircd::net::socket::desc_dealloc(ios::handler &h,
+                                void *const &ptr,
+                                const size_t &size)
+noexcept
+{
 }
 
 ///////////////////////////////////////////////////////////////////////////////

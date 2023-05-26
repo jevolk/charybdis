@@ -64,6 +64,7 @@ ircd::net::socket
 	static ios::descriptor desc_wait[4];
 	static ios::descriptor desc_write;           // for cb interface only
 	static ios::descriptor desc_read;            // for cb interface only
+	static thread_local socket *this_sock;       // desc allocator's hint
 
 	uint64_t id {++count};
 	ip::tcp::socket sd;
@@ -77,14 +78,20 @@ ircd::net::socket
 	bool timedout {false};
 	bool fini {false};
 	mutable bool _nodelay {false};               // userspace tracking only
+	unique_mutable_buffer desc_buf_timeout[2];   // desc_timeout's alloc
+	unique_mutable_buffer desc_buf_wait[4];      // desc_wait's alloc
+	unique_mutable_buffer desc_buf_write;        // desc_write's alloc
+	unique_mutable_buffer desc_buf_read;         // desc_read's alloc
 
+	static void *desc_alloc(ios::handler &, const size_t &, unique_mutable_buffer &);
+	static void desc_dealloc(ios::handler &, void *const &, const size_t &) noexcept;
 	void call_user(const eptr_handler &, const error_code &) noexcept;
 	void call_user(const ec_handler &, const error_code &) noexcept;
 	bool handle_verify(bool, asio::ssl::verify_context &, const open_opts &) noexcept;
 	void handle_disconnect(std::shared_ptr<socket>, eptr_handler, error_code) noexcept;
 	void handle_handshake(std::weak_ptr<socket>, eptr_handler, error_code) noexcept;
 	void handle_connect(std::weak_ptr<socket>, const open_opts &, eptr_handler, error_code) noexcept;
-	void handle_timeout(std::weak_ptr<socket>, ec_handler, error_code) noexcept;
+	void handle_timeout(std::shared_ptr<socket>, ec_handler, error_code) noexcept;
 	void handle_ready(std::weak_ptr<socket>, ready, ec_handler, error_code) noexcept;
 
   public:
