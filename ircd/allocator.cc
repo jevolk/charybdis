@@ -66,7 +66,7 @@ ircd::allocator::allocate(const size_t alignment,
 
 		[[unlikely]]
 		default:
-			throw_system_error();
+			throw_system_error(errc);
 			__builtin_unreachable();
 	}
 
@@ -313,6 +313,9 @@ ircd::allocator::advise(const const_buffer &buf,
 	{
 		syscall(::posix_madvise, mutable_cast(data(buf)), size(buf), advice)
 	};
+
+	if(unlikely(res != 0))
+		throw_system_error(res);
 
 	return size(buf);
 }
