@@ -36,6 +36,10 @@ malloc_conf
 	"narenas:1"
 	",tcache:false"
 	",metadata_thp:always"
+	",max_background_threads:0"
+	",dirty_decay_ms:93000"
+	",muzzy_decay_ms:305000"
+	",lg_extent_max_active_fit:5"
 };
 #endif
 
