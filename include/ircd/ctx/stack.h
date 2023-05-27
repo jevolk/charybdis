@@ -21,6 +21,8 @@ namespace boost::coroutines
 namespace ircd::ctx
 {
 	struct stack;
+
+	size_t evict(const stack &, const bool all = false, const bool now = false);
 }
 
 struct ircd::ctx::stack

@@ -3027,6 +3027,37 @@ console_cmd__ctx__term(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__ctx__trim(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"op"
+	}};
+
+	const bool all
+	{
+		has(param["op"], "all")
+	};
+
+	const bool now
+	{
+		has(param["op"], "now")
+	};
+
+	ctx::for_each([&]
+	(const auto &ctx)
+	{
+		if(id(ctx) == id(ctx::cur()))
+			return true;
+
+		ctx::evict(ctx::stack::get(ctx), all, now);
+		return true;
+	});
+
+	return true;
+}
+
+bool
 console_cmd__ctx__list(opt &out, const string_view &line)
 {
 	const params param{line, " ",

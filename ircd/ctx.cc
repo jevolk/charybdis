@@ -3273,6 +3273,45 @@ noexcept
 // ctx/stack.h
 //
 
+/// madvise over the context's stack. Advice only applies to the unused
+/// portion of a suspended stack.
+/// all: False to only apply advice after peak-observed watermark (default);
+/// otherwise apply advice to all unused memory.
+/// now: False to advise FREE (default); True to advise DONTNEED.
+size_t
+ircd::ctx::evict(const stack &stack,
+                 const bool all,
+                 const bool now)
+{
+	assert(&stack != &stack::get(cur()));
+	assert(stack.max >= stack.peak);
+	assert(stack.max >= stack.at);
+	const size_t len
+	{
+		all? stack.at: stack.peak
+	};
+
+	assert(stack.base >= stack.max);
+	assert(stack.base >= len);
+	const uintptr_t range[]
+	{
+		align_up(stack.base - stack.max, info::page_size),
+		align(stack.base - len, info::page_size),
+	};
+
+	assert(aligned(range[0], info::page_size));
+	assert(range[0] <= range[1]);
+	const const_buffer buf
+	{
+		reinterpret_cast<const char *>(range[0]),
+		reinterpret_cast<const char *>(range[1]),
+	};
+
+	assert(overlap_count(buf, stack.buf) == size(buf));
+	assert(size(buf) <= size(stack.buf));
+	return allocator::evict(buf, now);
+}
+
 [[gnu::hot]]
 ircd::ctx::stack &
 ircd::ctx::stack::get(ctx &ctx)
