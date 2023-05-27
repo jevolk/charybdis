@@ -201,6 +201,9 @@ bool
 ircd::server::prelink(const net::hostport &hostport)
 try
 {
+	if(unlikely(run::level != run::level::RUN))
+		return false;
+
 	auto &peer
 	{
 		get(hostport)
@@ -260,6 +263,8 @@ decltype(ircd::server::peers)::iterator
 ircd::server::create(const net::hostport &hostport,
                      decltype(peers)::iterator &it)
 {
+	assert(run::level == run::level::RUN);
+
 	auto peer
 	{
 		std::make_unique<server::peer>(hostport)
@@ -616,7 +621,7 @@ ircd::server::submit(const hostport &hostport,
 			"Remote server requests are disabled by the configuration."
 		};
 
-	if(unlikely(ircd::run::level != ircd::run::level::RUN))
+	if(unlikely(run::level != run::level::RUN))
 		throw unavailable
 		{
 			"Unable to fulfill any further requests."
@@ -988,7 +993,7 @@ ircd::server::peer::err_clear()
 	e.reset(nullptr);
 
 	// only clear the fini flag if we're in runlevel run
-	const bool fini(ircd::run::level != ircd::run::level::RUN);
+	const bool fini(run::level != run::level::RUN);
 	op_fini = false | fini;
 
 	return ret;
@@ -1045,7 +1050,7 @@ void
 ircd::server::peer::submit(request &request)
 try
 {
-	if(!err_check() || unlikely(ircd::run::level != ircd::run::level::RUN))
+	if(!err_check() || unlikely(run::level != run::level::RUN))
 		throw unavailable
 		{
 			"Peer %s is unable to take any requests :%s",
@@ -1581,6 +1586,8 @@ ircd::server::peer::del(link &link)
 void
 ircd::server::peer::resolve()
 {
+	assert(run::level == run::level::RUN);
+
 	const net::hostport canon
 	{
 		this->hostcanon
@@ -1626,7 +1633,7 @@ try
 	{
 		op_resolve = false;
 		err_set(std::current_exception());
-		if(unlikely(ircd::run::level != ircd::run::level::RUN))
+		if(unlikely(run::level != run::level::RUN))
 			op_fini = true;
 	}};
 
@@ -1680,7 +1687,7 @@ try
 	if(unlikely(!std::exchange(op_resolve, false)))
 		return;
 
-	if(unlikely(ircd::run::level != ircd::run::level::RUN))
+	if(unlikely(run::level != run::level::RUN))
 		op_fini = true;
 
 	if(unlikely(finished()))
@@ -1764,7 +1771,7 @@ try
 	if(unlikely(!std::exchange(op_resolve, false)))
 		return;
 
-	if(unlikely(ircd::run::level != ircd::run::level::RUN))
+	if(unlikely(run::level != run::level::RUN))
 		op_fini = true;
 
 	if(unlikely(finished()))
@@ -1851,7 +1858,7 @@ try
 	if(unlikely(!std::exchange(op_resolve, false)))
 		return;
 
-	if(unlikely(ircd::run::level != ircd::run::level::RUN))
+	if(unlikely(run::level != run::level::RUN))
 		op_fini = true;
 
 	if(unlikely(finished()))
@@ -1967,7 +1974,7 @@ ircd::server::peer::handle_finished()
 	};
 
 	//TODO: XXX
-	if(ircd::run::level == ircd::run::level::RUN)
+	if(run::level == run::level::RUN)
 		if(err_has())
 			return;
 
@@ -2402,7 +2409,7 @@ ircd::server::link::cleanup_canceled()
 bool
 ircd::server::link::open(const net::open_opts &open_opts)
 {
-	assert(ircd::run::level == ircd::run::level::RUN);
+	assert(run::level == run::level::RUN);
 
 	if(op_init)
 		return false;
