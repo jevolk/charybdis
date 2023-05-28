@@ -2707,7 +2707,7 @@ ircd::server::link::process_write_async(tag &tag,
 
 void
 ircd::server::link::handle_write_async(tag &tag,
-                                       const std::error_code &ec,
+                                       const error_code &ec,
                                        const size_t wrote)
 {
 	assert(op_write);

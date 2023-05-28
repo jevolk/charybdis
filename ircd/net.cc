@@ -278,24 +278,10 @@ try
 		socket.desc_write
 	};
 
-	auto handle{[&socket, callback(std::move(callback))]
-	(const auto &ec, const size_t bytes)
+	auto handle
 	{
-		const auto _ec
-		{
-			!ec && bytes?
-				error_code{}:
-			!ec && !bytes?
-				net::eof:
-				make_error_code(ec)
-		};
-
-		++socket.out.calls;
-		socket.out.bytes += bytes;
-		++socket.total_calls_out;
-		socket.total_bytes_out += bytes;
-		callback(_ec, bytes);
-	}};
+		std::bind(&socket::handle_write, &socket, weak_from(socket), std::move(callback), ph::_1, ph::_2)
+	};
 
 	assert(!socket::this_sock);
 	const scope_restore desc_sock
@@ -327,24 +313,10 @@ try
 		socket.desc_write
 	};
 
-	auto handle{[&socket, callback(std::move(callback))]
-	(const auto &ec, const size_t bytes)
+	auto handle
 	{
-		const auto _ec
-		{
-			!ec && bytes?
-				error_code{}:
-			!ec && !bytes?
-				net::eof:
-				make_error_code(ec)
-		};
-
-		++socket.out.calls;
-		socket.out.bytes += bytes;
-		++socket.total_calls_out;
-		socket.total_bytes_out += bytes;
-		callback(_ec, bytes);
-	}};
+		std::bind(&socket::handle_write, &socket, weak_from(socket), std::move(callback), ph::_1, ph::_2)
+	};
 
 	assert(!socket::this_sock);
 	const scope_restore desc_sock
@@ -2465,6 +2437,56 @@ catch(const std::exception &e)
 }
 
 void
+ircd::net::socket::handle_write(const std::weak_ptr<socket> wp,
+                                const handler callback,
+                                error_code ec,
+                                const size_t bytes)
+noexcept try
+{
+	using std::errc;
+
+	const life_guard<socket> s{wp};
+	if(unlikely(!ec && !sd.is_open()))
+		ec = make_error_code(errc::bad_file_descriptor);
+
+	if(unlikely(!ec && fini))
+		ec = make_error_code(errc::not_connected);
+
+	if(!ec && !bytes)
+		ec = make_error_code(net::eof);
+
+	if constexpr((false)) // manual debug; large nr syscalls
+	{
+		char ecbuf[64];
+		log::debug
+		{
+			log, "%s wrote %s bytes:%zu",
+			loghead(*this),
+			string(ecbuf, ec),
+			bytes,
+		};
+	}
+
+	++out.calls;
+	out.bytes += bytes;
+	++total_calls_out;
+	total_bytes_out += bytes;
+	call_user(callback, ec, bytes);
+}
+catch(const std::exception &e)
+{
+	log::critical
+	{
+		log, "socket(%p) handle_write :%s",
+		this,
+		e.what()
+	};
+
+	const ctx::exception_handler eh;
+	call_user(callback, ec, bytes);
+}
+
+void
 ircd::net::socket::handle_ready(const std::weak_ptr<socket> wp,
                                 const net::ready type,
                                 const ec_handler callback,
@@ -3009,7 +3031,7 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "socket(%p) async handler: unhandled exception :%s",
+		log, "socket(%p) async handler :unhandled exception :%s",
 		this,
 		e.what()
 	};
@@ -3031,10 +3053,30 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "socket(%p) async handler: unhandled exception :%s",
+		log, "socket(%p) async handler :unhandled exception :%s",
 		this,
 		e.what()
 	};
+}
+
+void
+ircd::net::socket::call_user(const handler &callback,
+                             const error_code &ec,
+                             const size_t bytes)
+noexcept try
+{
+	callback(ec, bytes);
+}
+catch(const std::exception &e)
+{
+	log::critical
+	{
+		log, "socket(%p) async handler :unhandled exception :%s",
+		this,
+		e.what()
+	};
+
+	close(*this, dc::RST, close_ignore);
 }
 
 bool

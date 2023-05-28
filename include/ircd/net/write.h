@@ -14,7 +14,7 @@
 namespace ircd::net
 {
 	using const_buffers = vector_view<const const_buffer>;
-	using write_handler = std::function<void (const std::error_code &, size_t)>;
+	using write_handler = std::function<void (const error_code &, size_t)>;
 
 	// Observers
 	size_t flushing(const socket &);

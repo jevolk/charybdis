@@ -42,6 +42,7 @@ ircd::net::socket
 	using message_flags = asio::socket_base::message_flags;
 	using ssl_stream = asio::ssl::stream<ip::tcp::socket &>;
 	using handshake_type = asio::ssl::stream<ip::tcp::socket>::handshake_type;
+	using handler = std::function<void (const error_code &, const size_t)>;
 	using ec_handler = std::function<void (const error_code &)>;
 	using eptr_handler = std::function<void (std::exception_ptr)>;
 
@@ -85,6 +86,7 @@ ircd::net::socket
 
 	static void *desc_alloc(ios::handler &, const size_t &, unique_mutable_buffer &);
 	static void desc_dealloc(ios::handler &, void *const &, const size_t &) noexcept;
+	void call_user(const handler &, const error_code &, size_t) noexcept;
 	void call_user(const eptr_handler &, const error_code &) noexcept;
 	void call_user(const ec_handler &, const error_code &) noexcept;
 	bool handle_verify(bool, asio::ssl::verify_context &, const open_opts &) noexcept;
@@ -93,6 +95,7 @@ ircd::net::socket
 	void handle_connect(std::weak_ptr<socket>, const open_opts &, eptr_handler, error_code) noexcept;
 	void handle_timeout(std::shared_ptr<socket>, ec_handler, error_code) noexcept;
 	void handle_ready(std::weak_ptr<socket>, ready, ec_handler, error_code) noexcept;
+	void handle_write(std::weak_ptr<socket>, handler, error_code, size_t) noexcept;
 
   public:
 	operator const ip::tcp::socket &() const     { return sd;                                      }
