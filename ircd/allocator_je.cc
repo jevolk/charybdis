@@ -10,6 +10,9 @@
 
 #include <RB_INC_JEMALLOC_H
 
+#define IRCD_ALLOCATOR_JE_HOOK 0
+#define RB_DEBUG_ALLOCATOR_JE 0
+
 #if defined(IRCD_ALLOCATOR_USE_JEMALLOC) && defined(HAVE_JEMALLOC_H)
 	#define IRCD_ALLOCATOR_JEMALLOC
 #endif
@@ -17,6 +20,20 @@
 namespace ircd::allocator::je
 {
 	using callback_prototype = void (std::ostream &, const string_view &);
+
+	#if defined(IRCD_ALLOCATOR_USE_JEMALLOC)
+	static void *arena_handle_alloc(extent_hooks_t *, void *, size_t, size_t, bool *, bool *, uint) noexcept;
+	static bool arena_handle_dalloc(extent_hooks_t *, void *, size_t, bool, uint) noexcept;
+	static void arena_handle_destroy(extent_hooks_t *, void *, size_t, bool, uint) noexcept;
+	static bool arena_handle_commit(extent_hooks_t *, void *, size_t, size_t, size_t, uint) noexcept;
+	static bool arena_handle_decommit(extent_hooks_t *, void *, size_t, size_t, size_t, uint) noexcept;
+	static bool arena_handle_purge_lazy(extent_hooks_t *, void *, size_t, size_t, size_t, uint) noexcept;
+	static bool arena_handle_purge_forced(extent_hooks_t *, void *, size_t, size_t, size_t, uint) noexcept;
+	static bool arena_handle_split(extent_hooks_t *, void *, size_t, size_t, size_t, bool, uint) noexcept;
+	static bool arena_handle_merge(extent_hooks_t *, void *, size_t, void *, size_t, bool, uint) noexcept;
+	static void init(), fini() noexcept;
+	extern extent_hooks_t arena_hooks, *their_arena_hooks;
+	#endif
 
 	static void stats_handler(void *, const char *) noexcept;
 	static mib_vec lookup(const vector_view<size_t> &, const string_view &);
@@ -485,3 +502,306 @@ noexcept
 {
 }
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// arena hooks
+//
+
+#if defined(IRCD_ALLOCATOR_JEMALLOC)
+
+decltype(ircd::allocator::je::their_arena_hooks)
+ircd::allocator::je::their_arena_hooks;
+
+decltype(ircd::allocator::je::arena_hooks)
+ircd::allocator::je::arena_hooks
+{
+	#if RB_DEBUG_ALLOCATOR_JE == 1
+	.alloc = arena_handle_alloc,
+	.dalloc = arena_handle_dalloc,
+	.destroy = arena_handle_destroy,
+	.commit = arena_handle_commit,
+	.decommit = arena_handle_decommit,
+	.purge_lazy = arena_handle_purge_lazy,
+	.purge_forced = arena_handle_purge_forced,
+	.split = arena_handle_split,
+	.merge = arena_handle_merge,
+	#endif
+};
+
+static const auto
+extent_hooks_key
+{
+	"arena.0.extent_hooks"
+};
+
+void
+__attribute__((constructor))
+ircd::allocator::je::init()
+{
+	if constexpr(IRCD_ALLOCATOR_JE_HOOK)
+		allocator::set(extent_hooks_key, &arena_hooks, their_arena_hooks);
+}
+
+void
+__attribute__((destructor))
+ircd::allocator::je::fini()
+noexcept
+{
+	extent_hooks_t *ours {nullptr};
+	if constexpr(IRCD_ALLOCATOR_JE_HOOK)
+		allocator::set(extent_hooks_key, their_arena_hooks, ours);
+
+	assert(!ours || ours == &arena_hooks);
+}
+
+void *
+ircd::allocator::je::arena_handle_alloc(extent_hooks_t *const hooks,
+                                        void *const new_addr,
+                                        size_t size,
+                                        size_t alignment,
+                                        bool *const zero,
+                                        bool *const commit,
+                                        unsigned arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	assert(zero);
+	assert(commit);
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u alloc addr:%p size:%zu align:%zu z:%b c:%b",
+			arena_ind,
+			new_addr,
+			size,
+			alignment,
+			*zero,
+			*commit,
+		};
+
+	void *const ret
+	{
+		their_hooks.alloc(hooks, new_addr, size, alignment, zero, commit, arena_ind)
+	};
+
+	return ret;
+}
+
+bool
+ircd::allocator::je::arena_handle_dalloc(extent_hooks_t *hooks,
+                                         void *const ptr,
+                                         size_t size,
+                                         bool committed,
+                                         uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u dalloc addr:%p size:%zu align:%zu z:%b c:%b",
+			arena_ind,
+			ptr,
+			size,
+			committed,
+		};
+
+	const bool ret
+	{
+		their_hooks.dalloc(hooks, ptr, size, committed, arena_ind)
+	};
+
+	return ret;
+}
+
+void
+ircd::allocator::je::arena_handle_destroy(extent_hooks_t *hooks,
+                                          void *const ptr,
+                                          size_t size,
+                                          bool committed,
+                                          uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u destroy addr:%p size:%zu align:%zu z:%b c:%b",
+			arena_ind,
+			ptr,
+			size,
+			committed,
+		};
+
+	return their_hooks.destroy(hooks, ptr, size, committed, arena_ind);
+}
+
+bool
+ircd::allocator::je::arena_handle_commit(extent_hooks_t *const hooks,
+                                         void *const ptr,
+                                         size_t size,
+                                         size_t offset,
+                                         size_t length,
+                                         uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u commit addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
+			ptr,
+			size,
+			offset,
+			length,
+		};
+
+	return their_hooks.commit(hooks, ptr, size, offset, length, arena_ind);
+}
+
+bool
+ircd::allocator::je::arena_handle_decommit(extent_hooks_t *const hooks,
+                                           void *const ptr,
+                                           size_t size,
+                                           size_t offset,
+                                           size_t length,
+                                           uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u decommit addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
+			ptr,
+			size,
+			offset,
+			length,
+		};
+
+	return their_hooks.decommit(hooks, ptr, size, offset, length, arena_ind);
+}
+
+bool
+ircd::allocator::je::arena_handle_purge_lazy(extent_hooks_t *const hooks,
+                                             void *const ptr,
+                                             size_t size,
+                                             size_t offset,
+                                             size_t length,
+                                             uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u purge lazy addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
+			ptr,
+			size,
+			offset,
+			length,
+		};
+
+	return their_hooks.purge_lazy(hooks, ptr, size, offset, length, arena_ind);
+}
+
+bool
+ircd::allocator::je::arena_handle_purge_forced(extent_hooks_t *const hooks,
+                                               void *const ptr,
+                                               size_t size,
+                                               size_t offset,
+                                               size_t length,
+                                               uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u purge forced addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
+			ptr,
+			size,
+			offset,
+			length,
+		};
+
+	return their_hooks.purge_forced(hooks, ptr, size, offset, length, arena_ind);
+}
+
+bool
+ircd::allocator::je::arena_handle_split(extent_hooks_t *const hooks,
+                                        void *const ptr,
+                                        size_t size,
+                                        size_t size_a,
+                                        size_t size_b,
+                                        bool committed,
+                                        uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u split addr:%p size:%zu size_a:%zu size_b:%zu committed:%b",
+			arena_ind,
+			ptr,
+			size,
+			size_a,
+			size_b,
+			committed,
+		};
+
+	return their_hooks.split(hooks, ptr, size, size_a, size_b, committed, arena_ind);
+}
+
+bool
+ircd::allocator::je::arena_handle_merge(extent_hooks_t *const hooks,
+                                        void *const addr_a,
+                                        size_t size_a,
+                                        void *const addr_b,
+                                        size_t size_b,
+                                        bool committed,
+                                        uint arena_ind)
+noexcept
+{
+	assert(their_arena_hooks);
+	const auto &their_hooks(*their_arena_hooks);
+
+	if constexpr(RB_DEBUG_ALLOCATOR_JE)
+		log::debug
+		{
+			"arena:%u merge a[addr:%p size:%zu] b[addr:%p size:%zu] committed:%b",
+			arena_ind,
+			addr_a,
+			size_a,
+			addr_b,
+			size_b,
+			committed,
+		};
+
+	return their_hooks.merge(hooks, addr_a, size_a, addr_b, size_b, committed, arena_ind);
+}
+
+#endif // defined(IRCD_ALLOCATOR_JEMALLOC)
