@@ -2514,17 +2514,37 @@ ircd::server::link::wait_writable()
 	if(op_write || unlikely(op_fini))
 		return;
 
+	assert(ready());
+	if(!tag_count())
+		return;
+
 	auto handler
 	{
 		std::bind(&link::handle_writable, this, ph::_1)
 	};
 
-	assert(ready());
 	op_write = true;
 	const unwind_exceptional unhandled{[this]
 	{
 		op_write = false;
 	}};
+
+	// Conditions to bypass readiness poll and attempt to write immediately.
+	const bool write_now
+	{
+		// Only tested with async/io_uring; not yet tested for the nbio path.
+		bool(write_async)
+
+		// Only if nothing is committed to the pipe otherwise we might be here
+		// because of an -EAGAIN.
+		&& !tag_committed()
+	};
+
+	if(write_now)
+	{
+		handler(error_code{});
+		return;
+	}
 
 	net::wait(*socket, net::ready::WRITE, std::move(handler));
 }
@@ -2536,6 +2556,7 @@ noexcept try
 {
 	using std::errc;
 
+	assert(op_write);
 	op_write = false;
 	write_ts = time<seconds>();
 
@@ -2724,6 +2745,7 @@ ircd::server::link::handle_write_async(tag &tag,
 	{
 		assert(peer);
 		assert(!wrote);
+		assert(ec != std::errc::resource_unavailable_try_again);
 		peer->handle_error(*this, ec);
 		return;
 	}
