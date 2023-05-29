@@ -15,6 +15,7 @@ struct construct::console
 	static ircd::conf::item<size_t> buffer_size;
 	static ircd::conf::item<size_t> ratelimit_bytes;
 	static ircd::conf::item<ircd::milliseconds> ratelimit_sleep;
+	static ircd::conf::item<bool> history_enable;
 
 	static const ircd::string_view generic_message;
 	static const ircd::string_view console_message;

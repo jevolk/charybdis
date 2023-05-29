@@ -54,6 +54,13 @@ construct::console::ratelimit_bytes
 	{ "default",  long(2_KiB)                         },
 };
 
+decltype(construct::console::history_enable)
+construct::console::history_enable
+{
+	{ "name",     "construct.console.history.enable" },
+	{ "default",  false                              },
+};
+
 decltype(construct::console::generic_message)
 construct::console::generic_message
 {R"(
@@ -552,7 +559,8 @@ construct::console::wait_input()
 	}
 	while(line.empty());
 
-	history.emplace_back(line);
+	if(bool(history_enable))
+		history.emplace_back(line);
 }
 
 bool
