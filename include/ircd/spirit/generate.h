@@ -45,10 +45,12 @@ namespace ircd::spirit
 	generator_buffer[generator_buffer_count][generator_buffer_size];
 
 	template<bool truncation = false,
+	         bool exceptions = true,
 	         class gen,
 	         class... attr>
 	[[gnu::visibility("internal"), clang::internal_linkage]]
-	bool generate(mutable_buffer &out, gen&&, attr&&...);
+	bool generate(mutable_buffer &out, gen&&, attr&&...)
+	noexcept(truncation && !exceptions);
 }
 
 /// This structure is a shadow for the default spirit::karma buffering
@@ -95,6 +97,7 @@ ircd::spirit::generator_state
 };
 
 template<bool truncation,
+         bool exceptions,
          class gen,
          class... attr>
 [[using gnu: always_inline, gnu_inline]]
@@ -102,7 +105,15 @@ extern inline bool
 ircd::spirit::generate(mutable_buffer &out,
                        gen&& g,
                        attr&&... a)
+noexcept(truncation && !exceptions) try
 {
+	static_assert
+	(
+		exceptions == true || truncation == true,
+		"truncation=true required when exceptions=false "
+		"otherwise an insufficient buffer throws."
+	);
+
 	// Save the user buffer as originally provided in case we need to restore it.
 	const mutable_buffer user
 	{
@@ -144,7 +155,7 @@ ircd::spirit::generate(mutable_buffer &out,
 	};
 
 	// Compile-time branch for generators that tolerate truncation (i.e. fmt::)
-	if constexpr(truncation)
+	if constexpr(truncation || !exceptions)
 	{
 		begin(out) = begin(out) > end(out)? end(out): begin(out);
 		assert(begin(out) <= end(out));
@@ -170,6 +181,14 @@ ircd::spirit::generate(mutable_buffer &out,
 	assert(begin(out) >= end(out) - size(user));
 	assert(begin(out) <= end(out));
 	return ret;
+}
+catch(...)
+{
+	if constexpr(exceptions)
+		throw;
+
+	assert(false);
+	__builtin_unreachable();
 }
 
 inline uint
