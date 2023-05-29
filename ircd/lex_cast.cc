@@ -41,8 +41,9 @@ namespace ircd::lex
 	static T cast(const string_view &);
 
 	template<class T,
-	         const rule_from<T()> &r>
-	static string_view cast(const mutable_buffer &, T);
+	         const rule_from<T()> &r,
+	         const bool truncation = false>
+	static string_view cast(const mutable_buffer &, T) noexcept(truncation);
 }
 
 #pragma GCC visibility push(internal)
@@ -97,16 +98,17 @@ ircd::lex_cast_buf
 alignas(64);
 
 template<class T,
-         const ircd::lex::rule_from<T()> &rule>
+         const ircd::lex::rule_from<T()> &rule,
+         const bool truncation>
 [[gnu::always_inline]]
 inline ircd::string_view
 ircd::lex::cast(const mutable_buffer &out,
                 T in)
-try
+noexcept(truncation) try
 {
-	constexpr bool truncation
+	constexpr bool exceptions
 	{
-		false
+		!truncation
 	};
 
 	mutable_buffer buf
@@ -116,7 +118,7 @@ try
 
 	const bool pass
 	{
-		ircd::generate<truncation>
+		ircd::generate<truncation, exceptions>
 		(
 			buf, rule | spirit::eps, in
 		)
@@ -130,6 +132,7 @@ try
 }
 catch(const std::exception &e)
 {
+	assert(!truncation);
 	throw_error<T>(rule, e);
 	__builtin_unreachable();
 }
