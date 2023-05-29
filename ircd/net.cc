@@ -24,7 +24,8 @@ ircd::net::wait_close_sockets()
 		if(!dock.wait_for(seconds(2)))
 			log::warning
 			{
-				log, "Waiting for %zu sockets to destruct", socket::instances
+				log, "Waiting for %zu sockets to destruct",
+				socket::instances
 			};
 }
 
@@ -2446,6 +2447,8 @@ noexcept try
 	using std::errc;
 
 	const life_guard<socket> s{wp};
+	assert(s.get() == this);
+
 	if(unlikely(!ec && !sd.is_open()))
 		ec = make_error_code(errc::bad_file_descriptor);
 
@@ -2497,6 +2500,7 @@ noexcept try
 
 	// After life_guard is constructed it is safe to use *this in this frame.
 	const life_guard<socket> s{wp};
+	assert(s.get() == this);
 
 	if(!timedout && !is(ec, errc::operation_canceled) && !fini)
 		cancel_timeout();
@@ -2554,18 +2558,30 @@ catch(const std::exception &e)
 }
 
 void
-ircd::net::socket::handle_timeout(const std::shared_ptr<socket> wp,
-                                  ec_handler callback,
+ircd::net::socket::handle_timeout(const std::shared_ptr<socket> sp,
+                                  const ec_handler callback,
                                   error_code ec)
 noexcept try
 {
+	assert(sp.get() == this);
+
 	// We increment our end of the timer semaphore. If the count is still
 	// behind the other end of the semaphore, this callback was sitting in
 	// the ios queue while the timer was given a new task; any effects here
 	// will be erroneously bleeding into the next timeout. However the callback
-	// is still invoked to satisfy the user's expectation for receiving it.
+	// is still invoked to satisfy each user's expectation for receiving it.
 	assert(timer_sem[0] < timer_sem[1]);
-	if(++timer_sem[0] == timer_sem[1] && timer_set) switch(ec.value())
+	const bool sem_hit
+	{
+		++timer_sem[0] == timer_sem[1]
+	};
+
+	const bool hit
+	{
+		sem_hit && std::exchange(timer_set, false)
+	};
+
+	if(hit) switch(ec.value())
 	{
 		// A 'success' for this handler means there was a timeout on the socket
 		case 0:
@@ -2651,15 +2667,16 @@ catch(const std::exception &e)
 }
 
 void
-ircd::net::socket::handle_connect(std::weak_ptr<socket> wp,
+ircd::net::socket::handle_connect(const std::weak_ptr<socket> wp,
                                   const open_opts &opts,
-                                  eptr_handler callback,
+                                  const eptr_handler callback,
                                   error_code ec)
 noexcept try
 {
 	using std::errc;
 
 	const life_guard<socket> s{wp};
+	assert(s.get() == this);
 
 	if(likely(sd.is_open()))
 		this->local = sd.local_endpoint();
@@ -2727,14 +2744,16 @@ catch(const std::exception &e)
 }
 
 void
-ircd::net::socket::handle_disconnect(std::shared_ptr<socket> s,
-                                     eptr_handler callback,
+ircd::net::socket::handle_disconnect(const std::shared_ptr<socket> s,
+                                     const eptr_handler callback,
                                      error_code ec)
 noexcept try
 {
 	using std::errc;
 
+	assert(s.get() == this);
 	assert(fini);
+
 	if(!timedout && ec != errc::operation_canceled)
 		cancel_timeout();
 
@@ -2783,14 +2802,15 @@ catch(const std::exception &e)
 }
 
 void
-ircd::net::socket::handle_handshake(std::weak_ptr<socket> wp,
-                                    eptr_handler callback,
+ircd::net::socket::handle_handshake(const std::weak_ptr<socket> wp,
+                                    const eptr_handler callback,
                                     error_code ec)
 noexcept try
 {
 	using std::errc;
 
 	const life_guard<socket> s{wp};
+	assert(s.get() == this);
 
 	if(!timedout && ec != errc::operation_canceled && !fini)
 		cancel_timeout();
@@ -3105,6 +3125,19 @@ ircd::milliseconds
 ircd::net::socket::cancel_timeout()
 noexcept
 {
+	const bool timedout
+	{
+		std::exchange(this->timedout, false)
+	};
+
+	const bool timer_set
+	{
+		std::exchange(this->timer_set, false)
+	};
+
+	if(!timer_set)
+		return 0ms;
+
 	const auto exp
 	{
 		timer.expires_from_now()
@@ -3115,8 +3148,6 @@ noexcept
 		exp.total_milliseconds()
 	};
 
-	timer_set = false;
-	timedout = false;
 	boost::system::error_code ec;
 	timer.cancel(ec);
 	assert(!ec);
