@@ -105,6 +105,15 @@ noexcept
 	return SIZE;
 }
 
+template<class T,
+         size_t SIZE>
+constexpr typename std::enable_if<std::is_array<T[SIZE]>::value, size_t>::type
+size(const T (&)[SIZE])
+noexcept
+{
+	return SIZE;
+}
+
 template<class T>
 constexpr typename std::enable_if<std::is_integral<T>::value, size_t>::type
 size(const T &val)
