@@ -21,6 +21,15 @@ struct ircd::server::link
 	static conf::item<size_t> tag_commit_max_default;
 	static conf::item<bool> write_async;
 	static uint64_t ids;
+	static uint64_t ticker[];
+	static stats::item<uint64_t *> ops_write_wait;
+	static stats::item<uint64_t *> ops_write_now;
+	static stats::item<uint64_t *> ops_write_nbio;
+	static stats::item<uint64_t *> ops_write_async;
+	static stats::item<uint64_t *> ops_write_more;
+	static stats::item<uint64_t *> ops_read_wait;
+	static stats::item<uint64_t *> ops_read_nbio;
+	static stats::item<uint64_t *> ops_read_discard;
 
 	uint64_t id {++ids};                         ///< unique identifier of link.
 	server::peer *peer;                          ///< backreference to peer

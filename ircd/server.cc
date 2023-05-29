@@ -2239,6 +2239,57 @@ ircd::server::link::write_async
 decltype(ircd::server::link::ids)
 ircd::server::link::ids;
 
+uint64_t
+ircd::server::link::ticker[8];
+
+decltype(ircd::server::link::ops_write_wait)
+ircd::server::link::ops_write_wait
+{
+	ticker + 0,  {{ "name", "ircd.server.link.ops.write.wait" }},
+};
+
+decltype(ircd::server::link::ops_write_now)
+ircd::server::link::ops_write_now
+{
+	ticker + 1,  {{ "name", "ircd.server.link.ops.write.now" }},
+};
+
+decltype(ircd::server::link::ops_write_nbio)
+ircd::server::link::ops_write_nbio
+{
+	ticker + 2,  {{ "name", "ircd.server.link.ops.write.nbio" }},
+};
+
+decltype(ircd::server::link::ops_write_async)
+ircd::server::link::ops_write_async
+{
+	ticker + 3,  {{ "name", "ircd.server.link.ops.write.async" }},
+};
+
+decltype(ircd::server::link::ops_write_more)
+ircd::server::link::ops_write_more
+{
+	ticker + 4,  {{ "name", "ircd.server.link.ops.write.more" }},
+};
+
+decltype(ircd::server::link::ops_read_wait)
+ircd::server::link::ops_read_wait
+{
+	ticker + 5,  {{ "name", "ircd.server.link.ops.read.wait" }},
+};
+
+decltype(ircd::server::link::ops_read_nbio)
+ircd::server::link::ops_read_nbio
+{
+	ticker + 6,  {{ "name", "ircd.server.link.ops.read.nbio" }},
+};
+
+decltype(ircd::server::link::ops_read_discard)
+ircd::server::link::ops_read_discard
+{
+	ticker + 7,  {{ "name", "ircd.server.link.ops.read.discard" }},
+};
+
 ircd::string_view
 ircd::server::loghead(const link &link)
 {
@@ -2542,10 +2593,12 @@ ircd::server::link::wait_writable()
 
 	if(write_now)
 	{
+		ops_write_now++;
 		handler(error_code{});
 		return;
 	}
 
+	ops_write_wait++;
 	net::wait(*socket, net::ready::WRITE, std::move(handler));
 }
 
@@ -2690,6 +2743,10 @@ bool
 ircd::server::link::process_write_nbio(tag &tag,
                                        const const_buffers &buffers)
 {
+	ops_write_nbio++;
+
+	assert(socket);
+	assert(buffers::size(buffers));
 	const size_t wrote
 	{
 		write_any(*socket, buffers)
@@ -2700,7 +2757,13 @@ ircd::server::link::process_write_nbio(tag &tag,
 	peer->write_bytes += wrote;
 	tag.wrote(wrote);
 	assert(tag_committed() <= tag_commit_max());
-	return wrote >= buffers::size(buffers);
+	const bool done
+	{
+		wrote >= buffers::size(buffers)
+	};
+
+	ops_write_more += !done;
+	return done;
 }
 
 bool
@@ -2722,6 +2785,7 @@ ircd::server::link::process_write_async(tag &tag,
 		std::bind(&link::handle_write_async, this, std::ref(tag), ph::_1, ph::_2)
 	};
 
+	ops_write_async++;
 	net::write_few(*socket, buffers, std::move(handler));
 	return false;
 }
@@ -2770,7 +2834,10 @@ ircd::server::link::handle_write_async(tag &tag,
 	peer->write_bytes += wrote;
 
 	if(more)
+	{
+		ops_write_more++;
 		wait_writable();
+	}
 }
 
 void
@@ -2791,6 +2858,7 @@ ircd::server::link::wait_readable()
 		std::bind(&link::handle_readable, this, ph::_1)
 	};
 
+	ops_read_wait++;
 	net::wait(*socket, net::ready::READ, std::move(handler));
 }
 
@@ -3000,6 +3068,8 @@ catch(const buffer_overrun &)
 ircd::const_buffer
 ircd::server::link::read(const mutable_buffer &buf)
 {
+	ops_read_nbio++;
+
 	assert(socket);
 	assert(!empty(buf));
 	const size_t received
@@ -3020,6 +3090,8 @@ ircd::server::link::read(const mutable_buffer &buf)
 void
 ircd::server::link::discard_read()
 {
+	ops_read_discard++;
+
 	assert(socket);
 	const size_t pending
 	{
