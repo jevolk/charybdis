@@ -13,7 +13,7 @@
 namespace ircd::png
 {
 	#ifdef HAVE_PNG_H
-	static void handle_error(png_structp, const char *) noexcept(false);
+	[[noreturn]] static void handle_error(png_structp, const char *) noexcept(false);
 	static void handle_warn(png_structp, const char *) noexcept;
 	static void *handle_alloc(png_structp, size_t) noexcept;
 	static void handle_free(png_structp, void *) noexcept;
