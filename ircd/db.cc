@@ -3423,9 +3423,11 @@ ircd::db::column::operator()(const string_view &key,
                              const view_closure &func,
                              const gopts &gopts)
 {
-	const auto it(seek(*this, key, gopts));
-	valid_eq_or_throw(*it, key);
-	func(val(*it));
+	const auto opts(make_opts(gopts));
+	throw_on_error
+	{
+		_read(*this, key, opts, func)
+	};
 }
 
 bool
@@ -3434,12 +3436,13 @@ ircd::db::column::operator()(const string_view &key,
                              const view_closure &func,
                              const gopts &gopts)
 {
-	const auto it(seek(*this, key, gopts));
-	if(!valid_eq(*it, key))
-		return false;
+	const auto opts(make_opts(gopts));
+	const auto status
+	{
+		_read(*this, key, opts, func)
+	};
 
-	func(val(*it));
-	return true;
+	return valid(status);
 }
 
 uint64_t
