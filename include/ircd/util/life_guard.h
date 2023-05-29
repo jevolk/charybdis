@@ -75,28 +75,28 @@ struct ircd::util::life_guard
 };
 
 template<class T>
-std::weak_ptr<T>
+inline std::weak_ptr<T>
 ircd::util::weak_from(T &t)
 {
 	return shared_from(t);
 };
 
 template<class T>
-std::weak_ptr<const T>
+inline std::weak_ptr<const T>
 ircd::util::weak_from(const T &t)
 {
 	return shared_from(t);
 };
 
 template<class T>
-std::shared_ptr<T>
+inline std::shared_ptr<T>
 ircd::util::shared_from(T &t)
 {
 	return dynamic_pointer_cast<T>(t.shared_from_this());
 };
 
 template<class T>
-std::shared_ptr<const T>
+inline std::shared_ptr<const T>
 ircd::util::shared_from(const T &t)
 {
 	return dynamic_pointer_cast<const T>(t.shared_from_this());

@@ -35,6 +35,7 @@ struct ircd::util::scope_restore
 };
 
 template<class T>
+inline
 ircd::util::scope_restore<T>::scope_restore(T &restore)
 noexcept
 :restore{&restore}
@@ -43,6 +44,7 @@ noexcept
 }
 
 template<class T>
+inline
 ircd::util::scope_restore<T>::scope_restore(T &restore,
                                             T&& ours)
 :restore{&restore}
@@ -53,6 +55,7 @@ ircd::util::scope_restore<T>::scope_restore(T &restore,
 
 template<class T>
 template<class... args>
+inline
 ircd::util::scope_restore<T>::scope_restore(T &restore,
                                             args&&... ours)
 :restore{&restore}
@@ -62,6 +65,7 @@ ircd::util::scope_restore<T>::scope_restore(T &restore,
 }
 
 template<class T>
+inline
 ircd::util::scope_restore<T>::~scope_restore()
 noexcept
 {

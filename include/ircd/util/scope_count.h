@@ -34,6 +34,7 @@ struct ircd::util::scope_count
 };
 
 template<class T>
+inline
 ircd::util::scope_count<T>::scope_count(T &count,
                                         const T &inc)
 :count{&count}
@@ -43,6 +44,7 @@ ircd::util::scope_count<T>::scope_count(T &count,
 }
 
 template<class T>
+inline
 ircd::util::scope_count<T>::~scope_count()
 noexcept
 {
