@@ -152,6 +152,7 @@ ircd::db::cache_arena_handle_alloc(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	assert(zero);
@@ -159,14 +160,13 @@ noexcept
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u alloc addr:%p size:%zu align:%zu z:%b c:%b ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u alloc addr:%p size:%zu align:%zu z:%b c:%b",
+			arena_ind,
 			new_addr,
 			size,
 			alignment,
 			*zero,
 			*commit,
-			arena_ind,
 		};
 
 	void *const ret
@@ -198,17 +198,17 @@ ircd::db::cache_arena_handle_dalloc(extent_hooks_t *hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u dalloc addr:%p size:%zu align:%zu z:%b c:%b ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u dalloc addr:%p size:%zu c:%b",
+			arena_ind,
 			ptr,
 			size,
 			committed,
-			arena_ind,
 		};
 
 	const bool ret
@@ -239,18 +239,18 @@ ircd::db::cache_arena_handle_destroy(extent_hooks_t *hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u destroy addr:%p size:%zu align:%zu z:%b c:%b ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u destroy addr:%p size:%zu c:%b",
+			arena_ind,
 			ptr,
 			size,
 			committed,
-			arena_ind,
 		};
 
 	#if defined(HAVE_MLOCK2)
@@ -277,18 +277,18 @@ ircd::db::cache_arena_handle_commit(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u commit addr:%p size:%zu offset:%zu length:%zu ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u commit addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
 			ptr,
 			size,
 			offset,
 			length,
-			arena_ind,
 		};
 
 	return their_hooks.commit(hooks, ptr, size, offset, length, arena_ind);
@@ -306,18 +306,18 @@ ircd::db::cache_arena_handle_decommit(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u decommit addr:%p size:%zu offset:%zu length:%zu ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u decommit addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
 			ptr,
 			size,
 			offset,
 			length,
-			arena_ind,
 		};
 
 	return their_hooks.decommit(hooks, ptr, size, offset, length, arena_ind);
@@ -335,18 +335,18 @@ ircd::db::cache_arena_handle_purge_lazy(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u purge lazy addr:%p size:%zu offset:%zu length:%zu ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u purge lazy addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
 			ptr,
 			size,
 			offset,
 			length,
-			arena_ind,
 		};
 
 	return their_hooks.purge_lazy(hooks, ptr, size, offset, length, arena_ind);
@@ -364,18 +364,18 @@ ircd::db::cache_arena_handle_purge_forced(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u purge forced addr:%p size:%zu offset:%zu length:%zu ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u purge forced addr:%p size:%zu offset:%zu length:%zu",
+			arena_ind,
 			ptr,
 			size,
 			offset,
 			length,
-			arena_ind,
 		};
 
 	return their_hooks.purge_forced(hooks, ptr, size, offset, length, arena_ind);
@@ -394,19 +394,19 @@ ircd::db::cache_arena_handle_split(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u split addr:%p size:%zu size_a:%zu size_b:%zu committed:%b ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u split addr:%p size:%zu size_a:%zu size_b:%zu committed:%b",
+			arena_ind,
 			ptr,
 			size,
 			size_a,
 			size_b,
 			committed,
-			arena_ind,
 		};
 
 	return their_hooks.split(hooks, ptr, size, size_a, size_b, committed, arena_ind);
@@ -425,19 +425,19 @@ ircd::db::cache_arena_handle_merge(extent_hooks_t *const hooks,
 noexcept
 {
 	assert(their_cache_arena_hooks);
+	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
-			log, "cache arena:%u merge a[addr:%p size:%zu] b[addr:%p size:%zu] committed:%b ind:%u",
-			database::allocator::cache_arena,
+			log, "cache arena:%u merge a[addr:%p size:%zu] b[addr:%p size:%zu] committed:%b",
+			arena_ind,
 			addr_a,
 			size_a,
 			addr_b,
 			size_b,
 			committed,
-			arena_ind,
 		};
 
 	return their_hooks.merge(hooks, addr_a, size_a, addr_b, size_b, committed, arena_ind);
