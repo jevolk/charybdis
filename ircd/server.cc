@@ -2651,7 +2651,7 @@ ircd::server::link::handle_writable_success()
 {
 	assert(socket);
 	auto it(begin(queue));
-	while(it != end(queue))
+	while(it != end(queue) && tag_committed() < tag_commit_max())
 	{
 		auto &tag{*it};
 		if((tag.abandoned() || tag.canceled()) && !tag.committed())
@@ -2683,9 +2683,6 @@ ircd::server::link::handle_writable_success()
 			close();
 			break;
 		}
-
-		if(!tag_committed())
-			wait_readable();
 
 		if(!tag.committed())
 			log::debug
@@ -2729,11 +2726,8 @@ ircd::server::link::handle_writable_success()
 				wait_writable();
 				break;
 			}
+			else wait_readable();
 		}
-
-		// Limits the amount of requests in the pipe.
-		if(tag_committed() >= tag_commit_max())
-			break;
 
 		++it;
 	}
@@ -2820,18 +2814,22 @@ ircd::server::link::handle_write_async(tag &tag,
 		!op_fini && !queue.empty()
 	};
 
-	bool more {false};
+	bool more{false}, done{false};
 	if(likely(tag_ok && tag.request))
 	{
 		tag.wrote(wrote);
-		more |= tag.write_remaining();
+		done = !tag.write_remaining();
 	}
 
 	assert(tag_committed() <= tag_commit_max());
 	more |= tag_uncommitted();
+	more |= !done;
 
 	assert(peer);
 	peer->write_bytes += wrote;
+
+	if(done)
+		wait_readable();
 
 	if(more)
 	{
