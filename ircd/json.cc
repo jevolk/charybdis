@@ -2230,15 +2230,6 @@ const
 }
 
 ircd::json::iov::push::push(iov &iov,
-                            member member)
-:node
-{
-	iov, std::move(member)
-}
-{
-}
-
-ircd::json::iov::push::push(iov &iov,
                             const bool &b,
                             const conditional_member &cp)
 :node
@@ -2613,7 +2604,7 @@ const
 
 bool
 ircd::json::object::has(const string_view &key,
-                        const enum json::type &type)
+                        const enum json::type type)
 const
 {
 	const auto &it
@@ -2626,13 +2617,6 @@ const
 		false;
 }
 
-bool
-ircd::json::object::has(const string_view &key)
-const
-{
-	return find(key) != end();
-}
-
 size_t
 ircd::json::object::count()
 const
@@ -2641,7 +2625,7 @@ const
 }
 
 ircd::json::object::const_iterator
-ircd::json::object::find(const name_hash_t &key)
+ircd::json::object::find(const name_hash_t key)
 const
 {
 	assert(key != 0);

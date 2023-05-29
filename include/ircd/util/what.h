@@ -13,7 +13,7 @@
 
 namespace ircd { inline namespace util
 {
-	string_view what(const std::exception_ptr eptr = std::current_exception()) noexcept;
+	[[gnu::pure]] string_view what(const std::exception_ptr & = std::current_exception()) noexcept;
 	string_view what(const std::exception &) noexcept;
 }}
 

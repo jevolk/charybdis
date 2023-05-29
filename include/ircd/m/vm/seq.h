@@ -36,3 +36,31 @@ struct ircd::m::vm::sequence::refresh
 
 	refresh();
 };
+
+inline uint64_t
+ircd::m::vm::sequence::min()
+{
+	const auto *const e
+	{
+		eval::seqmin()
+	};
+
+	return e? get(*e) : 0;
+}
+
+inline uint64_t
+ircd::m::vm::sequence::max()
+{
+	const auto *const e
+	{
+		eval::seqmax()
+	};
+
+	return e? get(*e) : 0;
+}
+
+inline const uint64_t &
+ircd::m::vm::sequence::get(const eval &eval)
+{
+	return eval.sequence;
+}

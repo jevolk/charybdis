@@ -53,8 +53,8 @@ struct ircd::util::timer
 	template<class duration = std::chrono::seconds> duration at() const;
 
 	// Convenience wrapper for util::pretty()
-	string_view pretty(const mutable_buffer &out, const int &fmt = 0) const;
-	std::string pretty(const int &fmt = 0) const;
+	string_view pretty(const mutable_buffer &out, const int fmt = 0) const;
+	std::string pretty(const int fmt = 0) const;
 
 	// Control
 	void cont();

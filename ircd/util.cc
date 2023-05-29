@@ -190,7 +190,7 @@ ircd::util::pretty(const mutable_buffer &out,
 ircd::string_view
 ircd::util::pretty(const mutable_buffer &out,
                    const nanoseconds &val,
-                   const uint &fmt)
+                   const uint fmt)
 {
 	return pretty<0>(out, val, fmt);
 }
@@ -198,7 +198,7 @@ ircd::util::pretty(const mutable_buffer &out,
 ircd::string_view
 ircd::util::pretty(const mutable_buffer &out,
                    const microseconds &val,
-                   const uint &fmt)
+                   const uint fmt)
 {
 	return pretty<1>(out, val, fmt);
 }
@@ -206,7 +206,7 @@ ircd::util::pretty(const mutable_buffer &out,
 ircd::string_view
 ircd::util::pretty(const mutable_buffer &out,
                    const milliseconds &val,
-                   const uint &fmt)
+                   const uint fmt)
 {
 	return pretty<2>(out, val, fmt);
 }
@@ -214,7 +214,7 @@ ircd::util::pretty(const mutable_buffer &out,
 ircd::string_view
 ircd::util::pretty(const mutable_buffer &out,
                    const seconds &val,
-                   const uint &fmt)
+                   const uint fmt)
 {
 	return pretty<3>(out, val, fmt);
 }
@@ -234,7 +234,7 @@ ircd::util::pretty_fmt
 
 std::string
 ircd::util::pretty(const human_readable_size &value,
-                   const uint &fmt)
+                   const uint fmt)
 {
 	return pretty(value, pretty_fmt[fmt]);
 }
@@ -242,7 +242,7 @@ ircd::util::pretty(const human_readable_size &value,
 ircd::string_view
 ircd::util::pretty(const mutable_buffer &out,
                    const human_readable_size &value,
-                   const uint &fmt)
+                   const uint fmt)
 {
 	return pretty(out, pretty_fmt[fmt], value);
 }
@@ -282,7 +282,7 @@ catch(const std::out_of_range &e)
 }
 
 ircd::human_readable_size
-ircd::util::si(const uint64_t &value)
+ircd::util::si(const uint64_t value)
 {
 	static const std::array<string_view, 7> unit
 	{
@@ -299,7 +299,7 @@ ircd::util::si(const uint64_t &value)
 }
 
 ircd::human_readable_size
-ircd::util::iec(const uint64_t &value)
+ircd::util::iec(const uint64_t value)
 {
 	static const std::array<string_view, 7> unit
 	{
@@ -324,7 +324,7 @@ ircd::util::iec(const uint64_t &value)
 /// string through the data() member requiring a const_cast. Closure returns
 /// a view of the data actually written to the buffer.
 std::string
-ircd::util::string(const size_t &size,
+ircd::util::string(const size_t size,
                    const string_closure_view &closure)
 {
 	return string(size, [&closure]
@@ -338,7 +338,7 @@ ircd::util::string(const size_t &size,
 /// string through the data() member requiring a const_cast. Closure returns
 /// the final size of the data written into the buffer.
 std::string
-ircd::util::string(const size_t &size,
+ircd::util::string(const size_t size,
                    const string_closure_size &closure)
 {
 	const size_t alloc_size
@@ -374,15 +374,15 @@ ircd::util::string(const const_buffer &buf)
 }
 
 std::string
-ircd::util::string(const char *const &buf,
-                   const size_t &size)
+ircd::util::string(const char *const buf,
+                   const size_t size)
 {
 	return std::string{buf, size};
 }
 
 std::string
-ircd::util::string(const uint8_t *const &buf,
-                   const size_t &size)
+ircd::util::string(const uint8_t *const buf,
+                   const size_t size)
 {
 	return string(reinterpret_cast<const char *>(buf), size);
 }
@@ -438,7 +438,7 @@ ircd::util::timer::cont()
 }
 
 std::string
-ircd::util::timer::pretty(const int &fmt)
+ircd::util::timer::pretty(const int fmt)
 const
 {
 	return util::pretty(at<nanoseconds>(), fmt);
@@ -446,7 +446,7 @@ const
 
 ircd::string_view
 ircd::util::timer::pretty(const mutable_buffer &out,
-                          const int &fmt)
+                          const int fmt)
 const
 {
 	return util::pretty(out, at<nanoseconds>(), fmt);
@@ -531,7 +531,7 @@ noexcept
 /// Get what() from exception_ptr
 ///
 ircd::string_view
-ircd::util::what(const std::exception_ptr eptr)
+ircd::util::what(const std::exception_ptr &eptr)
 noexcept try
 {
 	if(likely(eptr))

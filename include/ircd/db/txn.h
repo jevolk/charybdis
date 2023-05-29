@@ -110,8 +110,43 @@ struct ircd::db::txn::opts
 	size_t max_bytes = 0;
 };
 
+//
+// txn::append
+//
+
+inline
+ircd::db::txn::append::append(txn &t,
+                              const delta &delta)
+{
+	assert(bool(t.d));
+	append(t, *t.d, delta);
+}
+
+//
+// txn
+//
+
+inline
+ircd::db::txn::txn(database &d)
+:txn{d, opts{}}
+{}
+
+inline auto
+ircd::db::txn::release()
+noexcept
+{
+	return wb.release();
+}
+
+inline void
+ircd::db::txn::operator()(const sopts &opts)
+{
+	assert(bool(d));
+	operator()(*d, opts);
+}
+
 template<class T>
-T
+inline T
 ircd::db::txn::at(const op &op,
                   const string_view &col,
                   const string_view &key)
@@ -127,7 +162,7 @@ const
 }
 
 template<class T>
-T
+inline T
 ircd::db::txn::val(const op &op,
                    const string_view &col,
                    const string_view &key,
@@ -142,9 +177,32 @@ const
 	return ret;
 }
 
-inline auto
-ircd::db::txn::release()
-noexcept
+inline ircd::db::txn::operator
+ircd::db::database &()
 {
-	return wb.release();
+	assert(bool(d));
+	return *d;
+}
+
+inline ircd::db::txn::operator
+rocksdb::WriteBatch &()
+{
+	assert(bool(wb));
+	return *wb;
+}
+
+inline ircd::db::txn::operator
+const ircd::db::database &()
+const
+{
+	assert(bool(d));
+	return *d;
+}
+
+inline ircd::db::txn::operator
+const rocksdb::WriteBatch &()
+const
+{
+	assert(bool(wb));
+	return *wb;
 }

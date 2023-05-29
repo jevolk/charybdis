@@ -16,7 +16,7 @@ namespace ircd::fs
 	enum class ready :uint8_t;
 	struct wait_opts extern const wait_opts_default;
 
-	string_view reflect(const ready &);
+	string_view reflect(const ready) noexcept;
 
 	void wait(const fd &, const wait_opts &);
 }

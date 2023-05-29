@@ -21,22 +21,22 @@ inline namespace util
 	extern const string_view pretty_fmt[];
 
 	// Process the value to be made pretty first with one of the following:
-	human_readable_size iec(const uint64_t &value);
-	human_readable_size si(const uint64_t &value);
+	human_readable_size iec(const uint64_t value);
+	human_readable_size si(const uint64_t value);
 
 	// Generate a pretty string with a custom fmt string (low-level)
 	string_view pretty(const mutable_buffer &out, const string_view &fmt, const human_readable_size &);
 	std::string pretty(const human_readable_size &, const string_view &fmt);
 
 	// Generate a pretty string with the pretty_fmt_default implied.
-	string_view pretty(const mutable_buffer &out, const human_readable_size &, const uint &fmt = 0);
-	std::string pretty(const human_readable_size &, const uint &fmt = 0);
+	string_view pretty(const mutable_buffer &out, const human_readable_size &, const uint fmt = 0);
+	std::string pretty(const human_readable_size &, const uint fmt = 0);
 
 	// Human readable time suite (for timers and counts; otherwise see ircd/time.h)
-	string_view pretty(const mutable_buffer &out, const nanoseconds &, const uint &fmt = 0);
-	string_view pretty(const mutable_buffer &out, const microseconds &, const uint &fmt = 0);
-	string_view pretty(const mutable_buffer &out, const milliseconds &, const uint &fmt = 0);
-	string_view pretty(const mutable_buffer &out, const seconds &, const uint &fmt = 0);
+	string_view pretty(const mutable_buffer &out, const nanoseconds &, const uint fmt = 0);
+	string_view pretty(const mutable_buffer &out, const microseconds &, const uint fmt = 0);
+	string_view pretty(const mutable_buffer &out, const milliseconds &, const uint fmt = 0);
+	string_view pretty(const mutable_buffer &out, const seconds &, const uint fmt = 0);
 	template<class r, class p> std::string pretty(const duration<r, p> &, const uint &fmt = 0);
 }}
 

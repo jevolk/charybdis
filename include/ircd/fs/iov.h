@@ -29,8 +29,8 @@ namespace ircd::fs
 	// Transforms our buffers to struct iovec ones. The offset value allows
 	// a front-truncation of the input buffers when transforming. This is
 	// useful for progressive readv()'s filling the buffers.
-	const_iovec_view make_iov(const iovec_view &, const const_buffers &, const size_t &off = 0);
-	const_iovec_view make_iov(const iovec_view &, const mutable_buffers &, const size_t &off = 0);
+	const_iovec_view make_iov(const iovec_view &, const const_buffers &, const size_t off = 0);
+	const_iovec_view make_iov(const iovec_view &, const mutable_buffers &, const size_t off = 0);
 
 	// For boost::asio; internal
 	template<class T> vector_view<const T> make_iov(T *, const const_iovec_view &);

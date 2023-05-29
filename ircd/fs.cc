@@ -775,7 +775,7 @@ ircd::fs::read_opts_default;
 
 size_t
 ircd::fs::prefetch(const fd &fd,
-                   const size_t &count,
+                   const size_t count,
                    const read_opts &opts)
 {
 	#if defined(POSIX_FADV_WILLNEED)
@@ -787,7 +787,7 @@ ircd::fs::prefetch(const fd &fd,
 
 bool
 ircd::fs::incore(const fd &fd,
-                 const size_t &count,
+                 const size_t count,
                  const read_opts &opts)
 {
 	const fs::opts fs_opts
@@ -1171,7 +1171,7 @@ ircd::fs::write_opts_default;
 
 void
 ircd::fs::allocate(const fd &fd,
-                   const size_t &size,
+                   const size_t size,
                    const write_opts &opts)
 {
 	assert(opts.op == op::WRITE);
@@ -1197,7 +1197,7 @@ ircd::fs::allocate(const fd &fd,
 
 void
 ircd::fs::truncate(const string_view &path,
-                   const size_t &size,
+                   const size_t size,
                    const write_opts &opts)
 {
 	const fs::fd fd
@@ -1213,7 +1213,7 @@ ircd::fs::truncate(const string_view &path,
 
 void
 ircd::fs::truncate(const fd &fd,
-                   const size_t &size,
+                   const size_t size,
                    const write_opts &opts)
 {
 	assert(opts.op == op::WRITE);
@@ -1692,7 +1692,8 @@ noexcept
 }
 
 ircd::string_view
-ircd::fs::reflect(const ready &ready)
+ircd::fs::reflect(const ready ready)
+noexcept
 {
 	switch(ready)
 	{
@@ -1972,7 +1973,7 @@ namespace ircd::fs
 
 size_t
 ircd::fs::sync(const map &map,
-               const size_t &len,
+               const size_t len,
                const opts &opts)
 {
 	const bool invalidate
@@ -1995,7 +1996,7 @@ ircd::fs::sync(const map &map,
 
 size_t
 ircd::fs::flush(const map &map,
-                const size_t &len,
+                const size_t len,
                 const opts &opts)
 {
 	const bool invalidate
@@ -2018,7 +2019,7 @@ ircd::fs::flush(const map &map,
 
 size_t
 ircd::fs::evict(const map &map,
-                const size_t &len,
+                const size_t len,
                 const opts &opts)
 {
 	const size_t offset
@@ -2036,7 +2037,7 @@ ircd::fs::evict(const map &map,
 
 size_t
 ircd::fs::prefetch(const map &map,
-                   const size_t &len,
+                   const size_t len,
                    const opts &opts)
 {
 	const size_t offset
@@ -2054,8 +2055,8 @@ ircd::fs::prefetch(const map &map,
 
 size_t
 ircd::fs::advise(const map &map,
-                 const int &advice,
-                 const size_t &len,
+                 const int advice,
+                 const size_t len,
                  const opts &opts)
 {
 	const mutable_buffer buf
@@ -2280,7 +2281,7 @@ namespace ircd::fs
 	static uint flags(const fd::opts &);
 	static uint flags(const std::ios::openmode &);
 	static fd::opts make(const fd::opts &);
-	static long pathconf(const fd &, const int &arg);
+	static long pathconf(const fd &, const int arg);
 }
 
 decltype(ircd::fs::fd::opts::direct_io_enable)
@@ -2294,7 +2295,7 @@ ircd::fs::fd::opts::direct_io_enable
 #if defined(POSIX_FADV_DONTNEED)
 size_t
 ircd::fs::evict(const fd &fd,
-                const size_t &count,
+                const size_t count,
                 const opts &opts)
 {
 	return advise(fd, POSIX_FADV_DONTNEED, count, opts);
@@ -2303,7 +2304,7 @@ ircd::fs::evict(const fd &fd,
 #warning "POSIX_FADV_DONTNEED not available on this platform."
 size_t
 ircd::fs::evict(const fd &fd,
-                const size_t &count,
+                const size_t count,
                 const opts &opts)
 {
 	return 0UL;
@@ -2313,8 +2314,8 @@ ircd::fs::evict(const fd &fd,
 #if defined(HAVE_POSIX_FADVISE)
 size_t
 ircd::fs::advise(const fd &fd,
-                 const int &advice,
-                 const size_t &count,
+                 const int advice,
+                 const size_t count,
                  const opts &opts)
 {
 	static const size_t max_count
@@ -2344,8 +2345,8 @@ ircd::fs::advise(const fd &fd,
 #warning "posix_fadvise(2) not available for this compilation."
 size_t
 ircd::fs::advise(const fd &fd,
-                 const int &advice,
-                 const size_t &count,
+                 const int advice,
+                 const size_t count,
                  const opts &opts)
 {
 	return 0UL;
@@ -2355,7 +2356,7 @@ ircd::fs::advise(const fd &fd,
 #if defined(HAVE_FCNTL_H) && defined(F_SET_FILE_RW_HINT)
 void
 ircd::fs::write_life(const fd &fd,
-                     const uint64_t &hint)
+                     const uint64_t hint)
 {
 	if(!support::rwh_write_life)
 		return;
@@ -2366,7 +2367,7 @@ ircd::fs::write_life(const fd &fd,
 #warning "F_SET_FILE_RW_HINT not supported on platform."
 void
 ircd::fs::write_life(const fd &fd,
-                     const uint64_t &hint)
+                     const uint64_t hint)
 {
 }
 #endif
@@ -2462,7 +2463,7 @@ ircd::fs::block_size(const fd &fd)
 
 long
 ircd::fs::pathconf(const fd &fd,
-                   const int &arg)
+                   const int arg)
 {
 	return syscall(::fpathconf, fd, arg);
 }
@@ -2488,14 +2489,6 @@ ircd::fs::size(const fd &fd)
 // fd::fd
 //
 
-ircd::fs::fd::fd(const int &fdno)
-:fdno
-{
-	fdno
-}
-{
-}
-
 ircd::fs::fd::fd(const string_view &path)
 :fd
 {
@@ -2513,7 +2506,7 @@ ircd::fs::fd::fd(const string_view &path,
 {
 }
 
-ircd::fs::fd::fd(const int &dirfd,
+ircd::fs::fd::fd(const int dirfd,
                  const string_view &path,
                  const opts &opts_)
 try
@@ -2584,26 +2577,6 @@ catch(const std::system_error &e)
 	throw;
 }
 
-ircd::fs::fd::fd(fd &&o)
-noexcept
-:fdno
-{
-	std::move(o.fdno)
-}
-{
-	o.fdno = -1;
-}
-
-ircd::fs::fd &
-ircd::fs::fd::operator=(fd &&o)
-noexcept
-{
-	this->~fd();
-	fdno = std::move(o.fdno);
-	o.fdno = -1;
-	return *this;
-}
-
 ircd::fs::fd::~fd()
 noexcept
 {
@@ -2620,15 +2593,6 @@ noexcept
 			e.what()
 		};
 	}
-}
-
-int
-ircd::fs::fd::release()
-noexcept
-{
-	const int fdno(this->fdno);
-	this->fdno = -1;
-	return fdno;
 }
 
 ircd::fs::fd::opts
@@ -2779,7 +2743,7 @@ ircd::fs::make_iov(T *const buf,
 ircd::fs::const_iovec_view
 ircd::fs::make_iov(const iovec_view &iov,
                    const mutable_buffers &bufs,
-                   const size_t &offset)
+                   const size_t offset)
 {
 	assert(offset <= buffers::size(bufs));
 	const size_t max
@@ -2821,7 +2785,7 @@ ircd::fs::make_iov(const iovec_view &iov,
 ircd::fs::const_iovec_view
 ircd::fs::make_iov(const iovec_view &iov,
                    const const_buffers &bufs,
-                   const size_t &offset)
+                   const size_t offset)
 {
 	assert(offset <= buffers::size(bufs));
 	const size_t max

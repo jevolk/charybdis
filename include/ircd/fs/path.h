@@ -43,7 +43,7 @@ namespace ircd::fs
 	const char *path_cstr(const string_view &path); // rotating internal TLS buffer
 
 	// pathconf(3) interface
-	long pathconf(const string_view &path, const int &arg);
+	long pathconf(const string_view &path, const int arg);
 	size_t name_max_len(const string_view &path);
 	size_t path_max_len(const string_view &path);
 

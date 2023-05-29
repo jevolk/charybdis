@@ -104,6 +104,12 @@ struct ircd::json::iov::defaults
 	defaults() = default;
 };
 
+inline
+ircd::json::iov::push::push(iov &iov,
+                            member member)
+:node{iov, std::move(member)}
+{}
+
 inline ircd::json::iov::push::operator
 ircd::json::member &()
 {
@@ -125,7 +131,7 @@ const
 template<class node,
          size_t size,
          class T>
-ircd::json::iov &
+inline ircd::json::iov &
 ircd::json::make_iov(iov &ret,
                      node (&nodes)[size],
                      T&& members)
@@ -139,7 +145,7 @@ ircd::json::make_iov(iov &ret,
 /// sized array, you have to pass the size.
 template<class node,
          class T>
-ircd::json::iov &
+inline ircd::json::iov &
 ircd::json::make_iov(iov &ret,
                      node *const nodes,
                      const size_t &size,

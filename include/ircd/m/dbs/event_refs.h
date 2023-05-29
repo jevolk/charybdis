@@ -33,15 +33,13 @@ namespace ircd::m::dbs
 	string_view
 	event_refs_key(const mutable_buffer &out,
 	               const event::idx &tgt,
-	               const ref &type,
+	               const ref type,
 	               const event::idx &referer);
 
 	event_refs_tuple
 	event_refs_key(const string_view &amalgam);
 
-	string_view
-	reflect(const ref &);
-
+	[[gnu::pure]] string_view reflect(ref);
 	size_t _prefetch_event_refs(const event &, const opts &);
 	void _index_event_refs(db::txn &, const event &, const opts &);
 

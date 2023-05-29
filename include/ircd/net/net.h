@@ -54,7 +54,7 @@ namespace ircd::net
 
 namespace ircd::net
 {
-	const uint64_t &id(const socket &);
+	uint64_t id(const socket &) noexcept;
 	bool opened(const socket &) noexcept;
 	ipport local_ipport(const socket &) noexcept;
 	ipport remote_ipport(const socket &) noexcept;

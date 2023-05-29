@@ -28,15 +28,15 @@ inline namespace util
 	};
 
 	// Simple string generation by copy from existing buffer.
-	std::string string(const char *const &buf, const size_t &size);
-	std::string string(const uint8_t *const &buf, const size_t &size);
+	std::string string(const char *buf, const size_t size);
+	std::string string(const uint8_t *buf, const size_t size);
 	std::string string(const const_buffer &);
 
 	// String generation from closure. The closure is presented a buffer of
 	// size for writing into. Closure returns how much it wrote via size or
 	// view of written portion.
-	std::string string(const size_t &size, const string_closure_size &);
-	std::string string(const size_t &size, const string_closure_view &);
+	std::string string(const size_t size, const string_closure_size &);
+	std::string string(const size_t size, const string_closure_view &);
 
 	// toString()'ish template suite (see defs)
 	template<class T> std::string string(const mutable_buffer &buf, const T &s);

@@ -239,7 +239,7 @@ ircd::db::database::env::writable_file
 	uint64_t GetFileSize() noexcept override;
 	void SetPreallocationBlockSize(size_t size) noexcept override;
 	void GetPreallocationStatus(size_t* block_size, size_t* last_allocated_block) noexcept override;
-	void _allocate(const size_t &offset, const size_t &length);
+	void _allocate(const size_t offset, const size_t length);
 	void PrepareWrite(size_t offset, size_t len) noexcept override;
 	Status Allocate(uint64_t offset, uint64_t len) noexcept override;
 	Status PositionedAppend(const Slice& data, uint64_t offset) noexcept override;

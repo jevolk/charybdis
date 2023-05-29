@@ -102,6 +102,27 @@ struct ircd::db::row::delta
 	{}
 };
 
+inline void
+ircd::db::write(const row::delta &delta,
+                const sopts &sopts)
+{
+	write(&delta, &delta + 1, sopts);
+}
+
+inline void
+ircd::db::write(const sopts &sopts,
+                const std::initializer_list<row::delta> &deltas)
+{
+	write(deltas, sopts);
+}
+
+inline void
+ircd::db::write(const std::initializer_list<row::delta> &deltas,
+                const sopts &sopts)
+{
+	write(std::begin(deltas), std::end(deltas), sopts);
+}
+
 inline ircd::db::cell &
 ircd::db::row::operator[](const size_t &i)
 {

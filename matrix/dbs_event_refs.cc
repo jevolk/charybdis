@@ -977,7 +977,7 @@ ircd::m::dbs::event_refs_key(const string_view &amalgam)
 ircd::string_view
 ircd::m::dbs::event_refs_key(const mutable_buffer &out,
                              const event::idx &tgt,
-                             const ref &type,
+                             const ref type,
                              const event::idx &src)
 {
 	assert((src & ref_mask) == 0);
@@ -1001,7 +1001,7 @@ ircd::m::dbs::event_refs_key(const mutable_buffer &out,
 //
 
 ircd::string_view
-ircd::m::dbs::reflect(const ref &type)
+ircd::m::dbs::reflect(const ref type)
 {
 	switch(type)
 	{

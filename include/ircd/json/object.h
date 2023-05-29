@@ -82,14 +82,14 @@ struct ircd::json::object
 	const_iterator end() const;
 	const_iterator begin() const;
 	const_iterator find(const string_view &key) const;
-	const_iterator find(const name_hash_t &key) const;
+	const_iterator find(const name_hash_t key) const;
 
 	// util
 	bool empty() const;
 	size_t count() const;
 	size_t size() const; // warns if used; use count()
 	bool has(const string_view &key) const;
-	bool has(const string_view &key, const enum json::type &) const; // false if not type
+	bool has(const string_view &key, const enum json::type) const; // false if not type
 
 	// returns value or default
 	template<class T> T get(const string_view &key, const T &def = T{}) const;
@@ -258,6 +258,13 @@ const try
 catch(const bad_lex_cast &e)
 {
 	return def;
+}
+
+inline bool
+ircd::json::object::has(const string_view &key)
+const
+{
+	return find(key) != end();
 }
 
 inline size_t

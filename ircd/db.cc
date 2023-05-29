@@ -1315,11 +1315,6 @@ noexcept
 // txn
 //
 
-ircd::db::txn::txn(database &d)
-:txn{d, opts{}}
-{
-}
-
 ircd::db::txn::txn(database &d,
                    const opts &opts)
 :d{&d}
@@ -1340,13 +1335,6 @@ ircd::db::txn::txn(database &d,
 ircd::db::txn::~txn()
 noexcept
 {
-}
-
-void
-ircd::db::txn::operator()(const sopts &opts)
-{
-	assert(bool(d));
-	operator()(*d, opts);
 }
 
 void
@@ -1502,36 +1490,6 @@ const
 	}});
 }
 
-ircd::db::txn::operator
-ircd::db::database &()
-{
-	assert(bool(d));
-	return *d;
-}
-
-ircd::db::txn::operator
-rocksdb::WriteBatch &()
-{
-	assert(bool(wb));
-	return *wb;
-}
-
-ircd::db::txn::operator
-const ircd::db::database &()
-const
-{
-	assert(bool(d));
-	return *d;
-}
-
-ircd::db::txn::operator
-const rocksdb::WriteBatch &()
-const
-{
-	assert(bool(wb));
-	return *wb;
-}
-
 //
 // txn::checkpoint
 //
@@ -1580,13 +1538,6 @@ ircd::db::txn::append::append(txn &t,
 			}
 		};
 	});
-}
-
-ircd::db::txn::append::append(txn &t,
-                              const delta &delta)
-{
-	assert(bool(t.d));
-	append(t, *t.d, delta);
 }
 
 __attribute__((noreturn))
@@ -1648,27 +1599,6 @@ ircd::db::del(row &row,
               const sopts &sopts)
 {
 	write(row::delta{op::DELETE, row}, sopts);
-}
-
-void
-ircd::db::write(const row::delta &delta,
-                const sopts &sopts)
-{
-	write(&delta, &delta + 1, sopts);
-}
-
-void
-ircd::db::write(const sopts &sopts,
-                const std::initializer_list<row::delta> &deltas)
-{
-	write(deltas, sopts);
-}
-
-void
-ircd::db::write(const std::initializer_list<row::delta> &deltas,
-                const sopts &sopts)
-{
-	write(std::begin(deltas), std::end(deltas), sopts);
 }
 
 void

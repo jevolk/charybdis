@@ -61,7 +61,7 @@ struct boost::spirit::qi::rule<const char *, T1, T2, T3, T4>
 	using parameter_types = typename spirit::detail::params_from_sig<sig_type>::type;
 	using parameter_types_size = typename fusion::result_of::size<parameter_types>::type;
 	using context_type = context<fusion::cons<attr_reference_type, parameter_types>, locals_type>;
-	using function_prototype = bool (Iterator &, const Iterator &, context_type &, const skipper_type &);
+	using function_prototype = bool (Iterator &, const Iterator, context_type &, const skipper_type &);
 	using function_type = function<function_prototype>;
 	using encoding_modifier_type = typename mpl::if_
 	<

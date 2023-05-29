@@ -920,7 +920,7 @@ ircd::vector_view<ircd::string_view>
 ircd::http::query::string::array(const mutable_buffer &buf,
                                  const string_view &key,
                                  string_view *const &out,
-                                 const size_t &max)
+                                 const size_t max)
 const
 {
 	if(unlikely(!max))
@@ -952,7 +952,7 @@ const
 
 ircd::string_view
 ircd::http::query::string::at(const string_view &key,
-                              const size_t &idx)
+                              const size_t idx)
 const
 {
 	const string_view &ret
@@ -980,13 +980,6 @@ const
 	}
 
 	return ret;
-}
-
-ircd::string_view
-ircd::http::query::string::operator[](const string_view &key)
-const
-{
-	return _get(key, 0);
 }
 
 ircd::string_view
@@ -1334,7 +1327,7 @@ ircd::http::status(const string_view &str)
 }
 
 ircd::string_view
-ircd::http::status(const enum code &code)
+ircd::http::status(const enum code code)
 noexcept try
 {
 	return reason.at(code);
@@ -1350,7 +1343,7 @@ catch(const std::out_of_range &e)
 }
 
 enum ircd::log::level
-ircd::http::severity(const enum category &category)
+ircd::http::severity(const enum category category)
 noexcept
 {
 	switch(category)
@@ -1385,7 +1378,7 @@ noexcept
 }
 
 enum ircd::http::category
-ircd::http::category(const enum code &code)
+ircd::http::category(const enum code code)
 noexcept
 {
 	if(ushort(code) == 0)
@@ -1413,7 +1406,7 @@ noexcept
 }
 
 ircd::string_view
-ircd::http::category(const enum category &category)
+ircd::http::category(const enum category category)
 noexcept
 {
 	switch(category)

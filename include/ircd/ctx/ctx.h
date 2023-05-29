@@ -41,7 +41,7 @@ namespace ircd::ctx
 	bool is_main_thread() noexcept;
 	void assert_main_thread();
 
-	const uint64_t &id(const ctx &) noexcept;          // Unique ID for context
+	uint64_t id(const ctx &) noexcept;                 // Unique ID for context
 	string_view name(const ctx &) noexcept;            // User's optional label for context
 	const uint32_t &flags(const ctx &) noexcept;       // Direct flags access
 	const int32_t &notes(const ctx &) noexcept;        // Peeks at internal semaphore count

@@ -49,28 +49,6 @@ ircd::m::vm::sequence::refresh::refresh()
 //
 
 uint64_t
-ircd::m::vm::sequence::min()
-{
-	const auto *const e
-	{
-		eval::seqmin()
-	};
-
-	return e? get(*e) : 0;
-}
-
-uint64_t
-ircd::m::vm::sequence::max()
-{
-	const auto *const e
-	{
-		eval::seqmax()
-	};
-
-	return e? get(*e) : 0;
-}
-
-uint64_t
 ircd::m::vm::sequence::get(id::event::buf &event_id)
 {
 	static constexpr auto column_idx
@@ -103,10 +81,4 @@ ircd::m::vm::sequence::get(id::event::buf &event_id)
 
 	event_id = it->second;
 	return ret;
-}
-
-const uint64_t &
-ircd::m::vm::sequence::get(const eval &eval)
-{
-	return eval.sequence;
 }

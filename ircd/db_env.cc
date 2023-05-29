@@ -1866,8 +1866,8 @@ noexcept
 }
 
 void
-ircd::db::database::env::writable_file::_allocate(const size_t &offset,
-                                                  const size_t &length)
+ircd::db::database::env::writable_file::_allocate(const size_t offset,
+                                                  const size_t length)
 {
 	const size_t first_block
 	{

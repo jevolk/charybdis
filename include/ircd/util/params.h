@@ -78,8 +78,7 @@ ircd::util::params::params(const string_view &in,
 :in{in}
 ,sep{sep}
 ,names{names}
-{
-}
+{}
 
 inline
 ircd::util::params::params(const string_view &in,
@@ -89,11 +88,10 @@ ircd::util::params::params(const string_view &in,
 ,prefix{sep.second}
 ,sep{sep.first}
 ,names{names}
-{
-}
+{}
 
 template<class T>
-T
+inline T
 ircd::util::params::at(const string_view &name,
                        const T &def)
 const try
@@ -107,7 +105,7 @@ catch(const bad_lex_cast &)
 }
 
 template<class T>
-T
+inline T
 ircd::util::params::at(const string_view &name)
 const try
 {
@@ -150,12 +148,12 @@ const
 }
 
 template<class T>
-T
+inline T
 ircd::util::params::at(const size_t &i,
                        const T &def)
 const try
 {
-	return count() > i? at<T>(i) : def;
+	return count() > i? at<T>(i): def;
 }
 catch(const bad_lex_cast &e)
 {
@@ -163,7 +161,7 @@ catch(const bad_lex_cast &e)
 }
 
 template<class T>
-T
+inline T
 ircd::util::params::at(const size_t &i)
 const try
 {
@@ -173,7 +171,9 @@ catch(const bad_lex_cast &e)
 {
 	throw invalid
 	{
-		"parameter #%zu <%s>", i, name(i)
+		"parameter #%zu <%s>",
+		i,
+		name(i),
 	};
 }
 
@@ -191,7 +191,7 @@ const
 		{
 			"required parameter #%zu <%s>",
 			i,
-			name(i)
+			name(i),
 		};
 
 	return ret;

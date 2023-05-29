@@ -15,7 +15,8 @@ struct txndata;
 struct txn;
 struct node;
 
-struct unit
+struct [[gnu::visibility("internal")]]
+unit
 :std::enable_shared_from_this<unit>
 {
 	enum type { PDU, EDU, FAILURE };
@@ -27,7 +28,8 @@ struct unit
 	unit(const m::event &event);
 };
 
-struct txndata
+struct [[gnu::visibility("internal")]]
+txndata
 {
 	std::string content;
 	string_view txnid;
@@ -39,7 +41,8 @@ struct txndata
 	{}
 };
 
-struct alignas(32_KiB) txn
+struct [[gnu::visibility("internal")]]
+alignas(32_KiB) txn
 :txndata
 ,m::fed::send
 {
@@ -62,7 +65,8 @@ static_assert
 	sizeof(struct txn) == 32_KiB
 );
 
-struct node
+struct [[gnu::visibility("internal")]]
+node
 {
 	std::deque<std::shared_ptr<unit>> q;
 	std::array<char, rfc3986::DOMAIN_BUFSIZE> rembuf;

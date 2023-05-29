@@ -408,7 +408,7 @@ ircd::fs::name_max_len(const string_view &path)
 
 long
 ircd::fs::pathconf(const string_view &path,
-                   const int &arg)
+                   const int arg)
 {
 	return syscall(::pathconf, path_cstr(path), arg);
 }

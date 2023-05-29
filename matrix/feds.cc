@@ -8,6 +8,7 @@
 // copyright notice and this permission notice is present in all copies. The
 // full license for this software is available in the LICENSE file.
 
+#pragma GCC visibility push(internal)
 namespace ircd::m::feds
 {
 	struct request_base;
@@ -30,6 +31,7 @@ namespace ircd::m::feds
 	static request_list keys(const opts &, const closure &);
 	static request_list send(const opts &, const closure &);
 }
+#pragma GCC visibility pop
 
 //
 // request_base
@@ -46,13 +48,8 @@ struct ircd::m::feds::request_base
 	{}
 
 	request_base() = default;
-	virtual ~request_base() noexcept;
+	virtual ~request_base() noexcept {}
 };
-
-ircd::m::feds::request_base::~request_base()
-noexcept
-{
-}
 
 //
 // request

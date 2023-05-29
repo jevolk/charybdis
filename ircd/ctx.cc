@@ -398,7 +398,7 @@ catch(const std::exception &e)
 
 /// Throws if this context has been flagged for interruption and clears
 /// the flag.
-[[gnu::visibility("hidden"), gnu::hot]]
+[[gnu::visibility("hidden")]]
 void
 ircd::ctx::ctx::interruption_point()
 {
@@ -418,7 +418,7 @@ ircd::ctx::ctx::interruption_point()
 /// Returns true if this context has been flagged for termination. Does not
 /// clear the flag. Sets the NOINTERRUPT flag so the context cannot be further
 // interrupted which simplifies the termination process.
-[[gnu::visibility("hidden"), gnu::hot]]
+[[gnu::visibility("hidden")]]
 bool
 ircd::ctx::ctx::termination_point(std::nothrow_t)
 noexcept
@@ -435,7 +435,7 @@ noexcept
 
 /// Returns true if this context has been flagged for interruption and
 /// clears the flag.
-[[gnu::visibility("hidden"), gnu::hot]]
+[[gnu::visibility("hidden")]]
 bool
 ircd::ctx::ctx::interruption_point(std::nothrow_t)
 noexcept
@@ -452,7 +452,7 @@ noexcept
 
 /// True if this context has been flagged for interruption or termination
 /// and interrupts are not blocked.
-[[gnu::visibility("hidden"), gnu::hot]]
+[[gnu::visibility("hidden")]]
 bool
 ircd::ctx::ctx::interruption()
 const noexcept
@@ -473,22 +473,6 @@ const noexcept
 		return false;
 
 	return true;
-}
-
-[[gnu::visibility("hidden"), gnu::hot]]
-bool
-ircd::ctx::ctx::started()
-const noexcept
-{
-	return stack.base != 0;
-}
-
-[[gnu::visibility("hidden"), gnu::hot]]
-bool
-ircd::ctx::ctx::finished()
-const noexcept
-{
-	return started() && yc == nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -691,7 +675,7 @@ bool
 ircd::ctx::started(const ctx &ctx)
 noexcept
 {
-	return ctx.started();
+	return ctx.stack.base != 0;
 }
 
 /// Indicates if the base frame for `ctx` returned
@@ -700,7 +684,7 @@ bool
 ircd::ctx::finished(const ctx &ctx)
 noexcept
 {
-	return ctx.finished();
+	return started(ctx) && ctx.yc == nullptr;
 }
 
 /// Returns the IO priority nice-value
@@ -750,7 +734,7 @@ noexcept
 
 /// Returns a reference to unique ID for `ctx` (which will go away with `ctx`)
 [[gnu::hot]]
-const uint64_t &
+uint64_t
 ircd::ctx::id(const ctx &ctx)
 noexcept
 {
@@ -875,14 +859,23 @@ ircd::ctx::this_ctx::interruption_point()
 	return cur().interruption_point();
 }
 
+/// View the name of the currently running context, or "*" if no context is
+/// currently running.
+[[gnu::hot]]
+ircd::string_view
+ircd::ctx::this_ctx::name()
+noexcept
+{
+	return current? name(cur()): "*"_sv;
+}
+
 /// Returns unique ID of currently running context
 [[gnu::hot]]
-const uint64_t &
+uint64_t
 ircd::ctx::this_ctx::id()
 noexcept
 {
-	static const uint64_t zero{0};
-	return current? id(cur()) : zero;
+	return current? id(cur()): 0UL;
 }
 
 //

@@ -245,8 +245,9 @@ catch(...)
 }
 
 [[gnu::hot]]
-const uint64_t &
+uint64_t
 ircd::net::id(const socket &socket)
+noexcept
 {
 	return socket.id;
 }

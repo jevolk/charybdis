@@ -20,9 +20,9 @@ namespace ircd::fs
 	ulong fstype(const fd &);
 	ulong device(const fd &);
 	uint64_t write_life(const fd &) noexcept;
-	void write_life(const fd &, const uint64_t &);
-	size_t advise(const fd &, const int &, const size_t & = 0, const opts & = opts_default);
-	size_t evict(const fd &, const size_t &size = 0, const opts & = opts_default);
+	void write_life(const fd &, const uint64_t);
+	size_t advise(const fd &, const int, const size_t = 0, const opts & = opts_default);
+	size_t evict(const fd &, const size_t size = 0, const opts & = opts_default);
 }
 
 /// File Desc++ptor. This is simply a native fd (i.e. integer) with c++ object
@@ -41,8 +41,8 @@ struct ircd::fs::fd
 
 	int release() noexcept;
 
-	explicit fd(const int &);
-	fd(const int &dirfd, const string_view &path, const opts &);
+	explicit fd(const int);
+	fd(const int dirfd, const string_view &path, const opts &);
 	fd(const string_view &path, const opts &);
 	fd(const string_view &path);
 	fd() = default;
@@ -94,6 +94,36 @@ struct ircd::fs::fd::opts
 	/// Advise for dontneed access (ignored when direct=true)
 	bool dontneed {false};
 };
+
+inline
+ircd::fs::fd::fd(const int fdno)
+:fdno{fdno}
+{}
+
+inline
+ircd::fs::fd::fd(fd &&o)
+noexcept
+:fdno{std::move(o.fdno)}
+{
+	o.fdno = -1;
+}
+
+inline ircd::fs::fd &
+ircd::fs::fd::operator=(fd &&o)
+noexcept
+{
+	this->~fd();
+	fdno = std::move(o.fdno);
+	o.fdno = -1;
+	return *this;
+}
+
+inline int
+ircd::fs::fd::release()
+noexcept
+{
+	return std::exchange(fdno, -1);
+}
 
 inline bool
 ircd::fs::fd::operator!()

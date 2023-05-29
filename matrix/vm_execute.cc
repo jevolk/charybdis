@@ -25,6 +25,7 @@ namespace ircd::m::vm
 	static void fini();
 	static void init();
 
+	#pragma GCC visibility push(internal)
 	extern hook::site<eval &> issue_hook;        ///< Called when this server is issuing event
 	extern hook::site<eval &> conform_hook;      ///< Called for static evaluations of event
 	extern hook::site<eval &> access_hook;       ///< Called for access control checking
@@ -44,6 +45,7 @@ namespace ircd::m::vm
 	extern stats::item<uint64_t> write_append_cycles;
 	extern stats::item<uint64_t> write_commit_count;
 	extern stats::item<uint64_t> write_commit_cycles;
+	#pragma GCC visibility pop
 }
 
 decltype(ircd::m::vm::log_commit_debug)
@@ -1198,14 +1200,9 @@ ircd::m::vm::write_commit(eval &eval)
 		eval.opts->wopts.sopts
 	};
 
-	const auto db_seq_before
-	{
-		#ifdef RB_DEBUG
-			db::sequence(*m::dbs::events)
-		#else
-			0UL
-		#endif
-	};
+	uint64_t db_seq[2] {0};
+	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
+		db_seq[0] = db::sequence(*m::dbs::events);
 
 	constexpr bool stats_enable {false};
 	const uint64_t cyc_before {write_commit_cycles};
@@ -1218,26 +1215,25 @@ ircd::m::vm::write_commit(eval &eval)
 		txn(sopts);
 	}
 
-	write_commit_count += bool(stats_enable);
-	const auto db_seq_after
+	size_t txn_bytes {0}, txn_size {0};
+	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
 	{
-		#ifdef RB_DEBUG
-			db::sequence(*m::dbs::events)
-		#else
-			0UL
-		#endif
-	};
+		db_seq[1] = db::sequence(*m::dbs::events);
+		txn_bytes = txn.bytes();
+		txn_size = txn.size();
+	}
 
+	write_commit_count += bool(stats_enable);
 	log::debug
 	{
 		log, "%s wrote %lu | db seq:%lu:%lu txn:%lu cells:%zu in bytes:%zu cycles:%lu to events database",
 		loghead(eval),
 		sequence::get(eval),
-		db_seq_before,
-		db_seq_after,
+		db_seq[0],
+		db_seq[1],
 		uint64_t(write_commit_count),
-		txn.size(),
-		txn.bytes(),
+		txn_size,
+		txn_bytes,
 		uint64_t(write_commit_cycles) - cyc_before,
 	};
 }

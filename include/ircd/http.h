@@ -23,14 +23,14 @@ namespace ircd::http
 	struct response;
 
 	enum code :ushort;
-	string_view status(const enum code &) noexcept;
 	enum code status(const string_view &);
+	[[gnu::pure]] string_view status(const enum code) noexcept;
 
 	enum class category :uint8_t;
-	string_view category(const enum category &) noexcept;
-	enum category category(const enum code &) noexcept;
-	enum category category(const string_view &) noexcept;
-	enum log::level severity(const enum category &) noexcept;
+	[[gnu::pure]] string_view category(const enum category) noexcept;
+	[[gnu::pure]] enum category category(const enum code) noexcept;
+	[[gnu::pure]] enum category category(const string_view &) noexcept;
+	[[gnu::pure]] enum log::level severity(const enum category) noexcept;
 
 	void writeline(window_buffer &);
 	void writeline(window_buffer &, const window_buffer::closure &);
@@ -232,10 +232,10 @@ struct ircd::http::query::string
 	template<class T = string_view> T get(const string_view &key, const T &def = {}, const size_t &idx = 0) const;
 	string_view operator[](const string_view &key) const;
 
-	string_view at(const string_view &key, const size_t &idx = 0) const;
+	string_view at(const string_view &key, const size_t idx = 0) const;
 	template<class T> T at(const string_view &key, const size_t &idx = 0) const;
 
-	vector_view<string_view> array(const mutable_buffer &, const string_view &key, string_view *const &, const size_t &) const;
+	vector_view<string_view> array(const mutable_buffer &, const string_view &key, string_view *const &, size_t) const;
 	template<size_t MAX> vector_view<string_view> array(const mutable_buffer &, const string_view &key, string_view (&)[MAX]) const;
 
 	size_t count(const string_view &key) const;
@@ -415,6 +415,13 @@ ircd::http::query::string::at(const string_view &key,
 const
 {
 	return lex_cast<T>(at(key, idx));
+}
+
+inline ircd::string_view
+ircd::http::query::string::operator[](const string_view &key)
+const
+{
+	return _get(key, 0);
 }
 
 template<class... args>

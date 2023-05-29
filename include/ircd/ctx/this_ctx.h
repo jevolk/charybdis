@@ -18,7 +18,7 @@ namespace ircd::ctx { inline namespace this_ctx
 	extern ios::descriptor courtesy_yield_desc;
 
 	struct ctx &cur() noexcept;                  ///< Assumptional reference to *current
-	const uint64_t &id() noexcept;               // Unique ID for cur ctx
+	uint64_t id() noexcept;                      // Unique ID for cur ctx
 	string_view name() noexcept;                 // Optional label for cur ctx
 	ulong cycles() noexcept;                     // misc profiling related
 
@@ -116,15 +116,6 @@ noexcept
 	const auto slice(prof::cur_slice_cycles());
 	const auto accumulated(cycles(cur()));
 	return accumulated + slice;
-}
-
-/// View the name of the currently running context, or "*" if no context is
-/// currently running.
-inline ircd::string_view
-ircd::ctx::this_ctx::name()
-noexcept
-{
-	return current? name(cur()) : "*"_sv;
 }
 
 /// Reference to the currently running context. Call if you expect to be in a
