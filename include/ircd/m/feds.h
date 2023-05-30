@@ -121,6 +121,7 @@ struct ircd::m::feds::opts
 	uint64_t argi[4];    // misc integer argv
 
 	/// Whether exceptions from the supplied result closure are propagated.
+	/// Note that interrupts and terminations are always propagated.
 	bool nothrow_closure {false};
 
 	/// When nothrow_closure is true, this determines whether or not to

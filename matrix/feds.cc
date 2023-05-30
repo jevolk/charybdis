@@ -386,6 +386,10 @@ ircd::m::feds::handler(request_list &reqs,
 			if(!call_user(closure, result))
 				return false;
 		}
+		catch(const ctx::interrupted &)
+		{
+			throw;
+		}
 		catch(const std::exception &)
 		{
 			if(!req.opts->closure_errors && !req.opts->nothrow_closure_retval)
@@ -415,6 +419,10 @@ ircd::m::feds::call_user(const closure &closure,
 try
 {
 	return closure(result);
+}
+catch(const ctx::interrupted &)
+{
+	throw;
 }
 catch(const std::exception &)
 {
@@ -472,6 +480,10 @@ ircd::m::feds::for_each_in_room(const opts &opts,
 				return create_closure(request, origin);
 			}));
 		}
+		catch(const ctx::interrupted &)
+		{
+			throw;
+		}
 		catch(const std::exception &)
 		{
 			if(!opts.closure_cached_errors)
@@ -512,6 +524,10 @@ ircd::m::feds::for_one(const string_view &origin,
 		{
 			return create_closure(request, origin);
 		}));
+	}
+	catch(const ctx::interrupted &e)
+	{
+		throw;
 	}
 	catch(const std::exception &e)
 	{
