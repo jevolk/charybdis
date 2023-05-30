@@ -18,9 +18,9 @@ namespace ircd::allocator
 
 struct ircd::allocator::scope
 {
-	using alloc_closure = std::function<void *(const size_t &)>;
-	using realloc_closure = std::function<void *(void *const &ptr, const size_t &)>;
-	using free_closure = std::function<void (void *const &ptr)>;
+	using alloc_closure = std::function<void *(size_t)>;
+	using realloc_closure = std::function<void *(void *ptr, size_t)>;
+	using free_closure = std::function<bool (void *ptr)>;
 
 	static void hook_init() noexcept;
 	static void hook_fini() noexcept;
@@ -37,3 +37,46 @@ struct ircd::allocator::scope
 	scope(scope &&) = delete;
 	~scope() noexcept;
 };
+
+inline
+ircd::allocator::scope::scope(alloc_closure ac,
+                              realloc_closure rc,
+                              free_closure fc)
+:theirs
+{
+	std::exchange(current, this)
+}
+,user_alloc
+{
+	std::move(ac)
+}
+,user_realloc
+{
+	std::move(rc)
+}
+,user_free
+{
+	std::move(fc)
+}
+{
+	// If an allocator::scope instance already exists somewhere
+	// up the stack, *current will already be set. We only install
+	// our global hook handlers at the first instance ctor and
+	// uninstall it after that first instance dtors.
+	if(!theirs)
+		hook_init();
+}
+
+inline
+ircd::allocator::scope::~scope()
+noexcept
+{
+	assert(current == this);
+	theirs = std::exchange(current, theirs);
+
+	// Reinstall the pre-existing hooks after our last scope instance
+	// has destructed (the first to have constructed). We know this when
+	// current becomes null.
+	if(!current)
+		hook_fini();
+}

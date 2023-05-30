@@ -529,49 +529,6 @@ const
 decltype(ircd::allocator::scope::current)
 ircd::allocator::scope::current;
 
-ircd::allocator::scope::scope(alloc_closure ac,
-                              realloc_closure rc,
-                              free_closure fc)
-:theirs
-{
-	current
-}
-,user_alloc
-{
-	std::move(ac)
-}
-,user_realloc
-{
-	std::move(rc)
-}
-,user_free
-{
-	std::move(fc)
-}
-{
-	// If an allocator::scope instance already exists somewhere
-	// up the stack, *current will already be set. We only install
-	// our global hook handlers at the first instance ctor and
-	// uninstall it after that first instance dtors.
-	if(!current)
-		hook_init();
-
-	current = this;
-}
-
-ircd::allocator::scope::~scope()
-noexcept
-{
-	assert(current);
-	current = theirs;
-
-	// Reinstall the pre-existing hooks after our last scope instance
-	// has destructed (the first to have constructed). We know this when
-	// current becomes null.
-	if(!current)
-		hook_fini();
-}
-
 void
 __attribute__((weak))
 ircd::allocator::scope::hook_init()
@@ -801,7 +758,14 @@ extern "C" [[gnu::weak]] void __real_free(void *ptr);
 extern "C" void *
 __wrap_malloc(size_t size)
 {
-	void *const &ptr(::__real_malloc(size));
+	void *ptr {nullptr};
+	if(ircd::allocator::scope::current)
+		if(likely(ircd::allocator::scope::current->user_alloc))
+			ptr = ircd::allocator::scope::current->user_alloc(size);
+
+	if(likely(!ptr))
+		ptr = ::__real_malloc(size);
+
 	if(unlikely(!ptr))
 		throw std::bad_alloc();
 
@@ -827,7 +791,14 @@ __wrap_calloc(size_t nmemb, size_t size)
 extern "C" void *
 __wrap_realloc(void *ptr, size_t size)
 {
-	void *const &ret(::__real_realloc(ptr, size));
+	void *ret {nullptr};
+	if(ircd::allocator::scope::current)
+		if(likely(ircd::allocator::scope::current->user_realloc))
+			ptr = ircd::allocator::scope::current->user_realloc(ptr, size);
+
+	if(likely(!ret))
+		ret = ::__real_realloc(ptr, size);
+
 	if(unlikely(!ret))
 		throw std::bad_alloc();
 
@@ -840,7 +811,13 @@ __wrap_realloc(void *ptr, size_t size)
 extern "C" void
 __wrap_free(void *ptr)
 {
-	__real_free(ptr);
+	bool hooked {false};
+	if(ircd::allocator::scope::current)
+		if(likely(ircd::allocator::scope::current->user_free))
+			hooked = ircd::allocator::scope::current->user_free(ptr);
+
+	if(likely(!hooked))
+		__real_free(ptr);
 
 	auto &this_thread(ircd::allocator::profile::this_thread);
 	this_thread.free_bytes += 0UL; //TODO: XXX
