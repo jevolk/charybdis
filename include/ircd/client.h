@@ -18,8 +18,8 @@ namespace ircd
 	const ipport &remote(const client &);
 	ipport local(const client &);
 
-	string_view loghead(const mutable_buffer &buf, const client &);
-	string_view loghead(const client &);
+	[[gnu::pure]] string_view loghead(const mutable_buffer &buf, const client &);
+	[[gnu::pure]] string_view loghead(const client &);
 }
 
 /// Remote party connecting to our daemon to make requests.

@@ -796,6 +796,7 @@ catch(const std::exception &e)
 	return true;
 }
 
+[[using gnu: pure, visibility("internal")]]
 ircd::string_view
 ircd::m::acquire::loghead()
 const

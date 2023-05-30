@@ -635,6 +635,7 @@ ircd::server::submit(const hostport &hostport,
 	peer.submit(request);
 }
 
+[[gnu::pure]]
 ircd::string_view
 ircd::server::loghead(const link &link,
                       const request &request)
@@ -643,6 +644,7 @@ ircd::server::loghead(const link &link,
 	return loghead(buf, link, request);
 }
 
+[[gnu::pure]]
 ircd::string_view
 ircd::server::loghead(const mutable_buffer &buf,
                       const link &link,
@@ -656,6 +658,7 @@ ircd::server::loghead(const mutable_buffer &buf,
 	};
 }
 
+[[gnu::pure]]
 ircd::string_view
 ircd::server::loghead(const request &request)
 {
@@ -663,6 +666,7 @@ ircd::server::loghead(const request &request)
 	return loghead(buf, request);
 }
 
+[[gnu::pure]]
 ircd::string_view
 ircd::server::loghead(const mutable_buffer &buf,
                       const request &request)
@@ -2290,6 +2294,7 @@ ircd::server::link::ops_read_discard
 	ticker + 7,  {{ "name", "ircd.server.link.ops.read.discard" }},
 };
 
+[[gnu::pure]]
 ircd::string_view
 ircd::server::loghead(const link &link)
 {
@@ -2297,6 +2302,7 @@ ircd::server::loghead(const link &link)
 	return loghead(buf, link);
 }
 
+[[gnu::pure]]
 ircd::string_view
 ircd::server::loghead(const mutable_buffer &buf,
                       const link &link)

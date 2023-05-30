@@ -827,6 +827,7 @@ ircd::magick::job_init(const string_view &text,
 		};
 }
 
+[[gnu::pure]]
 ircd::string_view
 ircd::magick::loghead(const job &job)
 {

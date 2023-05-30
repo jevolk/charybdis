@@ -18,10 +18,8 @@
 
 namespace ircd::net
 {
-	#pragma GCC visibility push(hidden)
-	string_view loghead(const mutable_buffer &, const acceptor_udp &);
-	string_view loghead(const acceptor_udp &);
-	#pragma GCC visibility pop
+	[[gnu::pure]] string_view loghead(const mutable_buffer &, const acceptor_udp &);
+	[[gnu::pure]] string_view loghead(const acceptor_udp &);
 }
 
 struct [[gnu::visibility("protected")]]

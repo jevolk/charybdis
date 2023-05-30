@@ -17,8 +17,8 @@ namespace ircd::m::vm
 
 	string_view evaluator(const eval &) noexcept;
 
-	string_view loghead(const mutable_buffer &, const eval &);
-	string_view loghead(const eval &);    // single tls buffer
+	[[gnu::pure]] string_view loghead(const mutable_buffer &, const eval &);
+	[[gnu::pure]] string_view loghead(const eval &);    // single tls buffer
 
 	const event *find_pdu(const eval &, const event::id &) noexcept;
 	eval *find_parent(const eval &, const ctx::ctx & = ctx::cur()) noexcept;

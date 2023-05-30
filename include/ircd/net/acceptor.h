@@ -18,10 +18,8 @@
 
 namespace ircd::net
 {
-	#pragma GCC visibility push(hidden)
-	string_view loghead(const mutable_buffer &, const acceptor &);
-	string_view loghead(const acceptor &);
-	#pragma GCC visibility pop
+	[[gnu::pure]] string_view loghead(const mutable_buffer &, const acceptor &);
+	[[gnu::pure]] string_view loghead(const acceptor &);
 }
 
 /// Implementation to net::listener. See listener.h for additional interface.

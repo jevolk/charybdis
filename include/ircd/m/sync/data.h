@@ -20,7 +20,7 @@ namespace ircd::m::sync
 {
 	struct data;
 
-	string_view loghead(const data &);
+	[[gnu::pure]] string_view loghead(const data &);
 
 	bool apropos(const data &, const event::idx &);
 	bool apropos(const data &, const event::id &);
