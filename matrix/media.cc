@@ -496,13 +496,13 @@ ircd::m::media::mxc::mxc(const string_view &server,
 	mediaid?: rsplit(server, '/').second
 }
 {
-	if(unlikely(empty(server)))
+	if(unlikely(empty(this->server)))
 		throw m::BAD_REQUEST
 		{
 			"Invalid MXC: missing server parameter."
 		};
 
-	if(unlikely(empty(mediaid)))
+	if(unlikely(empty(this->mediaid)))
 		throw m::BAD_REQUEST
 		{
 			"Invalid MXC: missing mediaid parameter."
@@ -519,13 +519,13 @@ ircd::m::media::mxc::mxc(const string_view &uri)
 	rsplit(uri, '/').second
 }
 {
-	if(unlikely(empty(server)))
+	if(unlikely(empty(this->server)))
 		throw m::BAD_REQUEST
 		{
 			"Invalid MXC: missing server parameter."
 		};
 
-	if(unlikely(empty(mediaid)))
+	if(unlikely(empty(this->mediaid)))
 		throw m::BAD_REQUEST
 		{
 			"Invalid MXC: missing mediaid parameter."
