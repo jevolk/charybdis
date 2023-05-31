@@ -39,6 +39,11 @@ namespace ircd::m::vm
 	extern conf::item<bool> log_commit_debug;
 	extern conf::item<bool> log_accept_debug;
 	extern conf::item<bool> log_accept_info;
+
+	extern stats::item<uint64_t> write_append_count;
+	extern stats::item<uint64_t> write_append_cycles;
+	extern stats::item<uint64_t> write_commit_count;
+	extern stats::item<uint64_t> write_commit_cycles;
 }
 
 decltype(ircd::m::vm::log_commit_debug)
@@ -124,6 +129,30 @@ ircd::m::vm::effect_hook
 	{ "name",        "vm.effect"  },
 	{ "exceptions",  false        },
 	{ "interrupts",  false        },
+};
+
+decltype(ircd::m::vm::write_append_count)
+ircd::m::vm::write_append_count
+{
+	{ "name", "ircd.m.vm.write.append.count" },
+};
+
+decltype(ircd::m::vm::write_append_cycles)
+ircd::m::vm::write_append_cycles
+{
+	{ "name", "ircd.m.vm.write.append.cycles" },
+};
+
+decltype(ircd::m::vm::write_commit_count)
+ircd::m::vm::write_commit_count
+{
+	{ "name", "ircd.m.vm.write.commit.count" },
+};
+
+decltype(ircd::m::vm::write_commit_cycles)
+ircd::m::vm::write_commit_cycles
+{
+	{ "name", "ircd.m.vm.write.commit.cycles" },
 };
 
 //
@@ -1153,26 +1182,6 @@ ircd::m::vm::retire(eval &eval,
 	sequence::retired = retire;
 }
 
-namespace ircd::m::vm
-{
-	[[gnu::visibility("internal")]]
-	extern stats::item<uint64_t>
-	write_commit_count,
-	write_commit_cycles;
-}
-
-decltype(ircd::m::vm::write_commit_cycles)
-ircd::m::vm::write_commit_cycles
-{
-	{ "name", "ircd.m.vm.write_commit.cycles" },
-};
-
-decltype(ircd::m::vm::write_commit_count)
-ircd::m::vm::write_commit_count
-{
-	{ "name", "ircd.m.vm.write_commit.count" },
-};
-
 void
 ircd::m::vm::write_commit(eval &eval)
 {
@@ -1198,9 +1207,10 @@ ircd::m::vm::write_commit(eval &eval)
 		#endif
 	};
 
+	constexpr bool stats_enable {false};
 	const uint64_t cyc_before {write_commit_cycles};
 	{
-		const prof::scope_cycles cycles
+		const prof::scope_cycles<stats_enable> cycles
 		{
 			write_commit_cycles
 		};
@@ -1208,7 +1218,7 @@ ircd::m::vm::write_commit(eval &eval)
 		txn(sopts);
 	}
 
-	++write_commit_count;
+	write_commit_count += bool(stats_enable);
 	const auto db_seq_after
 	{
 		#ifdef RB_DEBUG
@@ -1348,20 +1358,29 @@ ircd::m::vm::write_append(eval &eval,
 		wopts.appendix[dbs::appendix::ROOM_JOINED] && state_present && pass
 	);
 
-	const size_t wrote
+	size_t wrote {0};
+	constexpr bool stats_enable {false};
+	const uint64_t cyc_before {write_append_cycles};
 	{
-		dbs::write(txn, event, wopts)
-	};
+		const prof::scope_cycles<stats_enable> cycles
+		{
+			write_append_cycles
+		};
 
+		wrote = dbs::write(txn, event, wopts);
+	}
+
+	write_append_count += bool(stats_enable);
 	log::debug
 	{
-		log, "%s composed transaction wrote:%zu state:%b pres:%b prev:%lu @%ld",
+		log, "%s composed transaction %zu wrote:%zu state:%b pres:%b prev:%lu @%ld cycles:%zu",
 		loghead(eval),
 		wrote,
 		state_candidate,
 		state_present,
 		state_idx,
 		state_depth,
+		uint64_t(write_append_cycles) - cyc_before,
 	};
 }
 
