@@ -13331,12 +13331,19 @@ console_cmd__user__rooms(opt &out, const string_view &line)
 		user
 	};
 
-	rooms.for_each(membership, [&out]
+	rooms.for_each(membership, [&out, &user]
 	(const m::room &room, const string_view &membership)
 	{
-		out << room.room_id
-		    << " " << membership
-		    << std::endl;
+		const m::event::fetch event
+		{
+			std::nothrow, room.get("m.room.member", user.user_id)
+		};
+
+		out
+		<< std::setw(6) << std::right << membership
+		<< ' '
+		<< m::pretty_oneline(event)
+		<< std::endl;
 	});
 
 	return true;
