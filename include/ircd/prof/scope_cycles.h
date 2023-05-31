@@ -13,7 +13,8 @@
 
 namespace ircd::prof
 {
-	template<bool fenced = false>
+	template<bool enable = true,
+	         bool fenced = false>
 	struct scope_cycles;
 }
 
@@ -27,7 +28,8 @@ namespace ircd::prof
 /// is disabled by default so that permanent instances of this device are not
 /// interfering and don't require any templating.
 ///
-template<bool fenced>
+template<bool enable,
+         bool fenced>
 struct ircd::prof::scope_cycles
 {
 	uint64_t &result;
@@ -38,18 +40,19 @@ struct ircd::prof::scope_cycles
 	~scope_cycles() noexcept;
 };
 
-template<bool fenced>
+template<bool enable,
+         bool fenced>
 #ifdef __clang__
 inline //TODO: ???
 #else
 extern inline
 __attribute__((always_inline, gnu_inline, artificial))
 #endif
-ircd::prof::scope_cycles<fenced>::scope_cycles(uint64_t &result)
+ircd::prof::scope_cycles<enable, fenced>::scope_cycles(uint64_t &result)
 noexcept
 :result{result}
 {
-	if constexpr(fenced)
+	if constexpr(enable && fenced)
 	{
 		#if defined(__x86_64__) || defined(__i386__)
 		asm volatile ("mfence");
@@ -57,9 +60,10 @@ noexcept
 		#endif
 	}
 
-	started = cycles();
+	if constexpr(enable)
+		started = cycles();
 
-	if constexpr(fenced)
+	if constexpr(enable && fenced)
 	{
 		#if defined(__x86_64__) || defined(__i386__)
 		asm volatile ("lfence");
@@ -67,17 +71,18 @@ noexcept
 	}
 }
 
-template<bool fenced>
+template<bool enable,
+         bool fenced>
 #ifdef __clang__
 inline //TODO: ???
 #else
 extern inline
 __attribute__((always_inline, gnu_inline, artificial))
 #endif
-ircd::prof::scope_cycles<fenced>::~scope_cycles()
+ircd::prof::scope_cycles<enable, fenced>::~scope_cycles()
 noexcept
 {
-	if constexpr(fenced)
+	if constexpr(enable && fenced)
 	{
 		#if defined(__x86_64__) || defined(__i386__)
 		asm volatile ("mfence");
@@ -85,10 +90,13 @@ noexcept
 		#endif
 	}
 
-	const uint64_t stopped(cycles());
-	result += stopped - started;
+	if constexpr(enable)
+	{
+		const uint64_t stopped(cycles());
+		result += stopped - started;
+	}
 
-	if constexpr(fenced)
+	if constexpr(enable && fenced)
 	{
 		#if defined(__x86_64__) || defined(__i386__)
 		asm volatile ("lfence");
