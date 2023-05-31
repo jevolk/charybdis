@@ -193,24 +193,26 @@ ircd::m::vm::execute(eval &eval,
 		*eval.opts
 	};
 
-	const scope_restore start_time
-	{
-		eval.start, now<system_point>()
-	};
-
+	// There are no batch injections for now.
+	assert(!eval.copts || events.size() <= 1);
 	const scope_restore eval_pdus
 	{
 		eval.pdus, events
 	};
 
-	const scope_count executing
+	const scope_restore start_time
 	{
-		eval::executing
+		eval.start, now<system_point>()
 	};
 
 	const scope_restore eval_phase
 	{
 		eval.phase, phase::EXECUTE
+	};
+
+	const scope_count executing
+	{
+		eval::executing
 	};
 
 	const bool prefetch_keys
@@ -249,7 +251,7 @@ ircd::m::vm::execute(eval &eval,
 		// Bitset indicating which events already exist.
 		const uint64_t existing
 		{
-			!opts.replays?
+			!opts.replays && opts.phase[phase::DUPCHK]?
 				m::exists(vector_view<const id::event>(ids, j)):
 				0UL
 		};
@@ -266,6 +268,8 @@ ircd::m::vm::execute(eval &eval,
 				events[i + k]
 			};
 
+			assert(!eval.copts || my(event));
+			assert(!eval.copts || !exists);
 			const auto fault
 			{
 				!exists?
@@ -811,6 +815,7 @@ ircd::m::vm::execute_pdu(eval &eval,
 		};
 
 	// Check if an event with the same ID was already accepted.
+	assert(!eval.copts || my(event));
 	if(likely(opts.phase[phase::DUPCHK]))
 	{
 		const scope_restore eval_phase

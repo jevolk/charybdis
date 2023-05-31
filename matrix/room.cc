@@ -303,7 +303,16 @@ ircd::m::commit(const room &room,
 	opts.non_conform.set(event::conforms::MISMATCH_ORIGIN_SENDER);
 
 	// Don't need this here
+	opts.fetch = false;
+	opts.phase.reset(vm::phase::PREINDEX);
 	opts.phase.reset(vm::phase::VERIFY);
+	opts.phase.reset(vm::phase::AUTH_RELA);
+	opts.wopts.appendix.set(dbs::appendix::EVENT_HORIZON_RESOLVE, false);
+
+	// XXX Due to the invite-system quirk we still need dupchk; also applying
+	// this for any member event just in case there are other similar quirks.
+	if(event.has("type") && string_view(event.at("type")) != "m.room.member")
+		opts.phase.reset(vm::phase::DUPCHK);
 
 	return vm::eval
 	{

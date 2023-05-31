@@ -158,7 +158,8 @@ ircd::m::vm::conform_report
 				true:
 
 			// allowed by my server
-			eval.room_internal?
+			eval.room_internal
+			|| eval.copts?
 				true:
 
 			// allowed by options
