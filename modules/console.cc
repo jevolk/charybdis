@@ -4711,7 +4711,7 @@ _print_sst_info(opt &out,
 	    << "  " << std::setw(32) << std::left << (f.created? timef(tmbuf, f.created, ircd::localtime) : string_view{})
 	    << "  " << std::setw(1) << std::left << (!f.filter.empty()? 'F' : '-')
 	    <<         std::setw(1) << std::left << (f.delta_encoding? 'D' : '-')
-	    <<         std::setw(1) << std::left << (true? '-' : '-')
+	    <<         std::setw(1) << std::left << ((true)? '-' : '-')
 	    << "  " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << f.compression_pct << '%'
 	    << "  " << std::setw(5) << std::left << trunc(f.compression, 5)
 	    << "  " << std::setw(24) << std::left << pretty(pbuf, iec(f.size))
@@ -8278,7 +8278,7 @@ console_cmd__events__refs(opt &out, const string_view &line)
 	};
 
 	if(type != m::dbs::ref(-1))
-		for(; uint8_t(type) < sizeof(m::dbs::ref) * 256; type = m::dbs::ref(uint8_t(type) + 1))
+		for(; uint8_t(type) < 255U; type = m::dbs::ref(uint8_t(type) + 1))
 			if(reflect(type) == typestr)
 				break;
 
@@ -9001,7 +9001,7 @@ console_cmd__event__refs(opt &out, const string_view &line)
 	};
 
 	if(!empty(typestr))
-		for(; uint8_t(type) < sizeof(m::dbs::ref) * 256; type = m::dbs::ref(uint8_t(type) + 1))
+		for(; uint8_t(type) < 255U; type = m::dbs::ref(uint8_t(type) + 1))
 			if(reflect(type) == typestr)
 				break;
 
@@ -9069,7 +9069,7 @@ console_cmd__event__refs__count(opt &out, const string_view &line)
 	};
 
 	if(!empty(typestr))
-		for(; uint8_t(type) < sizeof(m::dbs::ref) * 256; type = m::dbs::ref(uint8_t(type) + 1))
+		for(; uint8_t(type) < 255U; type = m::dbs::ref(uint8_t(type) + 1))
 			if(reflect(type) == typestr)
 				break;
 
