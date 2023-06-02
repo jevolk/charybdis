@@ -10024,6 +10024,45 @@ console_cmd__room__head__fetch(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__room__head__fetch__add(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"room_id"
+	}};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::room room
+	{
+		room_id
+	};
+
+	m::room::head::fetch::opts opts;
+	opts.room_id = room_id;
+	opts.existing = true;
+	m::room::head::fetch fetch
+	{
+		opts, [&out](const m::event &result)
+		{
+			const m::event::refs refs
+			{
+				m::index(std::nothrow, result.event_id)
+			};
+
+			m::room::head::modify(result.event_id, db::op::SET, true);
+			out << "Added " << result.event_id << " to head " << std::endl;
+			return true;
+		}
+	};
+
+	return true;
+}
+
+bool
 console_cmd__room__sounding(opt &out, const string_view &line)
 {
 	const params param{line, " ",
