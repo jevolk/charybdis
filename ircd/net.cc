@@ -284,6 +284,11 @@ try
 		std::bind(&socket::handle_write, &socket, weak_from(socket), std::move(callback), ph::_1, ph::_2)
 	};
 
+	auto candle
+	{
+		asio::bind_cancellation_slot(socket.cancel_write.slot(), ios::handle(desc, std::move(handle)))
+	};
+
 	assert(!socket::this_sock);
 	const scope_restore desc_sock
 	{
@@ -291,9 +296,9 @@ try
 	};
 
 	if(socket.ssl)
-		asio::async_write(*socket.ssl, bufs, ios::handle(desc, std::move(handle)));
+		asio::async_write(*socket.ssl, bufs, candle);
 	else
-		asio::async_write(socket.sd, bufs, ios::handle(desc, std::move(handle)));
+		asio::async_write(socket.sd, bufs, candle);
 }
 catch(const boost::system::system_error &e)
 {
@@ -319,6 +324,11 @@ try
 		std::bind(&socket::handle_write, &socket, weak_from(socket), std::move(callback), ph::_1, ph::_2)
 	};
 
+	auto candle
+	{
+		asio::bind_cancellation_slot(socket.cancel_write.slot(), ios::handle(desc, std::move(handle)))
+	};
+
 	assert(!socket::this_sock);
 	const scope_restore desc_sock
 	{
@@ -326,9 +336,9 @@ try
 	};
 
 	if(socket.ssl)
-		socket.ssl->async_write_some(bufs, ios::handle(desc, std::move(handle)));
+		socket.ssl->async_write_some(bufs, candle);
 	else
-		socket.sd.async_write_some(bufs, ios::handle(desc, std::move(handle)));
+		socket.sd.async_write_some(bufs, candle);
 }
 catch(const boost::system::system_error &e)
 {

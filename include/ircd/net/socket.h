@@ -83,6 +83,7 @@ ircd::net::socket
 	unique_mutable_buffer desc_buf_wait[4];      // desc_wait's alloc
 	unique_mutable_buffer desc_buf_write;        // desc_write's alloc
 	unique_mutable_buffer desc_buf_read;         // desc_read's alloc
+	asio::cancellation_signal cancel_write;      // for cb interface
 
 	static void *desc_alloc(ios::handler &, const size_t &, unique_mutable_buffer &);
 	static void desc_dealloc(ios::handler &, void *const &, const size_t &) noexcept;

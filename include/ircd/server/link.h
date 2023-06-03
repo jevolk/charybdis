@@ -56,7 +56,7 @@ struct ircd::server::link
 	void handle_readable(const error_code &) noexcept;
 	void wait_readable();
 
-	void handle_write_async(tag &, const std::error_code &, const size_t);
+	void handle_write_async(tag &, uint64_t, const std::error_code &, size_t);
 	bool process_write_async(tag &, const const_buffers &);
 	bool process_write_nbio(tag &, const const_buffers &);
 	void handle_writable_success();

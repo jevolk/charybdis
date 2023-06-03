@@ -38,6 +38,7 @@ struct ircd::server::tag
 		size_t content_length {0};     // fixed; or grows monotonic for chunked enc
 		size_t chunk_read {0};         // content read after last chunk head
 		size_t chunk_length {0};       // -1 for chunk header mode
+		std::weak_ptr<net::socket> sp; // for cancellation
 		http::code status {(http::code)0};
 	}
 	state;
@@ -129,4 +130,67 @@ noexcept
 		disassociate(*request, *this);
 
 	assert(!request);
+}
+
+inline bool
+ircd::server::tag::abandoned()
+const
+{
+	if(!p.valid())
+		return true;
+
+	assert(p.st);
+	assert(is(p.state(), ctx::future_state::PENDING));
+	return false;
+}
+
+inline bool
+ircd::server::tag::canceled()
+const
+{
+	return !!cancellation;
+}
+
+inline bool
+ircd::server::tag::committed()
+const
+{
+	return write_completed() > 0 || !state.sp.expired();
+}
+
+inline size_t
+ircd::server::tag::read_remaining()
+const
+{
+	assert(read_size() >= read_completed());
+	return read_size() - read_completed();
+}
+
+inline size_t
+ircd::server::tag::read_completed()
+const
+{
+	return state.head_read + state.content_read;
+}
+
+inline size_t
+ircd::server::tag::read_size()
+const
+{
+	return state.head_read + state.content_length;
+}
+
+inline size_t
+ircd::server::tag::write_remaining()
+const
+{
+	assert(write_size() >= write_completed());
+	return write_size() - write_completed();
+}
+
+inline size_t
+ircd::server::tag::write_completed()
+const
+{
+	return state.written;
 }

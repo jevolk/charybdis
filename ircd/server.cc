@@ -585,12 +585,13 @@ ircd::server::cancel(request &request)
 
 	log::debug
 	{
-		request::log[1], "%s cancel commit:%d w:%zu hr:%zu cr:%zu",
+		request::log[1], "%s cancel commit:%b wrote[%zu/%zu] read[head:%zu cont:%zu]",
 		loghead(request),
 		tag.committed(),
-		tag.state.written,
+		tag.write_completed(),
+		tag.write_size(),
 		tag.state.head_read,
-		tag.state.content_read
+		tag.state.content_read,
 	};
 
 	tag.set_exception<canceled>("Request canceled");
@@ -676,7 +677,11 @@ try
 		return "<no head>";
 
 	if(request.tag && request.tag->canceled())
-		return "<canceled; out data is gone>";
+		return fmt::sprintf
+		{
+			buf, "<tag:%lu canceled; out data is gone>",
+			request.tag->state.id,
+		};
 
 	const http::request::head head
 	{
@@ -1292,7 +1297,6 @@ ircd::server::peer::handle_error(link &link,
                                  std::exception_ptr eptr)
 {
 	assert(bool(eptr));
-	link.cancel_committed(eptr);
 	log::derror
 	{
 		log, "%s :%s",
@@ -1300,6 +1304,7 @@ ircd::server::peer::handle_error(link &link,
 		what(eptr)
 	};
 
+	link.cancel_committed(eptr);
 	link.close(net::dc::RST);
 }
 
@@ -2580,9 +2585,11 @@ ircd::server::link::wait_writable()
 		std::bind(&link::handle_writable, this, ph::_1)
 	};
 
+	assert(!op_write);
 	op_write = true;
 	const unwind_exceptional unhandled{[this]
 	{
+		assert(op_write);
 		op_write = false;
 	}};
 
@@ -2680,7 +2687,7 @@ ircd::server::link::handle_writable_success()
 		{
 			log::debug
 			{
-				log, "%s closing to interrupt canceled committed tag:%lu of %zu",
+				log, "%s closing to interrupt write of canceled tag:%lu of %zu",
 				loghead(*this),
 				tag.state.id,
 				tag_count()
@@ -2775,14 +2782,23 @@ ircd::server::link::process_write_async(tag &tag,
 
 	assert(!op_write);
 	op_write = true;
-	const unwind_exceptional unable{[this]
+
+	if(tag.state.sp.expired())
 	{
+		assert(!tag.committed());
+		assert(socket->cancel_write.slot().is_connected());
+		tag.state.sp = weak_from(*socket);
+	}
+
+	const unwind_exceptional unable{[this, &tag, &buffers]
+	{
+		assert(op_write);
 		op_write = false;
 	}};
 
 	auto handler
 	{
-		std::bind(&link::handle_write_async, this, std::ref(tag), ph::_1, ph::_2)
+		std::bind(&link::handle_write_async, this, std::ref(tag), tag.state.id, ph::_1, ph::_2)
 	};
 
 	ops_write_async++;
@@ -2792,12 +2808,40 @@ ircd::server::link::process_write_async(tag &tag,
 
 void
 ircd::server::link::handle_write_async(tag &tag,
+                                       const uint64_t tag_id,
                                        const error_code &ec,
                                        const size_t wrote)
 {
 	assert(op_write);
 	op_write = false;
 	write_ts = time<seconds>();
+
+	// tag might have gone away prior to callback
+	const bool tag_ok
+	{
+		!op_fini
+		&& !queue.empty()
+		&& queue.front().state.id == tag_id
+	};
+
+	bool more{false}, done{false};
+	if(likely(tag_ok && tag.request))
+	{
+		tag.wrote(wrote);
+		if(!tag.write_remaining())
+		{
+			assert(!tag.state.sp.expired());
+			tag.state.sp.reset();
+			done |= true;
+		}
+	}
+
+	assert(tag_committed() <= tag_commit_max());
+	more |= tag_uncommitted();
+	more |= !done;
+
+	assert(peer);
+	peer->write_bytes += wrote;
 
 	if(unlikely(finished()))
 	{
@@ -2808,31 +2852,10 @@ ircd::server::link::handle_write_async(tag &tag,
 	if(ec)
 	{
 		assert(peer);
-		assert(!wrote);
 		assert(ec != std::errc::resource_unavailable_try_again);
 		peer->handle_error(*this, ec);
 		return;
 	}
-
-	// tag might have gone away prior to callback
-	const bool tag_ok
-	{
-		!op_fini && !queue.empty()
-	};
-
-	bool more{false}, done{false};
-	if(likely(tag_ok && tag.request))
-	{
-		tag.wrote(wrote);
-		done = !tag.write_remaining();
-	}
-
-	assert(tag_committed() <= tag_commit_max());
-	more |= tag_uncommitted();
-	more |= !done;
-
-	assert(peer);
-	peer->write_bytes += wrote;
 
 	if(done)
 		wait_readable();
@@ -2968,7 +2991,7 @@ try
 	{
 		log::debug
 		{
-			log, "%s closing to interrupt canceled committed tag:%lu of %zu",
+			log, "%s closing to interrupt read of canceled tag:%lu of %zu",
 			loghead(*this),
 			tag.state.id,
 			tag_count()
@@ -3315,6 +3338,13 @@ noexcept
 	assert(tag.request == &request);
 	assert(!tag.cancellation);
 
+	// Async (io_uring) mode; in the middle of writing.
+	if(!tag.state.sp.expired())
+	{
+		const auto socket(tag.state.sp.lock());
+		socket->cancel_write.emit(asio::cancellation_type::terminal);
+	}
+
 	// The cancellation is a straightforward facsimile except in the case of
 	// dynamic chunked encoding mode where we need to add additional scratch.
 	assert(tag.state.head_read <= size(request.in.head));
@@ -3385,16 +3415,16 @@ noexcept
 
 	// If the head is not completely written we have to copy the remainder from where
 	// the socket left off.
-	if(tag.state.written < size(request.out.head))
+	if(tag.write_completed() < size(request.out.head))
 	{
 		const const_buffer src
 		{
-			request.out.head + tag.state.written
+			request.out.head + tag.write_completed()
 		};
 
 		const mutable_buffer dst
 		{
-			out_head + tag.state.written
+			out_head + tag.write_completed()
 		};
 
 		copy(dst, src);
@@ -3404,7 +3434,8 @@ noexcept
 	// the socket left off.
 	const size_t content_written
 	{
-		tag.state.written > size(request.out.head)? tag.state.written - size(request.out.head) : 0
+		tag.write_completed() > size(request.out.head)?
+			tag.write_completed() - size(request.out.head): 0
 	};
 
 	if(content_written < size(request.out.content))
@@ -3565,7 +3596,7 @@ ircd::server::tag::wrote(size_t bytes)
 {
 	assert(request);
 	const auto &req{*request};
-	assert(write_remaining() <= bytes);
+	assert(bytes <= write_remaining());
 
 	if(state.written < size(req.out.head))
 	{
@@ -5022,7 +5053,7 @@ size_t
 ircd::server::tag::write_completed()
 const
 {
-	return state.written;
+	return state.written + state.writing;
 }
 
 size_t
