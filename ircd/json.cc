@@ -214,11 +214,19 @@ namespace ircd::json::parser
 
 	template<class gen,
 	         class... attr>
-	static bool parse(const char *&start, const char *const &stop, gen&&, attr&&...);
+	static bool parse(std::nothrow_t , const char *&, const char *const &, gen&&, attr&&...);
 
 	template<class gen,
 	         class... attr>
-	static bool parse(const char *const &start, const char *const &stop, gen&&, attr&&...);
+	static bool parse(std::nothrow_t, const char *const &, const char *const &, gen&&, attr&&...);
+
+	template<class gen,
+	         class... attr>
+	static bool parse(const char *&, const char *const &, gen&&, attr&&...);
+
+	template<class gen,
+	         class... attr>
+	static bool parse(const char *const &, const char *const &, gen&&, attr&&...);
 }
 
 namespace ircd::json::printer
@@ -435,6 +443,38 @@ ircd::json::parser::parse(const char *&start,
 	#endif
 
 	return ircd::parse<parse_error>(start, stop, std::forward<gen>(g), std::forward<attr>(a)...);
+}
+
+template<class gen,
+         class... attr>
+[[gnu::always_inline]]
+inline bool
+ircd::json::parser::parse(std::nothrow_t,
+                          const char *const &start_,
+                          const char *const &stop,
+                          gen&& g,
+                          attr&&...a)
+{
+	const char *start(start_);
+	return parser::parse(std::nothrow, start, stop, std::forward<gen>(g), std::forward<attr>(a)...);
+}
+
+template<class gen,
+         class... attr>
+[[gnu::always_inline]]
+inline bool
+ircd::json::parser::parse(std::nothrow_t,
+                          const char *&start,
+                          const char *const &stop,
+                          gen&& g,
+                          attr&&...a)
+{
+	#ifdef IRCD_JSON_PARSER_STATS
+	++stats.parse_calls;
+	const prof::scope_cycles timer{stats.parse_cycles};
+	#endif
+
+	return ircd::parse(std::nothrow, start, stop, std::forward<gen>(g), std::forward<attr>(a)...);
 }
 
 /// The input covers everything from the alleged start of our alleged string
@@ -2604,6 +2644,7 @@ ircd::json::object::const_iterator
 ircd::json::object::find(const name_hash_t &key)
 const
 {
+	assert(key != 0);
 	return std::find_if(begin(), end(), [&key]
 	(const auto &member)
 	{
@@ -2615,6 +2656,7 @@ ircd::json::object::const_iterator
 ircd::json::object::find(const string_view &key)
 const
 {
+	assert(ircd::defined(key));
 	return std::find_if(begin(), end(), [&key]
 	(const auto &member)
 	{
@@ -4582,16 +4624,22 @@ ircd::json::operator==(const value &a, const value &b)
 
 namespace ircd::json::parser
 {
-	const expr validation
+	const expr validate
 	{
 		value(0) >> ws >> eoi
+		,"validate"
+	};
+
+	const expr validation
+	{
+		&validate
 		,"validation"
 	};
 
 	const expr validation_expect
 	{
-		expect[validation]
-		,"valid expectation"
+		expect[validate]
+		,"validation expectation"
 	};
 }
 
@@ -4629,15 +4677,10 @@ catch(const std::exception &e)
 bool
 ircd::json::valid(const string_view &s,
                   std::nothrow_t)
-noexcept try
+noexcept
 {
 	const char *start(begin(s)), *const stop(end(s));
-	return parser::parse(start, stop, parser::validation);
-}
-catch(...)
-{
-	assert(false);
-	return false;
+	return parser::parse(std::nothrow, start, stop, parser::validation);
 }
 
 void
@@ -4771,9 +4814,10 @@ ircd::json::type(const string_view &buf,
                  const enum type type)
 noexcept
 {
+	assert(uint(type) < 5);
 	const bool ret
 	{
-		parser::parse(begin(buf), end(buf), parser::type_parse_is[type])
+		parser::parse(std::nothrow, begin(buf), end(buf), parser::type_parse_is[type])
 	};
 
 	return ret;
@@ -4798,7 +4842,7 @@ ircd::json::type(const string_view &buf,
 noexcept
 {
 	enum type ret;
-	if(!parser::parse(begin(buf), end(buf), parser::type_parse, ret))
+	if(!parser::parse(std::nothrow, begin(buf), end(buf), parser::type_parse, ret))
 		return STRING;
 
 	return ret;
@@ -4862,9 +4906,10 @@ ircd::json::type(const string_view &buf,
                  strict_t)
 noexcept
 {
+	assert(uint(type) < 5);
 	const bool ret
 	{
-		parser::parse(begin(buf), end(buf), parser::type_parse_is_strict[type])
+		parser::parse(std::nothrow, begin(buf), end(buf), parser::type_parse_is_strict[type])
 	};
 
 	return ret;
@@ -4891,7 +4936,7 @@ ircd::json::type(const string_view &buf,
 noexcept
 {
 	enum type ret;
-	if(!parser::parse(begin(buf), end(buf), parser::type_parse_strict, ret))
+	if(!parser::parse(std::nothrow, begin(buf), end(buf), parser::type_parse_strict, ret))
 		return STRING;
 
 	return ret;

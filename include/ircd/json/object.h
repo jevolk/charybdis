@@ -119,6 +119,7 @@ inline T
 ircd::json::at(const object &object)
 try
 {
+	assert(key != 0);
 	const auto it
 	{
 		object.find(key)
@@ -147,6 +148,7 @@ inline T
 ircd::json::object::at(const string_view &key)
 const try
 {
+	assert(ircd::defined(key));
 	const auto it
 	{
 		find(key)
@@ -176,6 +178,7 @@ ircd::json::object::at(const string_view &key,
                        const enum json::type &type)
 const try
 {
+	assert(ircd::defined(key));
 	const auto it
 	{
 		find(key)
