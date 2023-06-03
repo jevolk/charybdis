@@ -117,13 +117,13 @@ ircd::fmt::specifier
 {
 	static std::map<string_view, const specifier *, std::less<>> registry;
 
-	std::set<std::string> names;
+	std::set<string_view> names;
 
   public:
 	virtual bool operator()(char *&out, const size_t &max, const spec &, const arg &) const = 0;
 
-	specifier(const std::initializer_list<std::string> &names);
-	specifier(const std::string &name);
+	specifier(const std::initializer_list<string_view> &names);
+	specifier(const string_view &name);
 	virtual ~specifier() noexcept;
 
 	static bool exists(const string_view &name);
@@ -155,7 +155,7 @@ ircd::fmt::string_specifier
 }
 const ircd::fmt::string_specifier
 {
-	"s"s
+	"s"_sv
 };
 
 decltype(ircd::fmt::string_specifier::types)
@@ -181,7 +181,7 @@ ircd::fmt::bool_specifier
 }
 const ircd::fmt::bool_specifier
 {
-	{ "b"s }
+	{ "b"_sv }
 };
 
 decltype(ircd::fmt::bool_specifier::types)
@@ -207,7 +207,7 @@ ircd::fmt::signed_specifier
 }
 const ircd::fmt::signed_specifier
 {
-	{ "d"s, "ld"s, "zd"s }
+	{ "d"_sv, "ld"_sv, "zd"_sv }
 };
 
 decltype(ircd::fmt::signed_specifier::types)
@@ -233,7 +233,7 @@ ircd::fmt::unsigned_specifier
 }
 const ircd::fmt::unsigned_specifier
 {
-	{ "u"s, "lu"s, "zu"s }
+	{ "u"_sv, "lu"_sv, "zu"_sv }
 };
 
 struct [[gnu::visibility("hidden")]]
@@ -256,7 +256,7 @@ ircd::fmt::hex_lowercase_specifier
 }
 const ircd::fmt::hex_lowercase_specifier
 {
-	{ "x"s, "lx"s }
+	{ "x"_sv, "lx"_sv }
 };
 
 decltype(ircd::fmt::hex_lowercase_specifier::types)
@@ -282,7 +282,7 @@ ircd::fmt::hex_uppercase_specifier
 }
 const ircd::fmt::hex_uppercase_specifier
 {
-	{ "X"s, "lX"s }
+	{ "X"_sv, "lX"_sv }
 };
 
 decltype(ircd::fmt::hex_uppercase_specifier::types)
@@ -311,7 +311,7 @@ ircd::fmt::float_specifier
 }
 const ircd::fmt::float_specifier
 {
-	{ "f"s, "lf"s }
+	{ "f"_sv, "lf"_sv }
 };
 
 decltype(ircd::fmt::float_specifier::types)
@@ -326,7 +326,7 @@ ircd::fmt::char_specifier
 }
 const ircd::fmt::char_specifier
 {
-	"c"s
+	"c"_sv
 };
 
 struct [[gnu::visibility("hidden")]]
@@ -338,7 +338,7 @@ ircd::fmt::pointer_specifier
 }
 const ircd::fmt::pointer_specifier
 {
-	"p"s
+	"p"_sv
 };
 
 //
@@ -473,12 +473,12 @@ const noexcept
 // fmt::specifier
 //
 
-ircd::fmt::specifier::specifier(const std::string &name)
+ircd::fmt::specifier::specifier(const string_view &name)
 :specifier{{name}}
 {
 }
 
-ircd::fmt::specifier::specifier(const std::initializer_list<std::string> &names)
+ircd::fmt::specifier::specifier(const std::initializer_list<string_view> &names)
 :names{names}
 {
 	for(const auto &name : this->names)
@@ -499,13 +499,13 @@ noexcept
 		registry.erase(name);
 }
 
-bool
+inline bool
 ircd::fmt::specifier::exists(const string_view &name)
 {
 	return registry.count(name);
 }
 
-const ircd::fmt::specifier &
+inline const ircd::fmt::specifier &
 ircd::fmt::specifier::at(const string_view &name)
 {
 	return *registry.at(name);
