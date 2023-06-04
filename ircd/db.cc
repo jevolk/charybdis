@@ -1791,8 +1791,6 @@ ircd::db::seek(row &r,
 		// Explicit option to prevent submitting must not be set. If there
 		// is a chance the data is already in the cache, we can avoid the
 		// context switching and occupation of the request pool.
-		//TODO: should check a bloom filter on the cache for this branch
-		//TODO: because right now double-querying the cache is gross.
 		const bool submit
 		{
 			r.size() > 1 &&
@@ -4986,7 +4984,9 @@ ircd::db::_seek(const vector_view<_read_op> &op,
 		timer = {};
 
 	#ifdef IRCD_DB_HAS_MULTIGET_BATCHED
-	d.d->MultiGet(ropts, num, cf, key, val.data(), ret.data());
+		d.d->MultiGet(ropts, num, cf, key, val.data(), ret.data());
+	#else
+		always_assert(false);
 	#endif
 
 	if constexpr(RB_DEBUG_DB_SEEK)
