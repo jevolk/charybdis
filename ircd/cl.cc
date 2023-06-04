@@ -2224,6 +2224,7 @@ ircd::cl::data::gart_page_size
 ircd::cl::data::data(const size_t size,
                      const bool host_read,
                      const bool host_write)
+try
 {
 	if(!size)
 		return;
@@ -2260,9 +2261,26 @@ ircd::cl::data::data(const size_t size,
 	primary_stats.alloc_count += 1;
 	primary_stats.alloc_bytes += size;
 }
+catch(const std::exception &e)
+{
+	char pbuf[48];
+	log::debug
+	{
+		log, "data(%p) device %s %lu@ host[read:%b write:%b] :%s",
+		this,
+		pretty(pbuf, iec(size)),
+		alignment(size),
+		host_read,
+		host_write,
+		e.what(),
+	};
+
+	throw;
+}
 
 ircd::cl::data::data(const mutable_buffer &buf,
                      const bool wonly)
+try
 {
 	const auto &ptr
 	{
@@ -2311,8 +2329,26 @@ ircd::cl::data::data(const mutable_buffer &buf,
 	primary_stats.alloc_count += 1;
 	primary_stats.alloc_bytes += size;
 }
+catch(const std::exception &e)
+{
+	char pbuf[48];
+	log::error
+	{
+		log, "data(%p) mutable %p %lu@ %s %lu@ wonly:%b :%s",
+		this,
+		ircd::data(buf),
+		alignment(ircd::data(buf)),
+		pretty(pbuf, iec(ircd::size(buf))),
+		alignment(ircd::size(buf)),
+		wonly,
+		e.what(),
+	};
+
+	throw;
+}
 
 ircd::cl::data::data(const const_buffer &buf)
+try
 {
 	const auto &ptr
 	{
@@ -2360,9 +2396,26 @@ ircd::cl::data::data(const const_buffer &buf)
 	primary_stats.alloc_count += 1;
 	primary_stats.alloc_bytes += size;
 }
+catch(const std::exception &e)
+{
+	char pbuf[48];
+	log::error
+	{
+		log, "data(%p) immutable %p %lu@ %s %lu@ :%s",
+		this,
+		ircd::data(buf),
+		alignment(ircd::data(buf)),
+		pretty(pbuf, iec(ircd::size(buf))),
+		alignment(ircd::size(buf)),
+		e.what(),
+	};
+
+	throw;
+}
 
 ircd::cl::data::data(data &master,
                      const pair<size_t, off_t> &slice)
+try
 {
 	constexpr auto type
 	{
@@ -2412,6 +2465,20 @@ ircd::cl::data::data(data &master,
 	);
 
 	throw_on_error(err);
+}
+catch(const std::exception &e)
+{
+	log::error
+	{
+		log, "data(%p) master(%p) size:%zu off:%zd :%s",
+		this,
+		&master,
+		slice.first,
+		slice.second,
+		e.what(),
+	};
+
+	throw;
 }
 
 ircd::cl::data::~data()
