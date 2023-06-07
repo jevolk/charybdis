@@ -357,6 +357,7 @@ endif
 if CLANG
 if OPENCL
 
+GPU_CC = $(CC)
 GPU_OPT = ${LLVM_OPT}
 GPU_LINK = ${LLVM_LINK}
 GPU_SPIRV = ${LLVM_SPIRV}
@@ -421,7 +422,7 @@ SPV_CFLAGS += -target spir--
 
 BUILT_SOURCES += gpt_gpu.spv.bc
 gpt_gpu.spv.bc: gpt_gpu.cl
-	$(CC) $(SPV_CFLAGS) $(SPV_CPPFLAGS) -O0 -emit-llvm -o $@ -x cl -c $^
+	$(GPU_CC) $(SPV_CFLAGS) $(SPV_CPPFLAGS) -O0 -emit-llvm -o $@ -x cl -c $^
 
 BUILT_SOURCES += gpt_gpu.spv
 gpt_gpu.spv: gpt_gpu.spv.bc
@@ -430,7 +431,7 @@ gpt_gpu.spv: gpt_gpu.spv.bc
 CLEANFILES += gpt_gpu.spv.cc
 libircd_la_SOURCES += gpt_gpu.spv.cc
 gpt_gpu.spv.cc: gpt_gpu.spv
-	xxd -i $^ $@
+	$(XXD) -i $^ $@
 
 #
 # GCN-HSA
@@ -452,7 +453,7 @@ GCN_HSA_CFLAGS += -Xclang -mlink-bitcode-file -Xclang /usr/lib/clc/amdgcn--amdhs
 
 BUILT_SOURCES += gpt_gpu.gcn_hsa.bc
 gpt_gpu.gcn_hsa.bc: gpt_gpu.cl
-	$(CC) $(GCN_HSA_CFLAGS) $(GCN_HSA_CPPFLAGS) -emit-llvm -o $@ -x cl -c $^
+	$(GPU_CC) $(GCN_HSA_CFLAGS) $(GCN_HSA_CPPFLAGS) -emit-llvm -o $@ -x cl -c $^
 
 BUILT_SOURCES += gpt_gpu.gcn_hsa.link.bc
 gpt_gpu.gcn_hsa.link.bc: gpt_gpu.gcn_hsa.bc
@@ -461,16 +462,16 @@ gpt_gpu.gcn_hsa.link.bc: gpt_gpu.gcn_hsa.bc
 
 #BUILT_SOURCES += gpt_gpu.gcn_hsa.s
 gpt_gpu.gcn_hsa.s: gpt_gpu.gcn_hsa.link.bc
-	$(CC) -cc1 $(GPU_ASFLAGS) -triple $(GCN_HSA_TARGET) -emit-obj -S -o $@ -x ir $^
+	$(GPU_CC) -cc1 $(GPU_ASFLAGS) -triple $(GCN_HSA_TARGET) -emit-obj -S -o $@ -x ir $^
 
 #BUILT_SOURCES += gpt_gpu.gcn_hsa.o
 gpt_gpu.gcn_hsa.o: gpt_gpu.gcn_hsa.link.bc
-	$(CC) -cc1 $(GPU_ASFLAGS) -triple $(GCN_HSA_TARGET) -emit-obj -o $@ -x ir $^
+	$(GPU_CC) -cc1 $(GPU_ASFLAGS) -triple $(GCN_HSA_TARGET) -emit-obj -o $@ -x ir $^
 
 CLEANFILES += gpt_gpu.gcn_hsa.bc.cc
 libircd_la_SOURCES += gpt_gpu.gcn_hsa.bc.cc
 gpt_gpu.gcn_hsa.bc.cc: gpt_gpu.gcn_hsa.bc
-	xxd -i $^ $@
+	$(XXD) -i $^ $@
 
 endif # AMD64
 
@@ -497,7 +498,7 @@ R600_BARTS_CFLAGS += -Xclang -mlink-bitcode-file -Xclang /usr/lib/clc/barts-r600
 
 BUILT_SOURCES += gpt_gpu.r600_barts.bc
 gpt_gpu.r600_barts.bc: gpt_gpu.cl
-	$(CC) $(R600_BARTS_CFLAGS) $(R600_BARTS_CPPFLAGS) -emit-llvm -o $@ -x cl -c $^
+	$(GPU_CC) $(R600_BARTS_CFLAGS) $(R600_BARTS_CPPFLAGS) -emit-llvm -o $@ -x cl -c $^
 
 #BUILT_SOURCES += gpt_gpu.r600_barts.link.bc
 gpt_gpu.r600_barts.link.bc: gpt_gpu.r600_barts.bc
@@ -506,16 +507,16 @@ gpt_gpu.r600_barts.link.bc: gpt_gpu.r600_barts.bc
 
 #BUILT_SOURCES += gpt_gpu.r600_barts.s
 gpt_gpu.r600_barts.s: gpt_gpu.r600_barts.link.bc
-	$(CC) -cc1 $(GPU_ASFLAGS) -triple $(R600_TARGET) -emit-obj -S -o $@ -x ir $^
+	$(GPU_CC) -cc1 $(GPU_ASFLAGS) -triple $(R600_TARGET) -emit-obj -S -o $@ -x ir $^
 
 #BUILT_SOURCES += gpt_gpu.r600_barts.o
 gpt_gpu.r600_barts.o: gpt_gpu.r600_barts.link.bc
-	$(CC) -cc1 $(GPU_ASFLAGS) -triple $(R600_TARGET) -emit-obj -o $@ -x ir $^
+	$(GPU_CC) -cc1 $(GPU_ASFLAGS) -triple $(R600_TARGET) -emit-obj -o $@ -x ir $^
 
 CLEANFILES += gpt_gpu.r600_barts.bc.cc
 libircd_la_SOURCES += gpt_gpu.r600_barts.bc.cc
 gpt_gpu.r600_barts.bc.cc: gpt_gpu.r600_barts.bc
-	xxd -i $^ $@
+	$(XXD) -i $^ $@
 
 endif # AMD64
 
