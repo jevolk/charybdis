@@ -4718,14 +4718,19 @@ ircd::db::commit(database &d,
 
 	if constexpr(RB_DEBUG_LEVEL)
 	{
-		char dbuf[192];
+		const auto took
+		{
+			timer.at<nanoseconds>()
+		};
+
+		char dbuf[192], pbuf[48];
 		log::debug
 		{
-			log, "[%s] %lu COMMIT %s in %ld$us",
+			log, "[%s] %lu COMMIT %s in %s",
 			d.name,
 			sequence(d),
 			debug(dbuf, batch),
-			timer.at<microseconds>().count()
+			pretty(pbuf, took, 1),
 		};
 	}
 }
@@ -5523,17 +5528,17 @@ ircd::db::make_conf_name(const mutable_buffer &buf,
 	};
 }
 
+namespace ircd::db
+{
+	static const rocksdb::ReadOptions default_read_options;
+}
+
 decltype(ircd::db::read_checksum)
 ircd::db::read_checksum
 {
 	{ "name",     "ircd.db.read.checksum" },
 	{ "default",  false                   }
 };
-
-namespace ircd::db
-{
-	static const rocksdb::ReadOptions default_read_options;
-}
 
 /// Convert our options structure into RocksDB's options structure.
 rocksdb::ReadOptions
@@ -5587,6 +5592,11 @@ noexcept
 	return ret;
 }
 
+namespace ircd::db
+{
+	static const rocksdb::WriteOptions default_write_options;
+}
+
 decltype(ircd::db::enable_wal)
 ircd::db::enable_wal
 {
@@ -5595,14 +5605,20 @@ ircd::db::enable_wal
 	{ "persist",   false                },
 };
 
-[[gnu::hot]]
 rocksdb::WriteOptions
 ircd::db::make_opts(const sopts &opts)
 noexcept
 {
-	rocksdb::WriteOptions ret;
+	const auto &def{default_write_options};
+	assume(def.sync == false);
+	assume(def.disableWAL == false);
+	assume(def.ignore_missing_column_families == false);
+	assume(def.no_slowdown == false);
+	assume(def.low_pri == false);
+
+	rocksdb::WriteOptions ret{def};
 	ret.sync = opts.fsync;
-	ret.disableWAL = !enable_wal || !opts.journal;
+	ret.disableWAL = !opts.journal || !enable_wal;
 	ret.ignore_missing_column_families = true;
 	ret.no_slowdown = !opts.blocking;
 	ret.low_pri = opts.prio_low;
