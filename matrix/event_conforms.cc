@@ -141,8 +141,9 @@ try
 	if(empty(json::get<"signatures"_>(e)))
 		set(MISSING_SIGNATURES);
 
-	if(empty(json::object{json::get<"signatures"_>(e).get(json::get<"origin"_>(e))}))
-		set(MISSING_ORIGIN_SIGNATURE);
+	if(!has(MISSING_ORIGIN))
+		if(empty(json::object{json::get<"signatures"_>(e).get(json::get<"origin"_>(e))}))
+			set(MISSING_ORIGIN_SIGNATURE);
 
 	if(!has(INVALID_OR_MISSING_SENDER_ID))
 		if(json::get<"origin"_>(e) != m::id::user{json::get<"sender"_>(e)}.host())
