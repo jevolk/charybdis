@@ -162,6 +162,20 @@ ircd::db::paranoid_lsm
 	{ "persist",  false                  },
 };
 
+/// Perform an fdatasync()/fsync() for every transaction. This is similar
+/// to WriteOptions::sync==true, but we enact this ourselves in the env.
+/// Enabling this on systems with aio/io_uring is not slow, even under normal
+/// application workloads, if one wants improved crash robustness. Note that
+/// if WriteOptions::sync is actually used by the application, enabling this
+/// will cause redundant system operations.
+decltype(ircd::db::paranoid_sync)
+ircd::db::paranoid_sync
+{
+	{ "name",     "ircd.db.paranoid.sync" },
+	{ "default",  false                   },
+	{ "persist",  false                   },
+};
+
 void
 ircd::db::sync(database &d)
 {

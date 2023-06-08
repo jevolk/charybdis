@@ -1349,11 +1349,15 @@ noexcept try
 			int(fd),
 		};
 
-	fs::sync_opts opts;
-	opts.metadata = false;
-	opts.priority = ionice;
-	opts.nodelay = nodelay;
-	fs::sync(fd, opts);
+	if(db::paranoid_sync)
+	{
+		fs::sync_opts opts;
+		opts.metadata = false;
+		opts.priority = ionice;
+		opts.nodelay = nodelay;
+		fs::sync(fd, opts);
+	}
+
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -1400,6 +1404,7 @@ noexcept try
 		};
 
 	fs::sync_opts opts;
+	opts.metadata = true;
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
 	fs::sync(fd, opts);
@@ -1449,6 +1454,7 @@ noexcept try
 		};
 
 	fs::sync_opts opts;
+	opts.metadata = bool(paranoid_sync);
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
 	fs::sync(fd, opts);
@@ -3700,6 +3706,7 @@ noexcept try
 		};
 
 	fs::sync_opts opts;
+	opts.metadata = bool(paranoid_sync);
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
 	fs::sync(fd, opts);
@@ -3748,6 +3755,7 @@ noexcept try
 		};
 
 	fs::sync_opts opts;
+	opts.metadata = true;
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
 	fs::sync(fd, opts);
@@ -3795,11 +3803,15 @@ noexcept try
 			this
 		};
 
-	fs::sync_opts opts;
-	opts.metadata = false;
-	opts.priority = ionice;
-	opts.nodelay = nodelay;
-	fs::sync(fd, opts);
+	if(db::paranoid_sync)
+	{
+		fs::sync_opts opts;
+		opts.metadata = false;
+		opts.priority = ionice;
+		opts.nodelay = nodelay;
+		fs::sync(fd, opts);
+	}
+
 	return Status::OK();
 }
 catch(const std::system_error &e)

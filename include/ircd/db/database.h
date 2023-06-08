@@ -28,6 +28,7 @@ namespace ircd::db
 	extern conf::item<bool> paranoid_wal;
 	extern conf::item<bool> paranoid_sst;
 	extern conf::item<bool> paranoid_lsm;
+	extern conf::item<bool> paranoid_sync;
 
 	// General information
 	const std::string &name(const database &);
