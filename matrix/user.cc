@@ -284,10 +284,25 @@ ircd::m::user::deactivate()
 		user_id
 	};
 
-	return send(user_room, m::me(), "ircd.account", "active", json::members
+	const auto ret
 	{
-		{ "value", false }
-	});
+		send(user_room, m::me(), "ircd.account", "active", json::members
+		{
+			{ "value", false }
+		})
+	};
+
+	const m::user::tokens tokens
+	{
+		user_id
+	};
+
+	const auto tokens_deleted
+	{
+		tokens.del("account deactivated")
+	};
+
+	return ret;
 }
 
 ircd::m::event::id::buf
