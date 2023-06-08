@@ -634,6 +634,29 @@ applyargs()
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// OpenSSL makes a lot of calls to getpid() for entropy but this is no longer
+// cached since glibc 2.25. Our version is correct for our application's uses
+// of `fork(2)`, specifically by not using `fork(2)` but instead using
+// `clone(CLONE_CHILD_SETTID)` allowing a thread_local to be the cache.
+//
+
+#if defined(__linux__)
+extern "C" pid_t
+getpid(void)
+noexcept
+{
+	thread_local const auto pid
+	{
+		ircd::syscall<SYS_getpid>()
+	};
+
+	assert(pid > 0);
+	return pid;
+}
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Unfortunate but worthwhile hack hook which allows us to optimize the
 // behavior of the boost::asio event loop by executing more queued tasks
 // before dropping to epoll_wait(2). This reduces the number of syscalls to
