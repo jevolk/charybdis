@@ -1410,6 +1410,8 @@ dnl
 AC_CHECK_FUNCS([          \
 	backtrace             \
 	fadvise               \
+	fdatasync             \
+	fsync                 \
 	madvise               \
 	mallinfo              \
 	mallinfo2             \

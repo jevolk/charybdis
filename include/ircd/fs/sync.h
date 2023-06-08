@@ -15,11 +15,8 @@ namespace ircd::fs
 {
 	struct sync_opts extern const sync_opts_default;
 
-	void flush(const fd &, const off_t &, const size_t &, const sync_opts & = sync_opts_default);
-	void flush(const fd &, const sync_opts & = sync_opts_default);
-
-	void sync(const fd &, const off_t &, const size_t &, const sync_opts & = sync_opts_default);
 	void sync(const fd &, const sync_opts & = sync_opts_default);
+	void sync(const fd &, const off_t &, const size_t &, const sync_opts & = sync_opts_default);
 }
 
 /// Options for a write operation
@@ -31,8 +28,26 @@ struct ircd::fs::sync_opts
 	/// sync_file_range() et al.
 	bool metadata {true};
 
+	/// Synchronize the filesystem; usually involves syncfs(2) or sync(2).
+	bool filesystem {false};
+
+	/// Specifies the nbytes if/when sync_file_range(2) is in use.
+	size_t size {0};
+
 	sync_opts(const off_t &offset = 0);
 };
+
+inline void
+ircd::fs::sync(const fd &fd,
+               const off_t &offset,
+               const size_t &size,
+               const sync_opts &opts_)
+{
+	auto opts(opts_);
+	opts.size = size;
+	opts.offset = offset;
+	return sync(fd, opts);
+}
 
 inline
 ircd::fs::sync_opts::sync_opts(const off_t &offset)

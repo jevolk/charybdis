@@ -699,49 +699,12 @@ const ircd::fs::sync_opts_default;
 
 void
 ircd::fs::sync(const fd &fd,
-               const off_t &offset,
-               const size_t &length,
                const sync_opts &opts)
-{
-	return sync(fd, opts);
-}
-
-void
-ircd::fs::sync(const fd &fd,
-               const sync_opts &opts)
-{
-	assert(opts.op == op::SYNC);
-	const prof::syscall_usage_warning message
-	{
-		"fs::sync(fd:%d)", int(fd)
-	};
-
-	#if defined(HAVE_SYNCFS)
-		syscall(::syncfs, fd);
-	#elif defined(HAVE_SYNC)
-		syscall(::sync);
-	#else
-		#error "Missing sync(2) on this platform."
-	#endif
-}
-
-void
-ircd::fs::flush(const fd &fd,
-                const off_t &offset,
-                const size_t &length,
-                const sync_opts &opts)
-{
-	return flush(fd, opts);
-}
-
-void
-ircd::fs::flush(const fd &fd,
-                const sync_opts &opts)
 {
 	assert(opts.op == op::SYNC);
 
 	if constexpr(IRCD_USE_AIO)
-		if(aio::system && opts.aio)
+		if(aio::system && opts.aio && !opts.filesystem)
 		{
 			if(support::aio_fdsync && !opts.metadata)
 				return void(aio::fsync(fd, opts));
@@ -752,17 +715,44 @@ ircd::fs::flush(const fd &fd,
 
 	const prof::syscall_usage_warning message
 	{
-		"fs::flush(fd:%d, {metadata:%b aio:%b:%b})",
+		"fs::sync(fd:%d, {metadata:%b filesystem:%b aio:%b:%b})",
 		int(fd),
 		opts.metadata,
+		opts.filesystem,
 		opts.aio,
-		opts.metadata? support::aio_fsync : support::aio_fdsync
+		opts.metadata? support::aio_fsync : support::aio_fdsync,
 	};
 
 	if(!opts.metadata)
-		return void(syscall(::fdatasync, fd));
+	{
+		#if defined(HAVE_FDATASYNC)
+			void(syscall(::fdatasync, fd));
+		#elif defined(HAVE_FSYNC)
+			void(syscall(::fsync, fd));
+		#else
+			#error "Missing fdatasync(2) and fsync(2) on this platform."
+		#endif
+	}
 
-	return void(syscall(::fsync, fd));
+	if(opts.metadata)
+	{
+		#if defined(HAVE_FSYNC)
+			void(syscall(::fsync, fd));
+		#else
+			#error "Missing fsync(2) on this platform."
+		#endif
+	}
+
+	if(opts.filesystem)
+	{
+		#if defined(HAVE_SYNCFS)
+			void(syscall(::syncfs, fd));
+		#elif defined(HAVE_SYNC)
+			void(syscall(::sync));
+		#else
+			#error "Missing sync(2) on this platform."
+		#endif
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

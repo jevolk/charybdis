@@ -1353,7 +1353,7 @@ noexcept try
 	opts.metadata = false;
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
-	fs::flush(fd, opts);
+	fs::sync(fd, opts);
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -1401,7 +1401,7 @@ noexcept try
 
 	fs::sync_opts opts;
 	opts.priority = ionice;
-	opts.nodelay = true;
+	opts.nodelay = nodelay;
 	fs::sync(fd, opts);
 	return Status::OK();
 }
@@ -1450,8 +1450,8 @@ noexcept try
 
 	fs::sync_opts opts;
 	opts.priority = ionice;
-	opts.nodelay = true;
-	fs::flush(fd, opts);
+	opts.nodelay = nodelay;
+	fs::sync(fd, opts);
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -1513,7 +1513,7 @@ noexcept try
 	opts.metadata = false;
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
-	fs::flush(fd, offset, length, opts);
+	fs::sync(fd, offset, length, opts);
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -3701,8 +3701,8 @@ noexcept try
 
 	fs::sync_opts opts;
 	opts.priority = ionice;
-	opts.nodelay = true;
-	fs::flush(fd, opts);
+	opts.nodelay = nodelay;
+	fs::sync(fd, opts);
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -3749,7 +3749,7 @@ noexcept try
 
 	fs::sync_opts opts;
 	opts.priority = ionice;
-	opts.nodelay = true;
+	opts.nodelay = nodelay;
 	fs::sync(fd, opts);
 	return Status::OK();
 }
@@ -3799,7 +3799,7 @@ noexcept try
 	opts.metadata = false;
 	opts.priority = ionice;
 	opts.nodelay = nodelay;
-	fs::flush(fd, opts);
+	fs::sync(fd, opts);
 	return Status::OK();
 }
 catch(const std::system_error &e)
