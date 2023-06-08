@@ -218,6 +218,8 @@ ircd::db::database::env::writable_file
 	using IOPriority = rocksdb::Env::IOPriority;
 	using WriteLifeTimeHint = rocksdb::Env::WriteLifeTimeHint;
 
+	static conf::item<bool> internal_filesize;
+
 	database &d;
 	ctx::mutex mutex;
 	rocksdb::EnvOptions env_opts;
@@ -227,6 +229,7 @@ ircd::db::database::env::writable_file
 	bool nodelay {false};
 	WriteLifeTimeHint hint {WriteLifeTimeHint::WLTH_NOT_SET};
 	fs::fd fd;
+	size_t logical_offset {0};
 	size_t preallocation_block_size {0};
 	ssize_t preallocation_last_block {-1};
 
@@ -263,7 +266,6 @@ ircd::db::database::env::writable_file_direct final
 :writable_file
 {
 	size_t alignment {0};
-	size_t logical_offset {0};
 	unique_buffer<mutable_buffer> buffer;
 
 	bool aligned(const size_t &) const;

@@ -1205,6 +1205,13 @@ ircd::db::database::env::make_nice(const IOPriority &prio)
 // writable_file
 //
 
+decltype(ircd::db::database::env::writable_file::internal_filesize)
+ircd::db::database::env::writable_file::internal_filesize
+{
+	{ "name",     "ircd.db.env.writable_file.internal_filesize" },
+	{ "default",  true                                          },
+};
+
 ircd::db::database::env::writable_file::writable_file(database *const &d,
                                                       const std::string &name,
                                                       const EnvOptions &env_opts,
@@ -1234,6 +1241,12 @@ try
 ,fd
 {
 	name, this->opts
+}
+,logical_offset
+{
+	!trunc?
+		fs::size(fd):
+		size_t(0)
 }
 ,preallocation_block_size
 {
@@ -1304,6 +1317,22 @@ noexcept try
 			this,
 			int(fd)
 		};
+
+	if(internal_filesize)
+	{
+		// Check if our internal state agrees with the real file size.
+		const auto final_offset(fs::size(fd));
+		if(unlikely(final_offset != this->logical_offset))
+			log::critical
+			{
+				log, "[%s] wfile:%p fd:%d size check failed; internal:%zu vs. kernel:%zu",
+				d.name,
+				this,
+				int(fd),
+				this->logical_offset,
+				final_offset,
+			};
+	}
 
 	fd = fs::fd{};
 	return Status::OK();
@@ -1575,6 +1604,7 @@ noexcept try
 	wopts.nodelay = nodelay;
 	wopts.interruptible = false;
 	fs::truncate(fd, size, wopts);
+	logical_offset = size;
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -1688,7 +1718,12 @@ noexcept try
 		data(s), size(s)
 	};
 
-	fs::append(fd, buf, wopts);
+	const const_buffer wrote
+	{
+		fs::append(fd, buf, wopts)
+	};
+
+	logical_offset += size(wrote);
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -1753,7 +1788,12 @@ noexcept try
 		data(s), size(s)
 	};
 
-	fs::append(fd, buf, wopts);
+	const const_buffer wrote
+	{
+		fs::append(fd, buf, wopts)
+	};
+
+	logical_offset = std::max(logical_offset, offset + size(wrote));
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -1937,6 +1977,8 @@ ircd::db::database::env::writable_file::_allocate(const size_t offset,
 
 	fs::allocate(fd, allocate_length, wopts);
 	this->preallocation_last_block = last_block;
+	if(!env_opts.fallocate_with_keep_size)
+		this->logical_offset = std::max(this->logical_offset, allocate_offset + allocate_length);
 }
 
 void
@@ -1992,13 +2034,22 @@ noexcept try
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s] wfile:%p fd:%d get file size",
+			log, "[%s] wfile:%p fd:%d get file size; logical:%zu",
 			d.name,
 			this,
-			int(fd)
+			int(fd),
+			logical_offset,
 		};
 
-	return fs::size(fd);
+	const auto ret
+	{
+		!internal_filesize?
+			fs::size(fd):
+			logical_offset
+	};
+
+	assert(logical_offset == ret);
+	return ret;
 }
 catch(const std::exception &e)
 {
@@ -2152,12 +2203,6 @@ ircd::db::database::env::writable_file_direct::writable_file_direct(database *co
 ,alignment
 {
 	fs::block_size(fd)
-}
-,logical_offset
-{
-	!trunc?
-		fs::size(fd):
-		size_t(0)
 }
 ,buffer
 {
