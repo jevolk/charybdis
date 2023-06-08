@@ -61,7 +61,7 @@ struct ircd::exec
 	long join(const int &sig = 0);  // returns exit code
 	long run();                     // returns pid or throws
 
-	exec(const args &, const opts &);
+	exec(const args &, opts);
 	exec(const args &);
 	exec(exec &&) = delete;
 	exec(const exec &) = delete;
@@ -78,6 +78,15 @@ ircd::instance_list<ircd::exec>::list;
 ///
 struct ircd::exec::opts
 {
+	/// When `true` the exec ctor will call exec::run() so the user doesn't
+	/// have to call it themselves after construction.
+	bool run {true};
+
+	/// When `true` the exec dtor will hang until the child has exited. When
+	/// `false` the expectation is for the child to exit or be joined prior to
+	/// to dtor otherwise SIGKILL is sent by the dtor.
+	bool wait {false};
+
 	/// Child executions will be logged at this level (use DEBUG to quiet)
 	ircd::log::level exec_log_level = ircd::log::level::NOTICE;
 

@@ -56,10 +56,10 @@ ircd::util::instance_list<ircd::exec>::list
 };
 
 ircd::exec::exec(const args &args,
-                 const opts &opt)
+                 opts opt)
 :opt
 {
-	std::make_unique<opts>(opt)
+	std::make_unique<opts>(std::move(opt))
 }
 ,path
 (
@@ -78,12 +78,21 @@ ircd::exec::exec(const args &args,
 	)
 }
 {
+	assert(this->opt);
+	if(this->opt->run)
+		run();
 }
 
 ircd::exec::~exec()
 noexcept try
 {
-	join(SIGKILL);
+	const int sig
+	{
+		!opt || !opt->wait?
+			(SIGKILL): 0
+	};
+
+	join(sig);
 	dock.wait([this]() noexcept
 	{
 		return this->pid <= 0;

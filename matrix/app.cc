@@ -236,7 +236,10 @@ ircd::m::app::app(const m::event::idx &event_idx)
 }
 ,child
 {
-	argv
+	argv, exec::opts
+	{
+		.run = false
+	}
 }
 ,user_id
 {
