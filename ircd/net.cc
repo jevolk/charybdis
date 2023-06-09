@@ -1413,6 +1413,8 @@ ircd::net::sock_opts::sock_opts(const socket &socket)
 ,iptos{net::iptos(socket)}
 ,priority{net::priority(socket)}
 ,affinity{net::affinity(socket)}
+,pmtudisc{net::pmtudisc(socket)}
+,pmtu{net::pmtu(socket)}
 {
 }
 
@@ -1466,7 +1468,31 @@ ircd::net::set(socket &socket,
 
 	if(opts.affinity != opts.IGN)
 		net::affinity(socket, opts.affinity);
+
+	if(opts.pmtudisc != opts.IGN)
+		net::pmtudisc(socket, opts.pmtudisc);
 }
+
+bool
+ircd::net::pmtudisc(socket &socket,
+                    const int val)
+#if defined(IP_MTU_DISCOVER) && defined(IPPROTO_IP)
+{
+	ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		sd.lowest_layer().native_handle()
+	};
+
+	sys::call(::setsockopt, fd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
+	return true;
+}
+#else
+{
+	#warning "IP_MTU_DISCOVER is not defined on this platform."
+	return false;
+}
+#endif
 
 bool
 ircd::net::affinity(socket &socket,
@@ -1813,6 +1839,59 @@ ircd::net::v6only(socket &socket,
 	sd.set_option(option);
 	return true;
 }
+
+int
+ircd::net::pmtu(const socket &socket)
+#if defined(IP_MTU) && defined(IPPROTO_IP)
+{
+	// This sockopt only works on connected sockets; throwing an exception
+	// when querying at other times is a bit too much burden on our callsites.
+	constexpr auto opts
+	{
+		sys::call::NOTHROW
+	};
+
+	const ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		mutable_cast(sd).lowest_layer().native_handle()
+	};
+
+	int ret {-1};
+	socklen_t len(sizeof(ret));
+	sys::call<opts>(::getsockopt, fd, IPPROTO_IP, IP_MTU, &ret, &len);
+	assert(len <= sizeof(ret));
+	return ret;
+}
+#else
+{
+	#warning "IP_MTU is not defined on this platform."
+	return -1;
+}
+#endif
+
+int
+ircd::net::pmtudisc(const socket &socket)
+#if defined(IP_MTU_DISCOVER) && defined(IPPROTO_IP)
+{
+	const ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		mutable_cast(sd).lowest_layer().native_handle()
+	};
+
+	int ret {-1};
+	socklen_t len(sizeof(ret));
+	sys::call(::getsockopt, fd, IPPROTO_IP, IP_MTU_DISCOVER, &ret, &len);
+	assert(len <= sizeof(ret));
+	return ret;
+}
+#else
+{
+	#warning "IP_MTU_DISCOVER is not defined on this platform."
+	return -1;
+}
+#endif
 
 int
 ircd::net::affinity(const socket &socket)

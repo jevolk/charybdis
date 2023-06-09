@@ -33,6 +33,8 @@ namespace ircd::net
 	int iptos(const socket &);
 	int priority(const socket &);
 	int affinity(const socket &);
+	int pmtudisc(const socket &);
+	int pmtu(const socket &);
 
 	// returns true if supported, false if unsupported; failures will throw.
 	bool v6only(socket &, const bool);
@@ -55,6 +57,7 @@ namespace ircd::net
 	bool iptos(socket &, const int);
 	bool priority(socket &, const int);
 	bool affinity(socket &, const int);
+	bool pmtudisc(socket &, const int);
 
 	void set(socket &, const sock_opts &);
 }
@@ -83,6 +86,8 @@ struct ircd::net::sock_opts
 	int iptos { IGN };
 	int priority { IGN };
 	int affinity { IGN };
+	int pmtudisc { IGN };
+	int pmtu { IGN };
 
 	sock_opts(const socket &);          // Get options from socket
 	sock_opts() = default;
