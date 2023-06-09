@@ -22,16 +22,7 @@ namespace ircd
 	inline namespace util {}
 }
 
-//
-// Fundamental macros
-//
-
-#define IRCD_STRLIT(a)      #a
-#define IRCD_EXPCAT(a, b)   a ## b
-#define IRCD_STRING(a)      IRCD_STRLIT(a)
-#define IRCD_CONCAT(a, b)   IRCD_EXPCAT(a, b)
-#define IRCD_UNIQUE(a)      IRCD_CONCAT(a, __COUNTER__)
-
+#include "macrography.h"
 #include "typography.h"
 #include "identity.h"
 #include "unit_literal.h"
