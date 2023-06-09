@@ -73,7 +73,7 @@ struct ircd::net::sock_opts
 	ssize_t write_bufsz { IGN };
 	ssize_t read_lowat { IGN };
 	ssize_t write_lowat { IGN };
-	int ebpf { -1 };
+	int ebpf { IGN };
 
 	sock_opts(const socket &);          // Get options from socket
 	sock_opts() = default;

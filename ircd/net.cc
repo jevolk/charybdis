@@ -1409,6 +1409,7 @@ ircd::net::sock_opts::sock_opts(const socket &socket)
 ,write_bufsz{ssize_t(net::write_bufsz(socket))}
 ,read_lowat{ssize_t(net::read_lowat(socket))}
 ,write_lowat{ssize_t(net::write_lowat(socket))}
+,ebpf{net::attach(socket)}
 {
 }
 
@@ -1451,7 +1452,7 @@ ircd::net::set(socket &socket,
 	if(opts.write_lowat != opts.IGN)
 		net::write_lowat(socket, opts.write_lowat);
 
-	if(opts.ebpf != -1)
+	if(opts.ebpf != opts.IGN)
 		net::attach(socket, opts.ebpf);
 }
 
@@ -1757,6 +1758,7 @@ ircd::net::attach(const socket &socket)
 #else
 {
 	#warning "SO_ATTACH_BPF is not defined on this platform."
+	return -1;
 }
 #endif
 
