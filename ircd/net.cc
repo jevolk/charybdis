@@ -1410,6 +1410,9 @@ ircd::net::sock_opts::sock_opts(const socket &socket)
 ,read_lowat{ssize_t(net::read_lowat(socket))}
 ,write_lowat{ssize_t(net::write_lowat(socket))}
 ,ebpf{net::attach(socket)}
+,iptos{net::iptos(socket)}
+,priority{net::priority(socket)}
+,affinity{net::affinity(socket)}
 {
 }
 
@@ -1454,7 +1457,79 @@ ircd::net::set(socket &socket,
 
 	if(opts.ebpf != opts.IGN)
 		net::attach(socket, opts.ebpf);
+
+	if(opts.iptos != opts.IGN)
+		net::iptos(socket, opts.iptos);
+
+	if(opts.priority != opts.IGN)
+		net::priority(socket, opts.priority);
+
+	if(opts.affinity != opts.IGN)
+		net::affinity(socket, opts.affinity);
 }
+
+bool
+ircd::net::affinity(socket &socket,
+                    const int cpu)
+#if defined(SO_INCOMING_CPU) && defined(SOL_SOCKET)
+{
+	ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		sd.lowest_layer().native_handle()
+	};
+
+	sys::call(::setsockopt, fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
+	return true;
+}
+#else
+{
+	#warning "SO_INCOMING_CPU is not defined on this platform."
+	return false;
+}
+#endif
+
+bool
+ircd::net::priority(socket &socket,
+                    const int prio)
+#if defined(SO_PRIORITY) && defined(SOL_SOCKET)
+{
+	ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		sd.lowest_layer().native_handle()
+	};
+
+	sys::call(::setsockopt, fd, SOL_SOCKET, SO_PRIORITY, &prio, sizeof(prio));
+	return true;
+}
+#else
+{
+	#warning "SO_PRIORITY is not defined on this platform."
+	return false;
+}
+#endif
+
+bool
+ircd::net::iptos(socket &socket,
+                 const int tos)
+#if defined(IP_TOS) && defined(IPPROTO_IP)
+{
+	ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		sd.lowest_layer().native_handle()
+	};
+
+	sys::call(::setsockopt, fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+	return true;
+}
+#else
+{
+	#warning "IP_TOS is not defined on this platform."
+	return false;
+}
+#endif
 
 bool
 ircd::net::detach(socket &socket,
@@ -1738,6 +1813,75 @@ ircd::net::v6only(socket &socket,
 	sd.set_option(option);
 	return true;
 }
+
+int
+ircd::net::affinity(const socket &socket)
+#if defined(SO_INCOMING_CPU) && defined(SOL_SOCKET)
+{
+	const ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		mutable_cast(sd).lowest_layer().native_handle()
+	};
+
+	int ret {-1};
+	socklen_t len(sizeof(ret));
+	sys::call(::getsockopt, fd, SOL_SOCKET, SO_INCOMING_CPU, &ret, &len);
+	assert(len <= sizeof(ret));
+	return ret;
+}
+#else
+{
+	#warning "SO_INCOMING_CPU is not defined on this platform."
+	return -1;
+}
+#endif
+
+int
+ircd::net::priority(const socket &socket)
+#if defined(SO_PRIORITY) && defined(SOL_SOCKET)
+{
+	const ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		mutable_cast(sd).lowest_layer().native_handle()
+	};
+
+	int ret {-1};
+	socklen_t len(sizeof(ret));
+	sys::call(::getsockopt, fd, SOL_SOCKET, SO_PRIORITY, &ret, &len);
+	assert(len <= sizeof(ret));
+	return ret;
+}
+#else
+{
+	#warning "SO_PRIORITY is not defined on this platform."
+	return -1;
+}
+#endif
+
+int
+ircd::net::iptos(const socket &socket)
+#if defined(IP_TOS) && defined(IPPROTO_IP)
+{
+	const ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		mutable_cast(sd).lowest_layer().native_handle()
+	};
+
+	int ret {-1};
+	socklen_t len(sizeof(ret));
+	sys::call(::getsockopt, fd, IPPROTO_IP, IP_TOS, &ret, &len);
+	assert(len <= sizeof(ret));
+	return ret;
+}
+#else
+{
+	#warning "IP_TOS is not defined on this platform."
+	return -1;
+}
+#endif
 
 int
 ircd::net::attach(const socket &socket)
