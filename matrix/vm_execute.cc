@@ -1187,6 +1187,11 @@ ircd::m::vm::retire(eval &eval,
 void
 ircd::m::vm::write_commit(eval &eval)
 {
+	constexpr bool stats_enable
+	{
+		IRCD_DEFINED(IRCD_M_VM_COMMIT_STATS)
+	};
+
 	assert(eval.txn);
 	assert(eval.txn.use_count() == 1);
 	auto &txn
@@ -1204,7 +1209,6 @@ ircd::m::vm::write_commit(eval &eval)
 	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
 		db_seq[0] = db::sequence(*m::dbs::events);
 
-	constexpr bool stats_enable {false};
 	const uint64_t cyc_before {write_commit_cycles};
 	{
 		const prof::scope_cycles<stats_enable> cycles
@@ -1244,6 +1248,11 @@ ircd::m::vm::write_append(eval &eval,
                           const bool &parent_post)
 
 {
+	constexpr bool stats_enable
+	{
+		IRCD_DEFINED(IRCD_M_VM_APPEND_STATS)
+	};
+
 	assert(eval.opts);
 	const auto &opts
 	{
@@ -1355,7 +1364,6 @@ ircd::m::vm::write_append(eval &eval,
 	);
 
 	size_t wrote {0};
-	constexpr bool stats_enable {false};
 	const uint64_t cyc_before {write_append_cycles};
 	{
 		const prof::scope_cycles<stats_enable> cycles

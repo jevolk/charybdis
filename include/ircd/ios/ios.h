@@ -47,8 +47,8 @@ namespace ircd::ios
 
 namespace ircd::ios::profile
 {
-	constexpr bool history {false};
-	constexpr bool logging {false};
+	constexpr bool history {IRCD_DEFINED(IRCD_IOS_PROFILE_HISTORY)};
+	constexpr bool logging {IRCD_DEFINED(IRCD_IOS_PROFILE_LOGGING)};
 }
 
 #include "descriptor.h"

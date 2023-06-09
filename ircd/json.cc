@@ -349,10 +349,18 @@ ircd::json::printer::print(mutable_buffer &out,
                            gen&& g,
                            attr&&... a)
 {
-	#ifdef IRCD_JSON_PRINTER_STATS
-	++stats.print_calls;
-	const prof::scope_cycles timer{stats.print_cycles};
-	#endif
+	constexpr bool enable_stats
+	{
+		IRCD_DEFINED(IRCD_JSON_PRINTER_STATS)
+	};
+
+	if constexpr(enable_stats)
+		++stats.print_calls;
+
+	const prof::scope_cycles<enable_stats> timer
+	{
+		stats.print_cycles
+	};
 
 	if(unlikely(!ircd::generate(out, std::forward<gen>(g), std::forward<attr>(a)...)))
 		throw print_error
@@ -432,23 +440,6 @@ template<class gen,
          class... attr>
 [[gnu::always_inline]]
 inline bool
-ircd::json::parser::parse(const char *&start,
-                          const char *const &stop,
-                          gen&& g,
-                          attr&&...a)
-{
-	#ifdef IRCD_JSON_PARSER_STATS
-	++stats.parse_calls;
-	const prof::scope_cycles timer{stats.parse_cycles};
-	#endif
-
-	return ircd::parse<parse_error>(start, stop, std::forward<gen>(g), std::forward<attr>(a)...);
-}
-
-template<class gen,
-         class... attr>
-[[gnu::always_inline]]
-inline bool
 ircd::json::parser::parse(std::nothrow_t,
                           const char *const &start_,
                           const char *const &stop,
@@ -463,16 +454,49 @@ template<class gen,
          class... attr>
 [[gnu::always_inline]]
 inline bool
+ircd::json::parser::parse(const char *&start,
+                          const char *const &stop,
+                          gen&& g,
+                          attr&&...a)
+{
+	constexpr bool enable_stats
+	{
+		IRCD_DEFINED(IRCD_JSON_PARSER_STATS)
+	};
+
+	if constexpr(enable_stats)
+		++stats.parse_calls;
+
+	const prof::scope_cycles<enable_stats> timer
+	{
+		stats.parse_cycles
+	};
+
+	return ircd::parse<parse_error>(start, stop, std::forward<gen>(g), std::forward<attr>(a)...);
+}
+
+template<class gen,
+         class... attr>
+[[gnu::always_inline]]
+inline bool
 ircd::json::parser::parse(std::nothrow_t,
                           const char *&start,
                           const char *const &stop,
                           gen&& g,
                           attr&&...a)
 {
-	#ifdef IRCD_JSON_PARSER_STATS
-	++stats.parse_calls;
-	const prof::scope_cycles timer{stats.parse_cycles};
-	#endif
+	constexpr bool enable_stats
+	{
+		IRCD_DEFINED(IRCD_JSON_PARSER_STATS)
+	};
+
+	if constexpr(enable_stats)
+		++stats.parse_calls;
+
+	const prof::scope_cycles<enable_stats> timer
+	{
+		stats.parse_cycles
+	};
 
 	return ircd::parse(std::nothrow, start, stop, std::forward<gen>(g), std::forward<attr>(a)...);
 }

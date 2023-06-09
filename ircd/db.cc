@@ -112,9 +112,9 @@ try
 {
 	const ctx::uninterruptible::nothrow ui;
 
-	#ifdef IRCD_DB_HAS_ALLOCATOR
-	database::allocator::init();
-	#endif
+	if constexpr(IRCD_DEFINED(IRCD_DB_HAS_ALLOCATOR))
+		database::allocator::init();
+
 	compressions();
 	directory();
 	request_pool();
@@ -165,9 +165,8 @@ noexcept
 		log, "All contexts joined; all requests are clear."
 	};
 
-	#ifdef IRCD_DB_HAS_ALLOCATOR
-	database::allocator::fini();
-	#endif
+	if constexpr(IRCD_DEFINED(IRCD_DB_HAS_ALLOCATOR))
+		database::allocator::fini();
 }
 
 void
@@ -4825,11 +4824,9 @@ ircd::db::_read(const vector_view<_read_op> &op,
 
 	const bool parallelize
 	{
-		#if defined(IRCD_DB_HAS_MULTIGET_DIRECT) && defined(IRCD_DB_HAS_MULTIREAD_FIX)
-			true && num > 1
-		#else
-			false
-		#endif
+		num > 1
+		&& IRCD_DEFINED(IRCD_DB_HAS_MULTIGET_DIRECT)
+		&& IRCD_DEFINED(IRCD_DB_HAS_MULTIREAD_FIX)
 	};
 
 	rocksdb::Status status[num];

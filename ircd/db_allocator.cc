@@ -17,7 +17,7 @@
 #endif
 
 #if defined(IRCD_ALLOCATOR_USE_JEMALLOC) && defined(HAVE_JEMALLOC_H)
-	#define IRCD_DB_USE_JEMALLOC
+	#define IRCD_DB_USE_JEMALLOC 1
 #else
 	#warning "Consider building with jemalloc for improved memory management."
 #endif
