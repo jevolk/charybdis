@@ -81,3 +81,9 @@ ircd::server::init
 	init() noexcept;
 	~init() noexcept;
 };
+
+inline size_t
+ircd::server::peer_count()
+{
+	return peers.size();
+}

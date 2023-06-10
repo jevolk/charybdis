@@ -74,7 +74,7 @@ struct ircd::server::link
 
 	// indicator lights
 	bool finished() const;
-	bool opened() const noexcept;
+	bool opened() const;
 	bool ready() const;
 	bool busy() const;
 
@@ -115,3 +115,68 @@ struct ircd::server::link
 	link(const link &) = delete;
 	~link() noexcept;
 };
+
+inline bool
+ircd::server::link::close(const net::dc type)
+{
+	return close(net::close_opts
+	{
+		.type = type,
+	});
+}
+
+inline size_t
+ircd::server::link::tag_count()
+const
+{
+	return queue.size();
+}
+
+inline size_t
+ircd::server::link::read_total()
+const
+{
+	return socket? net::bytes(*socket).first: 0;
+}
+
+inline size_t
+ircd::server::link::write_total()
+const
+{
+	return socket? net::bytes(*socket).second: 0;
+}
+
+inline bool
+ircd::server::link::busy()
+const
+{
+	return !queue.empty();
+}
+
+inline bool
+ircd::server::link::ready()
+const
+{
+	return opened() && !op_init && !op_fini;
+}
+
+inline bool
+ircd::server::link::opened()
+const
+{
+	return bool(socket) && net::opened(*socket);
+}
+
+inline size_t
+ircd::server::link::tag_commit_max()
+const
+{
+	return tag_commit_max_default;
+}
+
+inline size_t
+ircd::server::link::tag_max()
+const
+{
+	return tag_max_default;
+}

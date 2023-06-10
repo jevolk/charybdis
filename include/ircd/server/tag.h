@@ -19,7 +19,6 @@ namespace ircd::server
 	void associate(request &, tag &, tag &&) noexcept;
 	void associate(request &, tag &, request &&) noexcept;
 	void disassociate(request &, tag &) noexcept;
-	void cancel(request &, tag &) noexcept;
 }
 
 /// Internal portion of the request
@@ -71,8 +70,15 @@ struct ircd::server::tag
 	const_buffer read_content(const const_buffer &, bool &done);
 	const_buffer read_head(const const_buffer &, bool &done, link &);
 
+	pair<const_buffer> make_write_buffers() const;
+	void wrote_buffer(const const_buffer &);
+	void wrote(size_t bytes);
+
+	mutable_buffer make_read_buffer() const;
+	const_buffer read_buffer(const const_buffer &, bool &done, link &);
+
   public:
-	size_t write_size() const;
+	size_t write_size() const noexcept;
 	size_t write_completed() const;
 	size_t write_remaining() const;
 
@@ -83,13 +89,6 @@ struct ircd::server::tag
 	bool committed() const;                  // Tag has revealed data to remote
 	bool abandoned() const;                  // User has abandoned their future
 	bool canceled() const;                   // User has abandoned their *request
-
-	pair<const_buffer> make_write_buffers() const;
-	void wrote_buffer(const const_buffer &);
-	void wrote(size_t bytes);
-
-	mutable_buffer make_read_buffer() const;
-	const_buffer read_buffer(const const_buffer &, bool &done, link &);
 
 	tag() = default;
 	tag(server::request &) noexcept;

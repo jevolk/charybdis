@@ -232,6 +232,15 @@ noexcept
 	assert(!tag);
 }
 
+inline uint64_t
+ircd::server::id(const request &request)
+noexcept
+{
+	return request.tag?
+		request.tag->state.id:
+		0UL;
+}
+
 inline size_t
 ircd::server::size_chunks(const in &in)
 noexcept
@@ -255,4 +264,34 @@ ircd::server::size(const out &out)
 noexcept
 {
 	return size(out.head) + size(out.content);
+}
+
+inline void
+ircd::server::associate(request &request,
+                        tag &cur,
+                        tag &&old)
+noexcept
+{
+	assert(request.tag == &old);         // ctor moved
+	assert(cur.request == &request);     // ctor moved
+	assert(old.request == &request);     // ctor didn't trash old
+
+	cur.request = &request;
+	old.request = nullptr;
+	request.tag = &cur;
+}
+
+inline void
+ircd::server::associate(request &cur,
+                        tag &tag,
+                        request &&old)
+noexcept
+{
+	assert(tag.request == &old);   // ctor already moved
+	assert(cur.tag == &tag);       // ctor already moved
+	assert(old.tag == &tag);       // ctor didn't trash old
+
+	cur.tag = &tag;
+	tag.request = &cur;
+	old.tag = nullptr;
 }

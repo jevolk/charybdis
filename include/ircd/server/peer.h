@@ -140,6 +140,71 @@ struct ircd::server::peer::err
 	std::exception_ptr eptr;
 	system_point etime;
 
-	err(const std::exception_ptr &);
+	err(std::exception_ptr);
 	~err() noexcept;
 };
+
+inline ircd::string_view
+ircd::server::peer::err_msg()
+const
+{
+	return bool(e)?
+		what(e->eptr):
+		string_view{};
+}
+
+inline bool
+ircd::server::peer::err_has()
+const
+{
+	return bool(e);
+}
+
+inline size_t
+ircd::server::peer::read_total()
+const
+{
+	return read_bytes;
+}
+
+inline size_t
+ircd::server::peer::write_total()
+const
+{
+	return write_bytes;
+}
+
+inline size_t
+ircd::server::peer::link_count()
+const
+{
+	return links.size();
+}
+
+inline size_t
+ircd::server::peer::link_min()
+const
+{
+	return link_min_default;
+}
+
+inline size_t
+ircd::server::peer::link_max()
+const
+{
+	return link_max_default;
+}
+
+inline bool
+ircd::server::peer::expired()
+const
+{
+	return remote_expires < ircd::now<system_point>();
+}
+
+inline bool
+ircd::server::peer::finished()
+const
+{
+	return links.empty() && !op_resolve && op_fini;
+}

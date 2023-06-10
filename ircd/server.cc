@@ -24,6 +24,7 @@ namespace ircd::server
 	template<class F> static size_t accumulate_links(F&&);
 	template<class F> static size_t accumulate_tags(F&&);
 	static string_view canonize(const hostport &); // TLS buffer
+	static void cancel(request &, tag &) noexcept;
 
 	// convenience suite used to prefix log messages.
 	static string_view loghead(const mutable_buffer &out, const request &);
@@ -462,12 +463,6 @@ ircd::server::peer_unfinished()
 }
 
 size_t
-ircd::server::peer_count()
-{
-	return peers.size();
-}
-
-size_t
 ircd::server::link_count()
 {
 	return accumulate_peers([]
@@ -707,15 +702,6 @@ catch(const std::exception &e)
 	};
 
 	return "<critical error>";
-}
-
-uint64_t
-ircd::server::id(const request &request)
-noexcept
-{
-	return request.tag?
-		request.tag->state.id:
-		0UL;
 }
 
 //
@@ -1015,20 +1001,6 @@ ircd::server::peer::err_set(A&&... args)
 	this->e = std::make_unique<err>(std::forward<A>(args)...);
 }
 
-ircd::string_view
-ircd::server::peer::err_msg()
-const
-{
-	return bool(e)? what(e->eptr) : string_view{};
-}
-
-bool
-ircd::server::peer::err_has()
-const
-{
-	return bool(e);
-}
-
 decltype(ircd::server::peer::error_clear_default)
 ircd::server::peer::error_clear_default
 {
@@ -1239,7 +1211,7 @@ ircd::server::peer::link_add(const bool open)
 	return link;
 }
 
-void
+inline void
 ircd::server::peer::handle_open(link &link,
                                 std::exception_ptr eptr)
 {
@@ -1272,7 +1244,7 @@ ircd::server::peer::handle_open(link &link,
 	}
 }
 
-void
+inline void
 ircd::server::peer::handle_close(link &link,
                                  std::exception_ptr eptr)
 {
@@ -1292,7 +1264,7 @@ ircd::server::peer::handle_close(link &link,
 		handle_finished(link);
 }
 
-void
+inline void
 ircd::server::peer::handle_error(link &link,
                                  std::exception_ptr eptr)
 {
@@ -1308,7 +1280,7 @@ ircd::server::peer::handle_error(link &link,
 	link.close(net::dc::RST);
 }
 
-void
+inline void
 ircd::server::peer::handle_error(link &link,
                                  const std::system_error &e)
 {
@@ -1357,7 +1329,7 @@ ircd::server::peer::handle_error(link &link,
 	link.close(net::dc::RST);
 }
 
-void
+inline void
 ircd::server::peer::handle_finished(link &link)
 {
 	assert(link.finished());
@@ -1372,7 +1344,7 @@ ircd::server::peer::handle_finished(link &link)
 /// reschedule the queues in various links to diffuse the pending requests.
 /// This can't throw because the link still has to remove this tag from its
 /// queue.
-void
+inline void
 ircd::server::peer::handle_tag_done(link &link,
                                     tag &tag)
 noexcept try
@@ -1474,7 +1446,7 @@ catch(const std::exception &e)
 /// This is where we're notified a link has processed its queue and has no
 /// more work. We can choose whether to close the link or keep it open and
 /// reinstate the read poll; reschedule other work to this link, etc.
-void
+inline void
 ircd::server::peer::handle_link_done(link &link)
 {
 	assert(link.tag_count() == 0);
@@ -1491,7 +1463,7 @@ ircd::server::peer::handle_link_done(link &link)
 /// This is called when a tag on a link receives an HTTP response head.
 /// We can use this to learn information from the tag's request and the
 /// response head etc.
-void
+inline void
 ircd::server::peer::handle_head_recv(const link &link,
                                      const tag &tag,
                                      const http::response::head &head)
@@ -1512,7 +1484,7 @@ ircd::server::peer::handle_head_recv(const link &link,
 	}
 }
 
-void
+inline void
 ircd::server::peer::disperse(link &link)
 {
 	disperse_uncommitted(link);
@@ -1524,7 +1496,7 @@ ircd::server::peer::disperse(link &link)
 	assert(link.queue.empty());
 }
 
-void
+inline void
 ircd::server::peer::disperse_uncommitted(link &link)
 {
 	auto &queue(link.queue);
@@ -1556,7 +1528,7 @@ ircd::server::peer::disperse_uncommitted(link &link)
 	}
 }
 
-void
+inline void
 ircd::server::peer::cleanup_canceled()
 {
 	for(auto &link : links)
@@ -1566,7 +1538,7 @@ ircd::server::peer::cleanup_canceled()
 /// This *cannot* be called unless a link's socket is closed and its queue
 /// is empty. It is usually only called by a disconnect handler because
 /// the proper way to remove a link is asynchronously through link.close();
-void
+inline void
 ircd::server::peer::del(link &link)
 {
 	assert(!link.tag_count());
@@ -1592,7 +1564,7 @@ ircd::server::peer::del(link &link)
 	links.erase(it);
 }
 
-void
+inline void
 ircd::server::peer::resolve()
 {
 	assert(run::level == run::level::RUN);
@@ -1629,7 +1601,7 @@ ircd::server::peer::resolve()
 	resolve(hostport, opts);
 }
 
-void
+inline void
 ircd::server::peer::resolve(const net::hostport &hostport,
                             const net::dns::opts &opts)
 try
@@ -1687,7 +1659,7 @@ catch(const std::exception &e)
 	};
 }
 
-void
+inline void
 ircd::server::peer::handle_resolve_SRV(const hostport &hp,
                                        const json::array &rrs)
 try
@@ -1771,7 +1743,7 @@ catch(const std::exception &e)
 	close();
 }
 
-void
+inline void
 ircd::server::peer::handle_resolve_AAAA(const hostport &target,
                                         const json::array &rrs)
 try
@@ -1856,7 +1828,7 @@ catch(const std::exception &e)
 	close();
 }
 
-void
+inline void
 ircd::server::peer::handle_resolve_A(const hostport &target,
                                      const json::array &rrs)
 try
@@ -1939,7 +1911,7 @@ catch(const std::exception &e)
 	close();
 }
 
-void
+inline void
 ircd::server::peer::open_links()
 try
 {
@@ -1990,7 +1962,7 @@ ircd::server::peer::handle_finished()
 	del();
 }
 
-void
+inline void
 ircd::server::peer::del()
 {
 	// unlink from map
@@ -2007,20 +1979,6 @@ ircd::server::peer::del()
 	// Right now this is what the server:: ~init sequence needs
 	// to wait for all links to close on IRCd shutdown.
 	server::dock.notify_all();
-}
-
-size_t
-ircd::server::peer::read_total()
-const
-{
-	return read_bytes;
-}
-
-size_t
-ircd::server::peer::write_total()
-const
-{
-	return write_bytes;
 }
 
 size_t
@@ -2143,41 +2101,6 @@ const
 	});
 }
 
-size_t
-ircd::server::peer::link_count()
-const
-{
-	return links.size();
-}
-
-size_t
-ircd::server::peer::link_min()
-const
-{
-	return link_min_default;
-}
-
-size_t
-ircd::server::peer::link_max()
-const
-{
-	return link_max_default;
-}
-
-bool
-ircd::server::peer::expired()
-const
-{
-	return remote_expires < ircd::now<system_point>();
-}
-
-bool
-ircd::server::peer::finished()
-const
-{
-	return links.empty() && !op_resolve && op_fini;
-}
-
 template<class F>
 size_t
 ircd::server::peer::accumulate_tags(F&& closure)
@@ -2208,8 +2131,8 @@ const
 // peer::err
 //
 
-ircd::server::peer::err::err(const std::exception_ptr &eptr)
-:eptr{eptr}
+ircd::server::peer::err::err(std::exception_ptr eptr)
+:eptr{std::move(eptr)}
 ,etime{now<system_point>()}
 {
 }
@@ -2372,9 +2295,9 @@ ircd::server::link::submit(request &request)
 	if constexpr((false))
 		log::debug
 		{
-			log, "tag(%p) submitted to link(%p) queue: %zu",
-			&(*it),
-			this,
+			log, "tag:%lu submitted to link:%lu queued:%zu",
+			it->state.id,
+			this->id,
 			tag_count()
 		};
 
@@ -2429,7 +2352,7 @@ ircd::server::link::cancel_uncommitted(std::exception_ptr eptr)
 	}
 }
 
-void
+inline void
 ircd::server::link::cleanup_canceled()
 {
 	size_t dead(0);
@@ -2505,7 +2428,7 @@ ircd::server::link::open(const net::open_opts &open_opts)
 	return true;
 }
 
-void
+inline void
 ircd::server::link::handle_open(std::exception_ptr eptr)
 {
 	assert(op_init);
@@ -2517,15 +2440,6 @@ ircd::server::link::handle_open(std::exception_ptr eptr)
 
 	if(peer)
 		peer->handle_open(*this, std::move(eptr));
-}
-
-bool
-ircd::server::link::close(const net::dc type)
-{
-	return close(net::close_opts
-	{
-		.type = type,
-	});
 }
 
 bool
@@ -2556,7 +2470,7 @@ ircd::server::link::close(const net::close_opts &close_opts)
 	return true;
 }
 
-void
+inline void
 ircd::server::link::handle_close(std::exception_ptr eptr)
 {
 	assert(op_fini);
@@ -2570,7 +2484,7 @@ ircd::server::link::handle_close(std::exception_ptr eptr)
 		peer->handle_close(*this, std::move(eptr));
 }
 
-void
+inline void
 ircd::server::link::wait_writable()
 {
 	if(op_write || unlikely(op_fini))
@@ -2616,7 +2530,7 @@ ircd::server::link::wait_writable()
 }
 
 [[GCC::stack_protect]]
-void
+inline void
 ircd::server::link::handle_writable(const error_code &ec)
 noexcept try
 {
@@ -2659,7 +2573,7 @@ catch(...)
 	peer->handle_error(*this, std::current_exception());
 }
 
-void
+inline void
 ircd::server::link::handle_writable_success()
 {
 	assert(socket);
@@ -2746,7 +2660,7 @@ ircd::server::link::handle_writable_success()
 	}
 }
 
-bool
+inline bool
 ircd::server::link::process_write_nbio(tag &tag,
                                        const const_buffers &buffers)
 {
@@ -2773,7 +2687,7 @@ ircd::server::link::process_write_nbio(tag &tag,
 	return done;
 }
 
-bool
+inline bool
 ircd::server::link::process_write_async(tag &tag,
                                         const const_buffers &buffers)
 {
@@ -2806,7 +2720,7 @@ ircd::server::link::process_write_async(tag &tag,
 	return false;
 }
 
-void
+inline void
 ircd::server::link::handle_write_async(tag &tag,
                                        const uint64_t tag_id,
                                        const error_code &ec,
@@ -2867,7 +2781,7 @@ ircd::server::link::handle_write_async(tag &tag,
 	}
 }
 
-void
+inline void
 ircd::server::link::wait_readable()
 {
 	if(op_read || op_fini)
@@ -2890,7 +2804,7 @@ ircd::server::link::wait_readable()
 }
 
 [[GCC::stack_protect]]
-void
+inline void
 ircd::server::link::handle_readable(const error_code &ec)
 noexcept try
 {
@@ -2933,7 +2847,7 @@ catch(...)
 }
 
 /// Process as many read operations from as many tags as possible
-void
+inline void
 ircd::server::link::handle_readable_success()
 {
 	assert(socket);
@@ -2967,7 +2881,7 @@ ircd::server::link::handle_readable_success()
 }
 
 /// Process as many read operations for one tag as possible
-bool
+inline bool
 ircd::server::link::process_read(const_buffer &overrun,
                                  unique_buffer<mutable_buffer> &scratch)
 try
@@ -3044,7 +2958,7 @@ catch(const buffer_overrun &e)
 }
 
 /// Process one read operation for one tag
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::link::process_read_next(const const_buffer &underrun,
                                       tag &tag,
                                       bool &done)
@@ -3092,7 +3006,7 @@ catch(const buffer_overrun &)
 }
 
 /// Read directly off the link's socket into buf
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::link::read(const mutable_buffer &buf)
 {
 	ops_read_nbio++;
@@ -3114,7 +3028,7 @@ ircd::server::link::read(const mutable_buffer &buf)
 	};
 }
 
-void
+inline void
 ircd::server::link::discard_read()
 {
 	ops_read_discard++;
@@ -3167,27 +3081,6 @@ const
 	{
 		return tag.committed();
 	});
-}
-
-size_t
-ircd::server::link::tag_count()
-const
-{
-	return queue.size();
-}
-
-size_t
-ircd::server::link::read_total()
-const
-{
-	return socket? socket->in.bytes : 0;
-}
-
-size_t
-ircd::server::link::write_total()
-const
-{
-	return socket? socket->out.bytes : 0;
 }
 
 size_t
@@ -3251,27 +3144,6 @@ const
 }
 
 bool
-ircd::server::link::busy()
-const
-{
-	return !queue.empty();
-}
-
-bool
-ircd::server::link::ready()
-const
-{
-	return opened() && !op_init && !op_fini;
-}
-
-bool
-ircd::server::link::opened()
-const noexcept
-{
-	return bool(socket) && net::opened(*socket);
-}
-
-bool
 ircd::server::link::finished()
 const
 {
@@ -3281,22 +3153,8 @@ const
 	return !opened() && op_fini && !op_init && !op_open && !op_write && !op_read;
 }
 
-size_t
-ircd::server::link::tag_commit_max()
-const
-{
-	return tag_commit_max_default;
-}
-
-size_t
-ircd::server::link::tag_max()
-const
-{
-	return tag_max_default;
-}
-
 template<class F>
-size_t
+inline size_t
 ircd::server::link::accumulate_tags(F&& closure)
 const
 {
@@ -3542,36 +3400,6 @@ noexcept
 }
 
 void
-ircd::server::associate(request &request,
-                        tag &cur,
-                        tag &&old)
-noexcept
-{
-	assert(request.tag == &old);         // ctor moved
-	assert(cur.request == &request);     // ctor moved
-	assert(old.request == &request);     // ctor didn't trash old
-
-	cur.request = &request;
-	old.request = nullptr;
-	request.tag = &cur;
-}
-
-void
-ircd::server::associate(request &cur,
-                        tag &tag,
-                        request &&old)
-noexcept
-{
-	assert(tag.request == &old);   // ctor already moved
-	assert(cur.tag == &tag);       // ctor already moved
-	assert(old.tag == &tag);       // ctor didn't trash old
-
-	cur.tag = &tag;
-	tag.request = &cur;
-	old.tag = nullptr;
-}
-
-void
 ircd::server::disassociate(request &request,
                            tag &tag)
 noexcept
@@ -3591,7 +3419,7 @@ noexcept
 		delete &request;
 }
 
-void
+inline void
 ircd::server::tag::wrote(size_t bytes)
 {
 	assert(request);
@@ -3631,7 +3459,7 @@ ircd::server::tag::wrote(size_t bytes)
 	assert(!bytes);
 }
 
-void
+inline void
 ircd::server::tag::wrote_buffer(const const_buffer &buffer)
 {
 	assert(request);
@@ -3668,7 +3496,7 @@ ircd::server::tag::wrote_buffer(const const_buffer &buffer)
 	}
 }
 
-ircd::pair<ircd::const_buffer>
+inline ircd::pair<ircd::const_buffer>
 ircd::server::tag::make_write_buffers()
 const
 {
@@ -3696,7 +3524,7 @@ const
 	return {};
 }
 
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::make_write_head_buffer(const size_t written)
 const
 {
@@ -3711,7 +3539,7 @@ const
 	return window;
 }
 
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::make_write_content_buffer(const size_t written)
 const
 {
@@ -3764,7 +3592,7 @@ const
 /// through specific callbacks so the peer can learn information.
 ///
 [[GCC::stack_protect]]
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_buffer(const const_buffer &buffer,
                                bool &done,
                                link &link)
@@ -3807,7 +3635,7 @@ namespace ircd::server
 	static void content_completed(tag &, bool &done);
 }
 
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_head(const const_buffer &buffer,
                              bool &done,
                              link &link)
@@ -4020,7 +3848,7 @@ ircd::server::tag::read_head(const const_buffer &buffer,
 	return overrun;
 }
 
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_content(const const_buffer &buffer,
                                 bool &done)
 {
@@ -4096,7 +3924,7 @@ namespace ircd::server
 }
 
 [[GCC::stack_protect]]
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_chunk_head(const const_buffer &buffer,
                                    bool &done,
                                    const uint8_t recursion_level)
@@ -4236,7 +4064,7 @@ ircd::server::tag::read_chunk_head(const const_buffer &buffer,
 	return read_chunk_head(overrun, done, recursion_level + 1);
 }
 
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_chunk_content(const const_buffer &buffer,
                                       bool &done)
 {
@@ -4339,7 +4167,7 @@ namespace ircd::server
 }
 
 [[GCC::stack_protect]]
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_chunk_dynamic_head(const const_buffer &buffer,
                                            bool &done,
                                            const uint8_t recursion_level)
@@ -4489,7 +4317,7 @@ ircd::server::tag::read_chunk_dynamic_head(const const_buffer &buffer,
 	return read_chunk_dynamic_head(overrun, done, recursion_level + 1);
 }
 
-ircd::const_buffer
+inline ircd::const_buffer
 ircd::server::tag::read_chunk_dynamic_content(const const_buffer &buffer,
                                               bool &done)
 {
@@ -4681,7 +4509,7 @@ const
 	return ret;
 }
 
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_head_buffer()
 const
 {
@@ -4706,7 +4534,7 @@ const
 	return buffer;
 }
 
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_content_buffer()
 const
 {
@@ -4738,7 +4566,7 @@ const
 /// function accounts for that by returning a buffer which starts at the
 /// content_read offset (which is at the end of that previous read).
 ///
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_chunk_head_buffer()
 const
 {
@@ -4768,7 +4596,7 @@ const
 	return buffer;
 }
 
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_chunk_content_buffer()
 const
 {
@@ -4811,7 +4639,7 @@ const
 /// of the remaining main head buffer. This area is overwritten for each
 /// chunk head.
 ///
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_chunk_dynamic_head_buffer()
 const
 {
@@ -4850,7 +4678,7 @@ const
 	return buffer;
 }
 
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_chunk_dynamic_content_buffer()
 const
 {
@@ -4888,7 +4716,7 @@ const
 	return ret;
 }
 
-ircd::mutable_buffer
+inline ircd::mutable_buffer
 ircd::server::tag::make_read_discard_buffer()
 const
 {
@@ -4919,6 +4747,13 @@ const
 }
 
 size_t
+ircd::server::tag::write_size()
+const noexcept
+{
+	return request? size(request->out): 0;
+}
+
+inline size_t
 ircd::server::tag::content_remaining()
 const
 {
@@ -4926,7 +4761,7 @@ const
 	return state.content_length - state.content_read;
 }
 
-size_t
+inline size_t
 ircd::server::tag::content_overflow()
 const
 {
@@ -4937,7 +4772,7 @@ const
 }
 
 template<class... args>
-void
+inline void
 ircd::server::tag::set_value(args&&... a)
 {
 	if(abandoned())
@@ -4966,7 +4801,7 @@ ircd::server::tag::set_value(args&&... a)
 
 template<class E,
          class... args>
-void
+inline void
 ircd::server::tag::set_exception(args&&... a)
 try
 {
@@ -4983,7 +4818,7 @@ catch(const std::exception &e)
 	set_exception(std::current_exception());
 }
 
-void
+inline void
 ircd::server::tag::set_exception(std::exception_ptr eptr)
 {
 	if(abandoned())
@@ -4991,74 +4826,4 @@ ircd::server::tag::set_exception(std::exception_ptr eptr)
 
 	p.set_exception(std::move(eptr));
 	assert(abandoned());
-}
-
-bool
-ircd::server::tag::abandoned()
-const
-{
-	if(!p.valid())
-		return true;
-
-	assert(p.st);
-	assert(is(p.state(), ctx::future_state::PENDING));
-	return false;
-}
-
-bool
-ircd::server::tag::canceled()
-const
-{
-	return !!cancellation;
-}
-
-bool
-ircd::server::tag::committed()
-const
-{
-	return write_completed() > 0;
-}
-
-size_t
-ircd::server::tag::read_remaining()
-const
-{
-	assert(read_size() >= read_completed());
-	return read_size() - read_completed();
-}
-
-size_t
-ircd::server::tag::read_completed()
-const
-{
-	return state.head_read + state.content_read;
-}
-
-size_t
-ircd::server::tag::read_size()
-const
-{
-	return state.head_read + state.content_length;
-}
-
-size_t
-ircd::server::tag::write_remaining()
-const
-{
-	assert(write_size() >= write_completed());
-	return write_size() - write_completed();
-}
-
-size_t
-ircd::server::tag::write_completed()
-const
-{
-	return state.written + state.writing;
-}
-
-size_t
-ircd::server::tag::write_size()
-const
-{
-	return request? size(request->out) : 0;
 }
