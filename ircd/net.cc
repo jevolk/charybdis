@@ -1415,6 +1415,7 @@ ircd::net::sock_opts::sock_opts(const socket &socket)
 ,affinity{net::affinity(socket)}
 ,pmtudisc{net::pmtudisc(socket)}
 ,pmtu{net::pmtu(socket)}
+,tstamp{net::tstamp(socket)}
 {
 }
 
@@ -1471,7 +1472,31 @@ ircd::net::set(socket &socket,
 
 	if(opts.pmtudisc != opts.IGN)
 		net::pmtudisc(socket, opts.pmtudisc);
+
+	if(opts.tstamp != opts.IGN)
+		net::tstamp(socket, opts.tstamp);
 }
+
+bool
+ircd::net::tstamp(socket &socket,
+                  const int val)
+#if defined(SO_TIMESTAMPING) && defined(SOL_SOCKET)
+{
+	ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		sd.lowest_layer().native_handle()
+	};
+
+	sys::call(::setsockopt, fd, SOL_SOCKET, SO_TIMESTAMPING, &val, sizeof(val));
+	return true;
+}
+#else
+{
+	#warning "SO_TIMESTAMPING is not defined on this platform."
+	return false;
+}
+#endif
 
 bool
 ircd::net::pmtudisc(socket &socket,
@@ -1839,6 +1864,29 @@ ircd::net::v6only(socket &socket,
 	sd.set_option(option);
 	return true;
 }
+
+int
+ircd::net::tstamp(const socket &socket)
+#if defined(SO_TIMESTAMPING) && defined(SOL_SOCKET)
+{
+	const ip::tcp::socket &sd(socket);
+	const auto &fd
+	{
+		mutable_cast(sd).lowest_layer().native_handle()
+	};
+
+	int ret {-1};
+	socklen_t len(sizeof(ret));
+	sys::call(::getsockopt, fd, SOL_SOCKET, SO_TIMESTAMPING, &ret, &len);
+	assert(len <= sizeof(ret));
+	return ret;
+}
+#else
+{
+	#warning "SO_TIMESTAMPING is not defined on this platform."
+	return -1;
+}
+#endif
 
 int
 ircd::net::pmtu(const socket &socket)
