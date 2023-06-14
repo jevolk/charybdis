@@ -176,13 +176,21 @@ noexcept
 
 	// This feature is only enabled when RLIMIT_MEMLOCK is unlimited. We don't
 	// want to deal with any limit at all.
-	#if defined(HAVE_MLOCK2) && defined(MLOCK_ONFAULT)
 	if(database::allocator::mlock_enabled)
 	{
-		syscall(::mlock2, ret, size, MLOCK_ONFAULT);
-		database::allocator::mlock_current += size;
+		const const_buffer buf
+		{
+			static_cast<const char *>(ret), size
+		};
+
+		const auto locked
+		{
+			ircd::allocator::lock(buf, true)
+		};
+
+		assert(!locked || locked == size);
+		database::allocator::mlock_current += locked;
 	}
-	#endif
 
 	return ret;
 }
@@ -216,14 +224,22 @@ noexcept
 		their_hooks.dalloc(hooks, ptr, size, committed, arena_ind)
 	};
 
-	#if defined(HAVE_MLOCK2)
 	if(database::allocator::mlock_current && !ret)
 	{
-		syscall(::munlock, ptr, size);
+		const const_buffer buf
+		{
+			static_cast<const char *>(ptr), size
+		};
+
+		const auto unlocked
+		{
+			ircd::allocator::lock(buf, false)
+		};
+
+		assert(!unlocked || unlocked == size);
 		assert(database::allocator::mlock_current >= size);
-		database::allocator::mlock_current -= size;
+		database::allocator::mlock_current -= unlocked;
 	}
-	#endif
 
 	return ret;
 }
@@ -242,7 +258,6 @@ noexcept
 	assert(database::allocator::cache_arena == arena_ind);
 	const auto &their_hooks(*their_cache_arena_hooks);
 
-
 	if constexpr(RB_DEBUG_DB_ALLOCATOR)
 		log::debug
 		{
@@ -253,14 +268,22 @@ noexcept
 			committed,
 		};
 
-	#if defined(HAVE_MLOCK2)
 	if(database::allocator::mlock_current)
 	{
-		syscall(::munlock, ptr, size);
+		const const_buffer buf
+		{
+			static_cast<const char *>(ptr), size
+		};
+
+		const auto unlocked
+		{
+			ircd::allocator::lock(buf, false)
+		};
+
+		assert(!unlocked || unlocked == size);
 		assert(database::allocator::mlock_current >= size);
-		database::allocator::mlock_current -= size;
+		database::allocator::mlock_current -= unlocked;
 	}
-	#endif
 
 	return their_hooks.destroy(hooks, ptr, size, committed, arena_ind);
 }
