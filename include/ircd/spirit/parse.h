@@ -52,6 +52,13 @@ noexcept try
 catch(...)
 {
 	assert(false);
+
+	// If we emit __builtin_unreachable() when asserts are enabled the stack
+	// will be fubar for the debugger and won't have much useful information.
+	#if !defined(NDEBUG)
+		return false;
+	#endif
+
 	__builtin_unreachable();
 }
 
