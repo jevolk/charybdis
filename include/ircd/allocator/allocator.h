@@ -38,9 +38,9 @@ namespace ircd::allocator
 	size_t flush(const const_buffer &, const bool invd = false);       // msync
 	size_t sync(const const_buffer &, const bool invd = false);        // msync
 
-	void lock(const const_buffer &, const bool enable = true);         // mlock
-	void protect(const const_buffer &, const bool enable = true);      // mprotect
-	void readonly(const mutable_buffer &, const bool enable = true);   // mprotect
+	size_t lock(const const_buffer &, const bool enable = true);       // mlock
+	size_t protect(const const_buffer &, const bool enable = true);    // mprotect
+	size_t readonly(const mutable_buffer &, const bool enable = true); // mprotect
 
 	[[using gnu: malloc, alloc_align(1), alloc_size(2), returns_nonnull, warn_unused_result]]
 	char *allocate(const size_t align, const size_t size);

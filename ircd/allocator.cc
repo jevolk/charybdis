@@ -21,7 +21,7 @@
 
 namespace ircd::allocator
 {
-	static void advise_hugepage(void *const &, const size_t &alignment, const size_t &size);
+	static size_t advise_hugepage(void *const &, const size_t &, const size_t &);
 }
 
 #if defined(MADV_NORMAL) && defined(POSIX_MADV_NORMAL)
@@ -85,7 +85,7 @@ ircd::allocator::allocate(const size_t alignment,
 	return reinterpret_cast<char *>(ret);
 }
 
-void
+size_t
 ircd::allocator::advise_hugepage(void *const &ptr,
                                  const size_t &alignment,
                                  const size_t &size)
@@ -94,15 +94,16 @@ ircd::allocator::advise_hugepage(void *const &ptr,
 try
 {
 	if(likely(alignment < info::thp_size))
-		return;
+		return 0;
 
 	if(likely(alignment % size_t(info::thp_size) != 0))
-		return;
+		return 0;
 
 	if(!has(info::thp_enable, "[madvise]"))
-		return;
+		return 0;
 
 	sys::call(::madvise, ptr, size, MADV_HUGEPAGE);
+	return size;
 }
 catch(const std::exception &e)
 {
@@ -113,13 +114,16 @@ catch(const std::exception &e)
 		size,
 		e.what(),
 	};
+
+	return 0;
 }
 #else
 {
+	return 0;
 }
 #endif
 
-void
+size_t
 ircd::allocator::readonly(const mutable_buffer &buf,
                           const bool enable)
 #if defined(HAVE_MPROTECT)
@@ -133,17 +137,19 @@ ircd::allocator::readonly(const mutable_buffer &buf,
 
 	void *const ptr(mutable_cast(data(buf)));
 	sys::call(::mprotect, ptr, size(buf), prot);
+	return size(buf);
 }
 #else
 {
-	#warning "mprotect(2) not available for this compilation."
+	#warning "mprotect(2) not available for this platform."
+	return 0;
 }
 #endif
 
-#if defined(HAVE_MPROTECT)
-void
+size_t
 ircd::allocator::protect(const const_buffer &buf,
                          const bool enable)
+#if defined(HAVE_MPROTECT)
 {
 	const int prot
 	{
@@ -154,14 +160,16 @@ ircd::allocator::protect(const const_buffer &buf,
 
 	void *const ptr(mutable_cast(data(buf)));
 	sys::call(::mprotect, ptr, size(buf), prot);
+	return size(buf);
 }
 #else
 {
-	#warning "mprotect(2) not available for this compilation."
+	#warning "mprotect(2) not available for this platform."
+	return 0;
 }
 #endif
 
-void
+size_t
 ircd::allocator::lock(const const_buffer &buf,
                       const bool enable)
 #if defined(HAVE_MLOCK2) && defined(MLOCK_ONFAULT)
@@ -171,22 +179,26 @@ ircd::allocator::lock(const const_buffer &buf,
 
 	// can't mlock w/ valgrind
 	if(unlikely(vg::active))
-		return;
+		return 0;
 
 	if(enable)
 		syscall(::mlock2, data(buf), size(buf), flags);
 	else
 		syscall(::munlock, data(buf), size(buf));
+
+	return size(buf);
 }
 #else
 {
-	#warning "mlock2(2) not available for this compilation."
+	#warning "mlock2(2) not available for this platform."
+	return 0;
 }
 #endif
 
 size_t
 ircd::allocator::sync(const const_buffer &buf,
                       const bool invd)
+#if defined(HAVE_MSYNC) && defined(MS_INVALIDATE)
 {
 	assert(aligned(data(buf), info::page_size));
 	const prof::syscall_usage_warning message
@@ -194,19 +206,22 @@ ircd::allocator::sync(const const_buffer &buf,
 		"msync(2) MS_SYNC MS_INVALIDATE:%b", invd
 	};
 
-	#if defined(HAVE_MSYNC)
-		int flags {MS_SYNC};
-		flags |= invd? MS_INVALIDATE: 0;
-		sys::call(::msync, mutable_cast(data(buf)), size(buf), flags);
-		return size(buf);
-	#else
-		return 0;
-	#endif
+	int flags {MS_SYNC};
+	flags |= invd? MS_INVALIDATE: 0;
+	sys::call(::msync, mutable_cast(data(buf)), size(buf), flags);
+	return size(buf);
 }
+#else
+{
+	#warning "msync(2) not available for this platform."
+	return 0;
+}
+#endif
 
 size_t
 ircd::allocator::flush(const const_buffer &buf,
                        const bool invd)
+#if defined(HAVE_MSYNC) && defined(MS_INVALIDATE)
 {
 	assert(aligned(data(buf), info::page_size));
 	const prof::syscall_usage_warning message
@@ -214,19 +229,22 @@ ircd::allocator::flush(const const_buffer &buf,
 		"msync(2) MS_ASYNC MS_INVALIDATE:%b", invd
 	};
 
-	#if defined(HAVE_MSYNC)
-		int flags {MS_ASYNC};
-		flags |= invd? MS_INVALIDATE: 0;
-		sys::call(::msync, mutable_cast(data(buf)), size(buf), flags);
-		return size(buf);
-	#else
-		return 0;
-	#endif
+	int flags {MS_ASYNC};
+	flags |= invd? MS_INVALIDATE: 0;
+	sys::call(::msync, mutable_cast(data(buf)), size(buf), flags);
+	return size(buf);
 }
+#else
+{
+	#warning "msync(2) not available for this platform."
+	return 0;
+}
+#endif
 
 size_t
 ircd::allocator::cold(const const_buffer &buf,
                       const bool now)
+#if defined(MADV_PAGEOUT) || defined(MADV_COLD)
 {
 	const auto advice
 	{
@@ -237,16 +255,19 @@ ircd::allocator::cold(const const_buffer &buf,
 		#endif
 	};
 
-	#if defined(MADV_PAGEOUT) || defined(MADV_COLD)
-		return advise(buf, advice);
-	#else
-		return 0;
-	#endif
+	return advise(buf, advice);
 }
+#else
+{
+	#warning "MADV_PAGEOUT or MADV_COLD not available for this platform."
+	return 0;
+}
+#endif
 
 size_t
 ircd::allocator::evict(const const_buffer &buf,
                        const bool now)
+#if defined(POSIX_MADV_DONTNEED) || defined(MADV_FREE)
 {
 	const auto advice
 	{
@@ -257,38 +278,51 @@ ircd::allocator::evict(const const_buffer &buf,
 		#endif
 	};
 
-	#if defined(POSIX_MADV_DONTNEED) || defined(MADV_FREE)
-		return advise(buf, advice);
-	#else
-		return 0;
-	#endif
+	return advise(buf, advice);
 }
+#else
+{
+	#warning "POSIX_MADV_DONTNEED or MADV_FREE not available for this platform."
+	return 0;
+}
+#endif
 
 size_t
 ircd::allocator::fetch(const const_buffer &buf,
                        const bool w)
+#if defined(MADV_POPULATE_READ) && defined(MADV_POPULATE_WRITE)
 {
-	#if defined(MADV_POPULATE_READ) && defined(MADV_POPULATE_WRITE)
-		return advise(buf, w? MADV_POPULATE_WRITE: MADV_POPULATE_READ);
-	#else
-		return 0;
-	#endif
+	const auto advice
+	{
+		w? MADV_POPULATE_WRITE: MADV_POPULATE_READ
+	};
+
+	return advise(buf, advice);
 }
+#else
+{
+	#warning "MADV_POPULATE_READ and MADV_POPULATE_WRITE not available for this platform."
+	return 0;
+}
+#endif
 
 size_t
 ircd::allocator::prefetch(const const_buffer &buf)
+#if defined(POSIX_MADV_WILLNEED)
 {
-	#if defined(POSIX_MADV_WILLNEED)
-		return advise(buf, POSIX_MADV_WILLNEED);
-	#else
-		return 0;
-	#endif
+	return advise(buf, POSIX_MADV_WILLNEED);
 }
+#else
+{
+	#warning "POSIX_MADV_WILLNEED not available for this platform."
+	return 0;
+}
+#endif
 
-#if defined(HAVE_MADVISE)
 size_t
 ircd::allocator::advise(const const_buffer &buf,
                         const int advice)
+#if defined(HAVE_MADVISE)
 {
 	assert(aligned(data(buf), info::page_size));
 	switch(const auto r(::madvise(mutable_cast(data(buf)), size(buf), advice)); r)
@@ -305,9 +339,6 @@ ircd::allocator::advise(const const_buffer &buf,
 	__builtin_unreachable();
 }
 #elif defined(HAVE_POSIX_MADVISE)
-size_t
-ircd::allocator::advise(const const_buffer &buf,
-                        const int advice)
 {
 	const auto res
 	{
@@ -320,11 +351,8 @@ ircd::allocator::advise(const const_buffer &buf,
 	return size(buf);
 }
 #else
-#warning "posix_madvise(2) not available for this compilation."
-size_t
-ircd::allocator::advise(const const_buffer &buf,
-                        const int advice)
 {
+	#warning "posix_madvise(2) not available for this platform."
 	return 0;
 }
 #endif
