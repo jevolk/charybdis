@@ -8,8 +8,8 @@
 // copyright notice and this permission notice is present in all copies. The
 // full license for this software is available in the LICENSE file.
 
-#include <sys/syscall.h>
-#include <linux/bpf.h>
+#include <RB_INC_SYS_SYSCALL_H
+#include <RB_INC_LINUX_BPF_H
 
 namespace ircd::net::bpf
 {

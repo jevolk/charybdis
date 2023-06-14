@@ -18,7 +18,7 @@ static_assert
 #include <RB_INC_SYS_IOCTL_H
 #include <RB_INC_SYS_MMAN_H
 #include <RB_INC_SYS_RESOURCE_H
-#include <linux/perf_event.h>
+#include <RB_INC_LINUX_PERF_EVENT_H
 
 #ifndef __clang__
 	#define IRCD_PROF_ALWAYS_OPTIMIZE __attribute__((optimize("s"), flatten))

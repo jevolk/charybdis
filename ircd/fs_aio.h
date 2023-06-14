@@ -10,7 +10,7 @@
 
 #pragma once
 #define HAVE_FS_AIO_H
-#include <linux/aio_abi.h>
+#include <RB_INC_LINUX_AIO_ABI_H
 
 /// Define this to try all read requests with RWF_NOWAIT first and indicate
 /// EAGAIN failure with a log dwarning. On EAGAIN the request is resubmitted

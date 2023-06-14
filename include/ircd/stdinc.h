@@ -131,6 +131,9 @@ extern "C"
 #undef major
 #undef minor
 
+// Historical
+#undef linux
+
 // Experimental std::string_view
 #if !defined(__cpp_lib_string_view) && defined(__cpp_lib_experimental_string_view)
 namespace std

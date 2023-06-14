@@ -8,9 +8,7 @@
 // copyright notice and this permission notice is present in all copies. The
 // full license for this software is available in the LICENSE file.
 
-#if __has_include(<linux/input-event-codes.h>)
-	#include <linux/input-event-codes.h>
-#endif
+#include <RB_INC_LINUX_INPUT_EVENT_CODES_H
 
 #ifndef EV_SND
 	#define EV_SND 0
