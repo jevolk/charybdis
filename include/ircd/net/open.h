@@ -42,13 +42,6 @@ struct ircd::net::open_opts
 	static conf::item<bool> default_allow_self_chain;
 	static conf::item<bool> default_allow_expired;
 
-	// Get the proper target CN from the options structure
-	friend string_view common_name(const open_opts &);
-
-	open_opts() = default;
-	explicit open_opts(const net::ipport &ipport, const net::hostport & = {});
-	open_opts(const net::hostport &hostport);
-
 	/// Remote's hostname and port. This will be used for address resolution
 	/// if an ipport is not also provided later. The hostname will also be used
 	/// for certificate /CN verification if common_name is not provided later.
@@ -117,22 +110,6 @@ struct ircd::net::open_opts
 	/// Option to allow expired certificates.
 	bool allow_expired { default_allow_expired };
 };
-
-/// Constructor intended to provide implicit conversions (no-brackets required)
-/// in arguments to open(); i.e open(hostport) rather than open({hostport});
-inline
-ircd::net::open_opts::open_opts(const net::hostport &hostport)
-:hostport{hostport}
-{}
-
-/// Constructor intended to provide implicit conversions (no-brackets required)
-/// in arguments to open(); i.e open(ipport) rather than open({ipport});
-inline
-ircd::net::open_opts::open_opts(const net::ipport &ipport,
-                                const net::hostport &hostport)
-:hostport{hostport}
-,ipport{ipport}
-{}
 
 inline ircd::string_view
 ircd::net::server_name(const open_opts &opts)
