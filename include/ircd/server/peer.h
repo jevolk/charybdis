@@ -66,7 +66,9 @@ struct ircd::server::peer
 	void handle_finished(link &);
 	void handle_error(link &, const std::system_error &);
 	void handle_error(link &, std::exception_ptr);
+	void handle_close_error(link &, std::exception_ptr);
 	void handle_close(link &, std::exception_ptr);
+	void handle_open_error(link &, std::exception_ptr);
 	void handle_open(link &, std::exception_ptr);
 
   public:

@@ -1142,31 +1142,64 @@ ircd::server::peer::handle_open(link &link,
 {
 	if(eptr)
 	{
-		// Mark the peer as errored if the first link connection failed.
-		assert(!links.empty());
-		if(std::addressof(link) == std::addressof(links.front()))
-			err_set(eptr);
-
-		char rembuf[64];
-		log::derror
-		{
-			log, "%s [%s]: open :%s",
-			loghead(link),
-			string(rembuf, remote),
-			what(eptr)
-		};
-
-		if(op_fini)
-		{
-			if(link.finished())
-				handle_finished(link);
-
-			return;
-		}
-
-		link.close(net::dc::RST);
+		handle_open_error(link, eptr);
 		return;
 	}
+}
+
+inline void
+ircd::server::peer::handle_open_error(link &link,
+                                      std::exception_ptr eptr)
+{
+	assert(bool(eptr));
+
+	char rembuf[64];
+	log::derror
+	{
+		log, "%s [%s]: open :%s",
+		loghead(link),
+		string(rembuf, remote),
+		what(eptr)
+	};
+
+	// Mark the peer as errored if the first link connection failed for
+	// any reason of if subsequent connections failed for specific reasons.
+	assert(!links.empty());
+	const bool is_first_link
+	{
+		std::addressof(link) == std::addressof(links.front())
+	};
+
+	bool set_err
+	{
+		is_first_link
+	};
+
+	if(!is_first_link)
+	{
+		const auto e(as<std::system_error>(eptr));
+		if(e && system_category(e->code())) switch(e->code().value())
+		{
+			using std::errc;
+
+			case int(errc::network_unreachable):
+				set_err = true;
+				break;
+		}
+	}
+
+	if(set_err)
+		err_set(eptr);
+
+	if(op_fini)
+	{
+		if(link.finished())
+			handle_finished(link);
+
+		return;
+	}
+
+	link.close(net::dc::RST);
 }
 
 inline void
@@ -1174,19 +1207,26 @@ ircd::server::peer::handle_close(link &link,
                                  std::exception_ptr eptr)
 {
 	if(eptr)
-	{
-		char rembuf[64];
-		log::derror
-		{
-			log, "%s [%s]: close :%s",
-			loghead(link),
-			string(rembuf, remote),
-			what(eptr)
-		};
-	}
+		handle_close_error(link, eptr);
 
 	if(link.finished())
 		handle_finished(link);
+}
+
+inline void
+ircd::server::peer::handle_close_error(link &link,
+                                       std::exception_ptr eptr)
+{
+	assert(bool(eptr));
+
+	char rembuf[64];
+	log::derror
+	{
+		log, "%s [%s]: close :%s",
+		loghead(link),
+		string(rembuf, remote),
+		what(eptr),
+	};
 }
 
 inline void
@@ -1232,7 +1272,7 @@ ircd::server::peer::handle_error(link &link,
 	{
 		log::debug
 		{
-			log, "%s [%s]: %s",
+			log, "%s [%s] :%s",
 			loghead(link),
 			string(rembuf, remote),
 			e.what()
@@ -1244,7 +1284,7 @@ ircd::server::peer::handle_error(link &link,
 
 	log::derror
 	{
-		log, "%s [%s]: %s",
+		log, "%s [%s] :%s",
 		loghead(link),
 		string(rembuf, remote),
 		e.what()
@@ -1361,7 +1401,7 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "%s tag:%lu done; %s",
+		log, "%s tag:%lu done :%s",
 		loghead(link),
 		tag.state.id,
 		e.what()
@@ -2541,8 +2581,6 @@ inline void
 ircd::server::link::handle_writable(const error_code &ec)
 noexcept try
 {
-	using std::errc;
-
 	assert(op_write);
 	op_write = false;
 	write_ts = time<seconds>();
@@ -2555,6 +2593,8 @@ noexcept try
 
 	if(system_category(ec)) switch(ec.value())
 	{
+		using std::errc;
+
 		[[likely]]
 		case 0:
 			handle_writable_success();
@@ -2815,8 +2855,6 @@ inline void
 ircd::server::link::handle_readable(const error_code &ec)
 noexcept try
 {
-	using std::errc;
-
 	op_read = false;
 	read_ts = time<seconds>();
 
@@ -2828,6 +2866,8 @@ noexcept try
 
 	if(system_category(ec)) switch(ec.value())
 	{
+		using std::errc;
+
 		[[likely]]
 		case 0:
 			handle_readable_success();
