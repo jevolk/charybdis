@@ -6535,13 +6535,14 @@ console_cmd__net__addrs(opt &out, const string_view &line)
 	net::addrs::for_each([&out]
 	(const net::addrs::addr &addr)
 	{
-		out << std::left << std::setw(16) << addr.name << " "
-		    << std::setw(32) << addr.address << " "
-		    << "family[" << std::setw(2) << addr.family << "] "
-		    << "scope[" << addr.scope_id << "] "
-		    << "flowinfo[" << addr.flowinfo << "] "
-		    << "flags[0x" << std::hex << addr.flags << "]" << std::dec
-		    << std::endl;
+		out
+		<< std::setw(32) << addr.address << ' '
+		<< std::left << std::setw(16) << addr.name << ' '
+		<< "family:" << std::setw(3) << addr.family << ' '
+		<< "scope:" << std::setw(3) << addr.scope_id << ' '
+		<< "flags:0x" << std::hex << std::setw(8) << addr.flags << ' ' << std::dec
+		<< "flowinfo:" << std::setw(3) << addr.flowinfo << ' '
+		<< std::endl;
 
 		return true;
 	});
