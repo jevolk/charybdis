@@ -97,19 +97,20 @@ ircd::string(const mutable_buffer &buf,
 
 ircd::string_view
 ircd::string(const mutable_buffer &buf,
-             const std::system_error &e)
-{
-	return string(buf, e.code());
-}
-
-ircd::string_view
-ircd::string(const mutable_buffer &buf,
              const std::error_code &ec)
 {
 	return fmt::sprintf
 	{
 		buf, "%s :%s", ec.category().name(), ec.message()
 	};
+}
+
+bool
+ircd::is(const boost::system::system_error &e,
+         const std::errc &ec)
+noexcept
+{
+	return is(e.code(), ec);
 }
 
 bool

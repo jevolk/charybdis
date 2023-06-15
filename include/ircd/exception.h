@@ -28,19 +28,25 @@ namespace ircd
 	bool system_category(const std::error_category &) noexcept;
 	bool system_category(const std::error_code &) noexcept;
 	bool system_category(const boost::system::error_code &) noexcept;
+
 	bool is(const std::error_code &, const std::errc &) noexcept;
+	bool is(const std::system_error &, const std::errc &) noexcept;
 	bool is(const boost::system::error_code &, const std::errc &) noexcept;
+	bool is(const boost::system::system_error &, const std::errc &) noexcept;
+
 	std::error_code make_error_code(const int &code = errno) noexcept;
 	std::error_code make_error_code(const std::error_code &) noexcept;
 	std::error_code make_error_code(const std::system_error &) noexcept;
 	std::error_code make_error_code(const boost::system::error_code &) noexcept;
 	std::error_code make_error_code(const boost::system::system_error &) noexcept;
+
 	std::system_error make_system_error(const int &code = errno);
 	std::system_error make_system_error(const std::errc &);
 	std::system_error make_system_error(const std::error_code &);
 	std::system_error make_system_error(const boost::system::error_code &);
 	std::system_error make_system_error(const boost::system::system_error &);
-	[[noreturn]] void throw_system_error();
+
+	template<class E> E *as(const std::exception_ptr &);
 	template<class... args> std::exception_ptr make_system_eptr(args&&...);
 	template<class... args> [[noreturn]] void throw_system_error(args&&...);
 	template<class E, class... args> std::exception_ptr make_exception_ptr(args&&...);
@@ -53,6 +59,8 @@ namespace ircd
 	std::string string(const std::system_error &);
 	std::string string(const boost::system::error_code &);
 	std::string string(const boost::system::system_error &);
+
+	[[noreturn]] void throw_system_error();
 }
 
 /// The root exception type.
@@ -219,6 +227,13 @@ namespace ircd
 	IRCD_EXCEPTION(error, user_error)            // throw ircd::user_error("something silly")
 }
 
+inline ircd::string_view
+ircd::string(const mutable_buffer &buf,
+             const std::system_error &e)
+{
+	return string(buf, e.code());
+}
+
 template<class E,
          class... args>
 inline std::exception_ptr
@@ -244,6 +259,33 @@ inline std::exception_ptr
 ircd::make_system_eptr(args&&... a)
 {
 	return std::make_exception_ptr(make_system_error(std::forward<args>(a)...));
+}
+
+template<class E>
+inline E *
+ircd::as(const std::exception_ptr &eptr)
+try
+{
+	if(likely(eptr))
+		std::rethrow_exception(eptr);
+
+	return nullptr;
+}
+catch(E &e)
+{
+	return std::addressof(e);
+}
+catch(...)
+{
+	return nullptr;
+}
+
+inline bool
+ircd::is(const std::system_error &e,
+         const std::errc &ec)
+noexcept
+{
+	return is(e.code(), ec);
 }
 
 [[gnu::always_inline]]
