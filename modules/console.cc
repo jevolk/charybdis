@@ -9269,128 +9269,6 @@ console_cmd__event__trace(opt &out, const string_view &line)
 }
 
 //
-// eval
-//
-
-bool
-console_cmd__eval__file(opt &out, const string_view &line);
-
-bool
-console_cmd__eval(opt &out, const string_view &line)
-{
-	const params param{line, " ",
-	{
-		"event_id", "opts",
-	}};
-
-	if(!valid(m::id::EVENT, param.at(0)))
-		return console_cmd__eval__file(out, line);
-
-	const m::event::id &event_id
-	{
-		param.at(0)
-	};
-
-	const auto &args
-	{
-		tokens_after(line, ' ', 1)
-	};
-
-	const m::event::fetch event
-	{
-		event_id
-	};
-
-	m::vm::opts opts;
-	opts.nothrows = 0;
-
-	tokens(args, ' ', [&opts](const auto &arg)
-	{
-		switch(hash(arg))
-		{
-			case "replay"_:
-				opts.replays = true;
-				break;
-
-			case "nowrite"_:
-				opts.phase.reset(m::vm::phase::WRITE);
-				break;
-
-			case "noverify"_:
-				opts.phase.reset(m::vm::phase::VERIFY);
-				break;
-		}
-	});
-
-	out
-	<< pretty(event)
-	<< std::endl;
-
-	m::vm::eval
-	{
-		event, opts
-	};
-
-	out
-	<< "done"
-	<< std::endl;
-	return true;
-}
-
-bool
-console_cmd__eval__file(opt &out, const string_view &line)
-{
-	const params param{line, " ",
-	{
-		"path", "limit"
-	}};
-
-	const auto path
-	{
-		param.at("path")
-	};
-
-	const auto limit
-	{
-		param.at<size_t>("limit", -1UL)
-	};
-
-	const fs::fd::opts opts
-	{
-		.mode = std::ios::in,
-	};
-
-	const fs::fd file
-	{
-		path, opts
-	};
-
-	const fs::map map
-	{
-		file, fs::map::opts
-		{
-			opts
-		},
-	};
-
-	// This array is backed by the mmap
-	const json::array events
-	{
-		const_buffer{map}
-	};
-
-	m::vm::opts vm_opts;
-	vm_opts.infolog_accept = true;
-	vm_opts.limit = limit;
-	m::vm::eval
-	{
-		events, vm_opts
-	};
-
-	return true;
-}
-
-//
 // rooms
 //
 
@@ -17997,6 +17875,124 @@ console_cmd__vm(opt &out, const string_view &line)
 	out << "     inject " << std::left << std::setw(10) << m::vm::eval::injecting;
 
 	out << std::endl;
+	return true;
+}
+
+bool
+console_cmd__vm__eval__file(opt &out, const string_view &line);
+
+bool
+console_cmd__vm__eval(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"event_id", "opts",
+	}};
+
+	if(!valid(m::id::EVENT, param.at(0)))
+		return console_cmd__vm__eval__file(out, line);
+
+	const m::event::id &event_id
+	{
+		param.at(0)
+	};
+
+	const auto &args
+	{
+		tokens_after(line, ' ', 1)
+	};
+
+	const m::event::fetch event
+	{
+		event_id
+	};
+
+	m::vm::opts opts;
+	opts.nothrows = 0;
+
+	tokens(args, ' ', [&opts](const auto &arg)
+	{
+		switch(hash(arg))
+		{
+			case "replay"_:
+				opts.replays = true;
+				break;
+
+			case "nowrite"_:
+				opts.phase.reset(m::vm::phase::WRITE);
+				break;
+
+			case "noverify"_:
+				opts.phase.reset(m::vm::phase::VERIFY);
+				break;
+		}
+	});
+
+	out
+	<< pretty(event)
+	<< std::endl;
+
+	m::vm::eval
+	{
+		event, opts
+	};
+
+	out
+	<< "done"
+	<< std::endl;
+	return true;
+}
+
+bool
+console_cmd__vm__eval__file(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"path", "limit"
+	}};
+
+	const auto path
+	{
+		param.at("path")
+	};
+
+	const auto limit
+	{
+		param.at<size_t>("limit", -1UL)
+	};
+
+	const fs::fd::opts opts
+	{
+		.mode = std::ios::in,
+	};
+
+	const fs::fd file
+	{
+		path, opts
+	};
+
+	const fs::map map
+	{
+		file, fs::map::opts
+		{
+			opts
+		},
+	};
+
+	// This array is backed by the mmap
+	const json::array events
+	{
+		const_buffer{map}
+	};
+
+	m::vm::opts vm_opts;
+	vm_opts.infolog_accept = true;
+	vm_opts.limit = limit;
+	m::vm::eval
+	{
+		events, vm_opts
+	};
+
 	return true;
 }
 
