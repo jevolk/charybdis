@@ -17,10 +17,16 @@ struct ircd::server::link
 {
 	using const_buffers = net::const_buffers;
 
+	static net::sock_opts sock_opts;
+	static conf::item<ssize_t> only_ipv6;
+	static conf::item<ssize_t> sock_nodelay;
+	static conf::item<ssize_t> sock_read_bufsz;
+	static conf::item<ssize_t> sock_read_lowat;
+	static conf::item<ssize_t> sock_write_bufsz;
+	static conf::item<ssize_t> sock_write_lowat;
 	static conf::item<size_t> tag_max_default;
 	static conf::item<size_t> tag_commit_max_default;
 	static conf::item<bool> write_async;
-	static uint64_t ids;
 	static uint64_t ticker[];
 	static stats::item<uint64_t *> ops_write_wait;
 	static stats::item<uint64_t *> ops_write_now;
@@ -30,6 +36,7 @@ struct ircd::server::link
 	static stats::item<uint64_t *> ops_read_wait;
 	static stats::item<uint64_t *> ops_read_nbio;
 	static stats::item<uint64_t *> ops_read_discard;
+	static uint64_t ids;
 
 	uint64_t id {++ids};                         ///< unique identifier of link.
 	server::peer *peer;                          ///< backreference to peer

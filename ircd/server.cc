@@ -783,10 +783,6 @@ ircd::server::peer::MAX_LINK
 	16
 };
 
-decltype(ircd::server::peer::sock_opts)
-ircd::server::peer::sock_opts
-{};
-
 [[clang::always_destroy]]
 decltype(ircd::server::peer::close_desc)
 ircd::server::peer::close_desc
@@ -829,84 +825,6 @@ ircd::server::peer::enable_ipv6
 	{ "default",  true                           },
 };
 
-decltype(ircd::server::peer::only_ipv6)
-ircd::server::peer::only_ipv6
-{
-	{
-		{ "name",     "ircd.server.peer.ipv6.only" },
-		{ "default",  net::sock_opts::IGN          },
-	},
-	[](conf::item<void> &) noexcept
-	{
-		sock_opts.v6only = ssize_t(only_ipv6);
-	}
-};
-
-decltype(ircd::server::peer::sock_nodelay)
-ircd::server::peer::sock_nodelay
-{
-	{
-		{ "name",     "ircd.server.peer.sock.nodelay" },
-		{ "default",  long(true)                      },
-	},
-	[](conf::item<void> &) noexcept
-	{
-		sock_opts.nodelay = ssize_t(sock_nodelay);
-	}
-};
-
-decltype(ircd::server::peer::sock_read_bufsz)
-ircd::server::peer::sock_read_bufsz
-{
-	{
-		{ "name",     "ircd.server.peer.sock.read.bufsz" },
-		{ "default",  net::sock_opts::IGN                },
-	},
-	[](conf::item<void> &) noexcept
-	{
-		sock_opts.read_bufsz = ssize_t(sock_read_bufsz);
-	}
-};
-
-decltype(ircd::server::peer::sock_read_lowat)
-ircd::server::peer::sock_read_lowat
-{
-	{
-		{ "name",     "ircd.server.peer.sock.read.lowat" },
-		{ "default",  net::sock_opts::IGN                },
-	},
-	[](conf::item<void> &) noexcept
-	{
-		sock_opts.read_lowat = ssize_t(sock_read_lowat);
-	}
-};
-
-decltype(ircd::server::peer::sock_write_bufsz)
-ircd::server::peer::sock_write_bufsz
-{
-	{
-		{ "name",     "ircd.server.peer.sock.write.bufsz" },
-		{ "default",  net::sock_opts::IGN                 },
-	},
-	[](conf::item<void> &) noexcept
-	{
-		sock_opts.write_bufsz = ssize_t(sock_write_bufsz);
-	}
-};
-
-decltype(ircd::server::peer::sock_write_lowat)
-ircd::server::peer::sock_write_lowat
-{
-	{
-		{ "name",     "ircd.server.peer.sock.write.lowat" },
-		{ "default",  net::sock_opts::IGN                 },
-	},
-	[](conf::item<void> &) noexcept
-	{
-		sock_opts.write_lowat = ssize_t(sock_write_lowat);
-	}
-};
-
 decltype(ircd::server::peer::ids)
 ircd::server::peer::ids;
 
@@ -926,7 +844,7 @@ ircd::server::peer::peer(const net::hostport &hostport,
 }
 {
 	// Socket options
-	this->open_opts.sopts = &peer::sock_opts;
+	this->open_opts.sopts = &link::sock_opts;
 
 	// Ensure references are to this class's members
 	const net::hostport canon{this->hostcanon};
@@ -2147,6 +2065,88 @@ noexcept
 // server/link.h
 //
 
+decltype(ircd::server::link::sock_opts)
+ircd::server::link::sock_opts
+{};
+
+decltype(ircd::server::link::only_ipv6)
+ircd::server::link::only_ipv6
+{
+	{
+		{ "name",     "ircd.server.link.ipv6.only" },
+		{ "default",  net::sock_opts::IGN          },
+	},
+	[](conf::item<void> &) noexcept
+	{
+		sock_opts.v6only = ssize_t(only_ipv6);
+	}
+};
+
+decltype(ircd::server::link::sock_nodelay)
+ircd::server::link::sock_nodelay
+{
+	{
+		{ "name",     "ircd.server.link.sock.nodelay" },
+		{ "default",  long(true)                      },
+	},
+	[](conf::item<void> &) noexcept
+	{
+		sock_opts.nodelay = ssize_t(sock_nodelay);
+	}
+};
+
+decltype(ircd::server::link::sock_read_bufsz)
+ircd::server::link::sock_read_bufsz
+{
+	{
+		{ "name",     "ircd.server.link.sock.read.bufsz" },
+		{ "default",  net::sock_opts::IGN                },
+	},
+	[](conf::item<void> &) noexcept
+	{
+		sock_opts.read_bufsz = ssize_t(sock_read_bufsz);
+	}
+};
+
+decltype(ircd::server::link::sock_read_lowat)
+ircd::server::link::sock_read_lowat
+{
+	{
+		{ "name",     "ircd.server.link.sock.read.lowat" },
+		{ "default",  net::sock_opts::IGN                },
+	},
+	[](conf::item<void> &) noexcept
+	{
+		sock_opts.read_lowat = ssize_t(sock_read_lowat);
+	}
+};
+
+decltype(ircd::server::link::sock_write_bufsz)
+ircd::server::link::sock_write_bufsz
+{
+	{
+		{ "name",     "ircd.server.link.sock.write.bufsz" },
+		{ "default",  net::sock_opts::IGN                 },
+	},
+	[](conf::item<void> &) noexcept
+	{
+		sock_opts.write_bufsz = ssize_t(sock_write_bufsz);
+	}
+};
+
+decltype(ircd::server::link::sock_write_lowat)
+ircd::server::link::sock_write_lowat
+{
+	{
+		{ "name",     "ircd.server.link.sock.write.lowat" },
+		{ "default",  net::sock_opts::IGN                 },
+	},
+	[](conf::item<void> &) noexcept
+	{
+		sock_opts.write_lowat = ssize_t(sock_write_lowat);
+	}
+};
+
 decltype(ircd::server::link::tag_max_default)
 ircd::server::link::tag_max_default
 {
@@ -2167,9 +2167,6 @@ ircd::server::link::write_async
 	{ "name",     "ircd.server.link.write.async" },
 	{ "default",  bool(IRCD_USE_ASIO_IO_URING)   },
 };
-
-decltype(ircd::server::link::ids)
-ircd::server::link::ids;
 
 uint64_t
 ircd::server::link::ticker[8];
@@ -2221,6 +2218,9 @@ ircd::server::link::ops_read_discard
 {
 	ticker + 7,  {{ "name", "ircd.server.link.ops.read.discard" }},
 };
+
+decltype(ircd::server::link::ids)
+ircd::server::link::ids;
 
 [[gnu::pure]]
 ircd::string_view
