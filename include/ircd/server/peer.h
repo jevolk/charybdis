@@ -32,6 +32,7 @@ struct ircd::server::peer
 	std::string hostcanon;        // hostname:service[:port]
 	net::ipport remote;
 	system_point remote_expires;
+	net::sock_opts sock_opts;
 	net::open_opts open_opts;
 	std::list<link> links;
 	std::unique_ptr<err> e;

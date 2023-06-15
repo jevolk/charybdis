@@ -838,13 +838,19 @@ ircd::server::peer::peer(const net::hostport &hostport,
 {
 	net::canonize(hostport)
 }
+,sock_opts
+{
+	open_opts.sopts?
+		*open_opts.sopts:
+		link::sock_opts
+}
 ,open_opts
 {
 	open_opts
 }
 {
 	// Socket options
-	this->open_opts.sopts = &link::sock_opts;
+	this->open_opts.sopts = &this->sock_opts;
 
 	// Ensure references are to this class's members
 	const net::hostport canon{this->hostcanon};
@@ -854,6 +860,7 @@ ircd::server::peer::peer(const net::hostport &hostport,
 			host(canon), port(hostport)
 		};
 
+	// Finesse the real remote target
 	this->open_opts.ipport = this->remote;
 	this->open_opts.hostport.host = host(canon);
 	this->open_opts.hostport.service = service(canon);
