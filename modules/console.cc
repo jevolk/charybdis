@@ -16415,7 +16415,7 @@ console_cmd__fed__state(opt &out, const string_view &line)
 {
 	const params param{line, " ",
 	{
-		"room_id", "remote", "event_id|op", "op"
+		"room_id", "remote", "event_id|op", "op", "oparg"
 	}};
 
 	const auto &room_id
@@ -16436,6 +16436,11 @@ console_cmd__fed__state(opt &out, const string_view &line)
 	string_view op
 	{
 		param[3]
+	};
+
+	string_view oparg
+	{
+		param["oparg"]
 	};
 
 	if(!op && event_id == "eval")
@@ -16511,6 +16516,14 @@ console_cmd__fed__state(opt &out, const string_view &line)
 
 	m::vm::opts vmopts;
 	vmopts.nothrows = -1;
+	vmopts.replays = has(oparg, "replay");
+	vmopts.phase.set(m::vm::phase::ACCESS, !has(oparg, "noacl"));
+	vmopts.phase.set(m::vm::phase::CONFORM, !has(oparg, "noconform"));
+	vmopts.phase.set(m::vm::phase::VERIFY, !has(oparg, "noverify"));
+	vmopts.phase.set(m::vm::phase::AUTH_STATIC, !has(oparg, "noauth"));
+	vmopts.phase.set(m::vm::phase::AUTH_RELA, !has(oparg, "noauth"));
+	vmopts.phase.set(m::vm::phase::AUTH_PRES, !has(oparg, "noauth"));
+	vmopts.phase.set(m::vm::phase::WRITE, !has(oparg, "nowrite"));
 	vmopts.phase.set(m::vm::phase::FETCH_PREV, false);
 	vmopts.phase.set(m::vm::phase::FETCH_STATE, false);
 	vmopts.notify_servers = false;
