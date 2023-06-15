@@ -9,6 +9,7 @@
 // full license for this software is available in the LICENSE file.
 
 #include <ircd/ircd.h>
+#include <ircd/util/params.h>
 #include "construct.h"
 #include "console.h"
 
@@ -264,6 +265,9 @@ try
 
 	if(startswith(line, "watch"))
 		return cmd__watch();
+
+	if(startswith(line, "eval"))
+		return cmd__eval();
 
 	int ret{-1};
 	if(module) switch((ret = handle_line_bymodule()))
@@ -527,6 +531,37 @@ construct::console::cmd__watch()
 		}
 	}
 	while(1);
+
+	return true;
+}
+
+bool
+construct::console::cmd__eval()
+{
+	const ircd::params param
+	{
+		tokens_after(line, ' ', 0), " ",
+		{
+			"path"
+		}
+	};
+
+	const auto path
+	{
+		param.at("path")
+	};
+
+	const auto file
+	{
+		ircd::fs::read(path)
+	};
+
+	ircd::tokens(file, '\n', [this]
+	(const string_view &line)
+	{
+		this->line = line;
+		handle_line();
+	});
 
 	return true;
 }
