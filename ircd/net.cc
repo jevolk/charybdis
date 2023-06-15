@@ -1405,10 +1405,10 @@ ircd::net::sock_opts::sock_opts(const socket &socket)
 ,quickack{net::quickack(socket)}
 ,keepalive{net::keepalive(socket)}
 ,linger{net::linger(socket)}
-,read_bufsz{ssize_t(net::read_bufsz(socket))}
-,write_bufsz{ssize_t(net::write_bufsz(socket))}
-,read_lowat{ssize_t(net::read_lowat(socket))}
-,write_lowat{ssize_t(net::write_lowat(socket))}
+,read_bufsz{net::read_bufsz(socket)}
+,write_bufsz{net::write_bufsz(socket)}
+,read_lowat{net::read_lowat(socket)}
+,write_lowat{net::write_lowat(socket)}
 ,ebpf{net::attach(socket)}
 ,iptos{net::iptos(socket)}
 ,priority{net::priority(socket)}
@@ -1644,7 +1644,7 @@ ircd::net::attach(const int sd,
 
 bool
 ircd::net::write_lowat(socket &socket,
-                       const size_t bytes)
+                       const int bytes)
 {
 	assert(bytes <= std::numeric_limits<int>::max());
 	const ip::tcp::socket::send_low_watermark option
@@ -1659,7 +1659,7 @@ ircd::net::write_lowat(socket &socket,
 
 bool
 ircd::net::read_lowat(socket &socket,
-                      const size_t bytes)
+                      const int bytes)
 {
 	assert(bytes <= std::numeric_limits<int>::max());
 	const ip::tcp::socket::receive_low_watermark option
@@ -1674,7 +1674,7 @@ ircd::net::read_lowat(socket &socket,
 
 bool
 ircd::net::write_bufsz(socket &socket,
-                       const size_t bytes)
+                       const int bytes)
 {
 	assert(bytes <= std::numeric_limits<int>::max());
 	const ip::tcp::socket::send_buffer_size option
@@ -1689,7 +1689,7 @@ ircd::net::write_bufsz(socket &socket,
 
 bool
 ircd::net::read_bufsz(socket &socket,
-                      const size_t bytes)
+                      const int bytes)
 {
 	assert(bytes <= std::numeric_limits<int>::max());
 	const ip::tcp::socket::receive_buffer_size option
@@ -1704,14 +1704,12 @@ ircd::net::read_bufsz(socket &socket,
 
 bool
 ircd::net::linger(socket &socket,
-                  const time_t t)
+                  const int t)
 {
-	assert(t >= std::numeric_limits<int>::min());
-	assert(t <= std::numeric_limits<int>::max());
 	const ip::tcp::socket::linger option
 	{
 		t >= 0,                // ON / OFF boolean
-		t >= 0? int(t) : 0     // Uses 0 when OFF
+		t >= 0? t : 0          // Uses 0 when OFF
 	};
 
 	ip::tcp::socket &sd(socket);
@@ -2033,7 +2031,7 @@ ircd::net::attach(const socket &socket)
 }
 #endif
 
-size_t
+int
 ircd::net::write_lowat(const socket &socket)
 {
 	const ip::tcp::socket &sd(socket);
@@ -2042,7 +2040,7 @@ ircd::net::write_lowat(const socket &socket)
 	return option.value();
 }
 
-size_t
+int
 ircd::net::read_lowat(const socket &socket)
 {
 	const ip::tcp::socket &sd(socket);
@@ -2051,7 +2049,7 @@ ircd::net::read_lowat(const socket &socket)
 	return option.value();
 }
 
-size_t
+int
 ircd::net::write_bufsz(const socket &socket)
 {
 	const ip::tcp::socket &sd(socket);
@@ -2060,7 +2058,7 @@ ircd::net::write_bufsz(const socket &socket)
 	return option.value();
 }
 
-size_t
+int
 ircd::net::read_bufsz(const socket &socket)
 {
 	const ip::tcp::socket &sd(socket);
@@ -2069,7 +2067,7 @@ ircd::net::read_bufsz(const socket &socket)
 	return option.value();
 }
 
-time_t
+int
 ircd::net::linger(const socket &socket)
 {
 	const ip::tcp::socket &sd(socket);

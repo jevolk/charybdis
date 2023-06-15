@@ -24,11 +24,11 @@ namespace ircd::net
 	bool nodelay(const socket &);
 	bool quickack(const socket &);
 	bool keepalive(const socket &);
-	time_t linger(const socket &);
-	size_t read_bufsz(const socket &);
-	size_t write_bufsz(const socket &);
-	size_t read_lowat(const socket &);
-	size_t write_lowat(const socket &);
+	int linger(const socket &);
+	int read_bufsz(const socket &);
+	int write_bufsz(const socket &);
+	int read_lowat(const socket &);
+	int write_lowat(const socket &);
 	int attach(const socket &);
 	int iptos(const socket &);
 	int priority(const socket &);
@@ -46,11 +46,11 @@ namespace ircd::net
 	bool nodelay(socket &, const bool);
 	bool quickack(socket &, const bool);
 	bool keepalive(socket &, const bool);
-	bool linger(socket &, const time_t); // -1 is OFF; >= 0 is ON
-	bool read_bufsz(socket &, const size_t bytes);
-	bool write_bufsz(socket &, const size_t bytes);
-	bool read_lowat(socket &, const size_t bytes);
-	bool write_lowat(socket &, const size_t bytes);
+	bool linger(socket &, const int); // -1 is OFF; >= 0 is ON
+	bool read_bufsz(socket &, const int bytes);
+	bool write_bufsz(socket &, const int bytes);
+	bool read_lowat(socket &, const int bytes);
+	bool write_lowat(socket &, const int bytes);
 	bool attach(const int sd, const int fd);
 	bool attach(socket &, const int fd);
 	bool detach(const int sd, const int fd);
@@ -79,11 +79,11 @@ struct ircd::net::sock_opts
 	int8_t nodelay { IGN };
 	int8_t quickack { IGN };
 	int8_t keepalive { IGN };
-	time_t linger { IGN };               // -1 is OFF; >= 0 is ON
-	ssize_t read_bufsz { IGN };
-	ssize_t write_bufsz { IGN };
-	ssize_t read_lowat { IGN };
-	ssize_t write_lowat { IGN };
+	int linger { IGN };                  // -1 is OFF; >= 0 is ON
+	int read_bufsz { IGN };
+	int write_bufsz { IGN };
+	int read_lowat { IGN };
+	int write_lowat { IGN };
 	int ebpf { IGN };
 	int iptos { IGN };
 	int priority { IGN };
