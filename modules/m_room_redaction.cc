@@ -192,7 +192,7 @@ try
 		request.get(seconds(redaction_fetch_timeout))
 	};
 
-	const json::object pdus
+	const json::array pdus
 	{
 		json::object(response).get("pdus")
 	};
