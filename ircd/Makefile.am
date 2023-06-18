@@ -25,6 +25,7 @@ AM_LDFLAGS += -Wl,--wrap=pthread_clockjoin_np
 AM_LDFLAGS += -Wl,--wrap=pthread_self
 AM_LDFLAGS += -Wl,--wrap=pthread_setname_np
 AM_LDFLAGS += -Wl,--wrap=_dl_signal_exception
+AM_LDFLAGS += -Wl,--wrap=recvmsg
 AM_LDFLAGS += -Wl,-z,nodelete
 AM_LDFLAGS += -Wl,-z,nodlopen
 AM_LDFLAGS += -Wl,-z,lazy
@@ -233,6 +234,7 @@ libircd_la_SOURCES += net_listener.cc
 libircd_la_SOURCES += net_listener_udp.cc
 if LINUX
 libircd_la_SOURCES += net_bpf.cc
+libircd_la_SOURCES += net_errq.cc
 endif
 libircd_la_SOURCES += server.cc
 libircd_la_SOURCES += client.cc
@@ -327,6 +329,9 @@ net.lo:               AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
 net_addrs.lo:         AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
 net_dns.lo:           AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
 net_dns_resolver.lo:  AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
+if LINUX
+net_errq.lo:          AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
+endif
 net_listener.lo:      AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
 net_listener_udp.lo:  AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
 openssl.lo:           AM_CPPFLAGS := @SSL_CPPFLAGS@ @CRYPTO_CPPFLAGS@ ${AM_CPPFLAGS}

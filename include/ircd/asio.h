@@ -43,7 +43,6 @@ namespace boost
 #include <RB_INC_SYS_EPOLL_H
 #include <RB_INC_SYS_TIMERFD_H
 #include <RB_INC_SYS_EVENTFD_H
-#include <RB_INC_LINUX_NET_TSTAMP_H
 
 // Workaround io_uring_service::get_sqe() bug; see below
 #if defined(HAVE_LIBURING_H) \

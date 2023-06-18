@@ -1374,6 +1374,7 @@ RB_CHK_SYSHEADER(linux/icmp.h, [LINUX_ICMP_H])
 RB_CHK_SYSHEADER(linux/input-event-codes.h, [LINUX_INPUT_EVENT_CODES_H])
 RB_CHK_SYSHEADER(linux/bpf.h, [LINUX_BPF_H])
 RB_CHK_SYSHEADER(linux/net_tstamp.h, [LINUX_NET_TSTAMP_H])
+RB_CHK_SYSHEADER(linux/errqueue.h, [LINUX_ERRQUEUE_H])
 
 dnl windows platform
 RB_CHK_SYSHEADER(windows.h, [WINDOWS_H])

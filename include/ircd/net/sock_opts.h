@@ -92,6 +92,8 @@ struct ircd::net::sock_opts
 	int pmtu { IGN };
 	int tstamp { IGN };
 
-	sock_opts(const socket &);          // Get options from socket
+	bool enable_tstamp() noexcept;       // platform-specific helper
+
+	sock_opts(const socket &);           // Get options from socket
 	sock_opts() = default;
 };

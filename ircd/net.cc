@@ -1409,6 +1409,14 @@ ircd::net::sock_opts::sock_opts(const socket &socket)
 {
 }
 
+[[gnu::weak]]
+bool
+ircd::net::sock_opts::enable_tstamp()
+noexcept
+{
+	return false;
+}
+
 /// Updates the socket with provided options. Defaulted / -1'ed options are
 /// ignored for updating.
 void
