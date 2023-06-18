@@ -6096,6 +6096,92 @@ catch(const std::out_of_range &)
 }
 
 bool
+console_cmd__peer__links(opt &out, const string_view &line)
+{
+	const auto print_head{[&out]
+	{
+		out
+		<< std::setw(9) << std::right << "PEER" << ' '
+		<< std::setw(6) << std::right << "LINK" << ' '
+		<< std::setw(6) << std::right << "SOCK" << ' '
+		<< std::setw(5) << std::right << "FD" << ' '
+		<< std::setw(40) << std::right << "ADDRESS" << ' '
+		<< std::setw(50) << std::left << "NAME" << ' '
+		<< std::setw(7) << std::right << "READS" << ' ' << ' '
+		<< std::setw(23) << std::left << "READ" << ' '
+		<< std::setw(7) << std::right << "WRITES" << ' ' << ' '
+		<< std::setw(23) << std::left << "WRITE" << ' '
+		<< std::setw(7) << std::right << "DONE" << ' '
+		<< std::setw(4) << std::right << "COMI" << ' '
+		<< std::setw(4) << std::right << "UCOM" << ' ' << ' '
+		<< std::setw(11) << std::left << "FLAGS" << ' '
+		<< std::endl;
+	}};
+
+	const auto print{[&out]
+	(const auto &peer, const auto &link, const size_t &i)
+	{
+		assert(link.socket);
+		const auto &sock
+		{
+			*link.socket
+		};
+
+		const auto &[stat_read, stat_write]
+		{
+			net::sock_stat::get(sock)
+		};
+
+		uint fi {0};
+		char flags[12] {0};
+		if(link.finished())  flags[fi++] = 'F';
+		if(link.opened())    flags[fi++] = 'O';
+		if(link.ready())     flags[fi++] = 'R';
+		if(link.busy())      flags[fi++] = 'B';
+		if(link.op_init)     flags[fi++] = 'i';
+		if(link.op_fini)     flags[fi++] = 'f';
+		if(link.op_open)     flags[fi++] = 'o';
+		if(link.op_write)    flags[fi++] = 'w';
+		if(link.op_read)     flags[fi++] = 'r';
+		if(link.exclude)     flags[fi++] = 'e';
+		assert(fi < sizeof(flags));
+
+		char pbuf[2][32];
+		out
+		<< std::setw(6) << std::right << peer.id << ':'
+		<< std::setw(2) << std::left << i << ' '
+		<< std::setw(6) << std::right << link.id << ' '
+		<< std::setw(6) << std::right << id(sock) << ' '
+		<< std::setw(5) << std::right << native_handle(sock) << ' '
+		<< std::setw(40) << std::right << remote_ipport(sock) << ' '
+		<< std::setw(50) << std::left << trunc(peer.hostcanon, 50) << ' '
+		<< std::setw(7) << std::right << stat_read->calls << ' ' << ' '
+		<< std::setw(23) << std::left << pretty(pbuf[0], iec(stat_read->bytes)) << ' '
+		<< std::setw(7) << std::right << stat_write->calls << ' ' << ' '
+		<< std::setw(23) << std::left << pretty(pbuf[1], iec(stat_write->bytes)) << ' '
+		<< std::setw(7) << std::right << link.tag_done << ' '
+		<< std::setw(4) << std::right << link.tag_committed() << ' '
+		<< std::setw(4) << std::right << link.tag_uncommitted() << ' ' << ' '
+		<< std::setw(11) << std::left << flags << ' '
+		<< '\n';
+	}};
+
+	print_head();
+	for(const auto &p : server::peers)
+	{
+		const auto &host{p.first};
+		const auto &peer{*p.second};
+
+		size_t i(0);
+		for(const auto &link : peer.links)
+			print(peer, link, i++);
+	}
+
+	out << std::flush;
+	return true;
+}
+
+bool
 console_cmd__peer__error(opt &out, const string_view &line)
 {
 	for(const auto &pair : ircd::server::peers)
