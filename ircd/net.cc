@@ -158,28 +158,6 @@ ircd::net::peer_cert_der(const mutable_buffer &buf,
 	return openssl::i2d(buf, cert);
 }
 
-[[gnu::hot]]
-std::pair<size_t, size_t>
-ircd::net::calls(const socket &socket)
-noexcept
-{
-	return
-	{
-		socket.in.calls, socket.out.calls
-	};
-}
-
-[[gnu::hot]]
-std::pair<size_t, size_t>
-ircd::net::bytes(const socket &socket)
-noexcept
-{
-	return
-	{
-		socket.in.bytes, socket.out.bytes
-	};
-}
-
 ircd::string_view
 ircd::net::loghead(const socket &socket)
 {
@@ -404,8 +382,8 @@ try
 
 	++socket.out.calls;
 	socket.out.bytes += ret;
-	++socket.total_calls_out;
-	socket.total_bytes_out += ret;
+	++sock_stat::total_calls_out;
+	sock_stat::total_bytes_out += ret;
 	return ret;
 }
 catch(const boost::system::system_error &e)
@@ -451,8 +429,8 @@ try
 
 	++socket.out.calls;
 	socket.out.bytes += ret;
-	++socket.total_calls_out;
-	socket.total_bytes_out += ret;
+	++sock_stat::total_calls_out;
+	sock_stat::total_bytes_out += ret;
 	return ret;
 }
 catch(const boost::system::system_error &e)
@@ -489,8 +467,8 @@ try
 
 	++socket.out.calls;
 	socket.out.bytes += ret;
-	++socket.total_calls_out;
-	socket.total_bytes_out += ret;
+	++sock_stat::total_calls_out;
+	sock_stat::total_bytes_out += ret;
 	return ret;
 }
 catch(const boost::system::system_error &e)
@@ -527,8 +505,8 @@ try
 
 	++socket.out.calls;
 	socket.out.bytes += ret;
-	++socket.total_calls_out;
-	socket.total_bytes_out += ret;
+	++sock_stat::total_calls_out;
+	sock_stat::total_bytes_out += ret;
 	return ret;
 }
 catch(const boost::system::system_error &e)
@@ -679,8 +657,8 @@ try
 
 	++socket.in.calls;
 	socket.in.bytes += ret;
-	++socket.total_calls_in;
-	socket.total_bytes_in += ret;
+	++sock_stat::total_calls_in;
+	sock_stat::total_bytes_in += ret;
 	return ret;
 }
 catch(const boost::system::system_error &e)
@@ -732,8 +710,8 @@ try
 
 	++socket.in.calls;
 	socket.in.bytes += ret;
-	++socket.total_calls_in;
-	socket.total_bytes_in += ret;
+	++sock_stat::total_calls_in;
+	sock_stat::total_bytes_in += ret;
 	return ret;
 }
 catch(const boost::system::system_error &e)
@@ -767,8 +745,8 @@ ircd::net::read_any(socket &socket,
 
 	++socket.in.calls;
 	socket.in.bytes += ret;
-	++socket.total_calls_in;
-	socket.total_bytes_in += ret;
+	++sock_stat::total_calls_in;
+	sock_stat::total_bytes_in += ret;
 
 	if(likely(!ec))
 		return ret;
@@ -801,8 +779,8 @@ ircd::net::read_one(socket &socket,
 
 	++socket.in.calls;
 	socket.in.bytes += ret;
-	++socket.total_calls_in;
-	socket.total_bytes_in += ret;
+	++sock_stat::total_calls_in;
+	sock_stat::total_bytes_in += ret;
 
 	if(likely(!ec))
 		return ret;
@@ -2171,6 +2149,61 @@ ircd::net::v6only(const socket &socket)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// net/sock_stat.h
+//
+
+decltype(ircd::net::sock_stat::total_bytes_in)
+ircd::net::sock_stat::total_bytes_in
+{
+	{ "name", "ircd.net.socket.in.total.bytes"                      },
+	{ "desc", "The total number of bytes received by all sockets"   },
+};
+
+decltype(ircd::net::sock_stat::total_bytes_out)
+ircd::net::sock_stat::total_bytes_out
+{
+	{ "name", "ircd.net.socket.out.total.bytes"                     },
+	{ "desc", "The total number of bytes received by all sockets"   },
+};
+
+decltype(ircd::net::sock_stat::total_calls_in)
+ircd::net::sock_stat::total_calls_in
+{
+	{ "name", "ircd.net.socket.in.total.calls"                      },
+	{ "desc", "The total number of read operations on all sockets"  },
+};
+
+decltype(ircd::net::sock_stat::total_calls_out)
+ircd::net::sock_stat::total_calls_out
+{
+	{ "name", "ircd.net.socket.out.total.calls"                      },
+	{ "desc", "The total number of write operations on all sockets"  },
+};
+
+[[gnu::hot]]
+std::pair<ircd::net::sock_stat *, ircd::net::sock_stat *>
+ircd::net::sock_stat::get(socket &socket)
+noexcept
+{
+	return
+	{
+		&socket.in, &socket.out
+	};
+}
+
+[[gnu::hot]]
+std::pair<const ircd::net::sock_stat *, const ircd::net::sock_stat *>
+ircd::net::sock_stat::get(const socket &socket)
+noexcept
+{
+	return
+	{
+		&socket.in, &socket.out
+	};
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // net/scope_timeout.h
 //
 
@@ -2435,34 +2468,6 @@ ircd::net::socket::desc_read
 	{
 		desc_dealloc(handler, ptr, size);
 	},
-};
-
-decltype(ircd::net::socket::total_bytes_in)
-ircd::net::socket::total_bytes_in
-{
-	{ "name", "ircd.net.socket.in.total.bytes"                      },
-	{ "desc", "The total number of bytes received by all sockets"   },
-};
-
-decltype(ircd::net::socket::total_bytes_out)
-ircd::net::socket::total_bytes_out
-{
-	{ "name", "ircd.net.socket.out.total.bytes"                     },
-	{ "desc", "The total number of bytes received by all sockets"   },
-};
-
-decltype(ircd::net::socket::total_calls_in)
-ircd::net::socket::total_calls_in
-{
-	{ "name", "ircd.net.socket.in.total.calls"                      },
-	{ "desc", "The total number of read operations on all sockets"  },
-};
-
-decltype(ircd::net::socket::total_calls_out)
-ircd::net::socket::total_calls_out
-{
-	{ "name", "ircd.net.socket.out.total.calls"                      },
-	{ "desc", "The total number of write operations on all sockets"  },
 };
 
 //
@@ -2748,8 +2753,8 @@ noexcept try
 
 	++out.calls;
 	out.bytes += bytes;
-	++total_calls_out;
-	total_bytes_out += bytes;
+	++sock_stat::total_calls_out;
+	sock_stat::total_bytes_out += bytes;
 	call_user(callback, ec, bytes);
 }
 catch(const std::exception &e)

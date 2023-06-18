@@ -33,10 +33,6 @@ struct [[gnu::visibility("protected")]]
 ircd::net::socket
 :std::enable_shared_from_this<ircd::net::socket>
 {
-	struct io;
-	struct stat;
-	struct xfer;
-
 	using endpoint = ip::tcp::endpoint;
 	using wait_type = ip::tcp::socket::wait_type;
 	using message_flags = asio::socket_base::message_flags;
@@ -46,18 +42,8 @@ ircd::net::socket
 	using ec_handler = std::function<void (const error_code &)>;
 	using eptr_handler = std::function<void (std::exception_ptr)>;
 
-	struct stat
-	{
-		size_t bytes {0};
-		size_t calls {0};
-	};
-
 	static uint64_t count;                       // monotonic
 	static uint64_t instances;                   // current socket count
-	static stats::item<uint64_t> total_bytes_in;
-	static stats::item<uint64_t> total_bytes_out;
-	static stats::item<uint64_t> total_calls_in;
-	static stats::item<uint64_t> total_calls_out;
 	static ios::descriptor desc_connect;
 	static ios::descriptor desc_handshake;
 	static ios::descriptor desc_disconnect;
@@ -71,7 +57,7 @@ ircd::net::socket
 	ip::tcp::socket sd;
 	std::optional<ssl_stream> ssl;
 	endpoint local, remote;
-	stat in, out;
+	sock_stat in, out;
 	deadline_timer timer;
 	uint64_t timer_sem[2] {0};                   // handler, sender
 	char alpn[12] {0};

@@ -43,6 +43,7 @@ namespace ircd::net
 #include "listener.h"
 #include "listener_udp.h"
 #include "sock_opts.h"
+#include "sock_stat.h"
 #include "addrs.h"
 #include "open.h"
 #include "close.h"
@@ -55,12 +56,11 @@ namespace ircd::net
 namespace ircd::net
 {
 	uint64_t id(const socket &) noexcept;
-	bool opened(const socket &) noexcept;
 	int native_handle(const socket &) noexcept;
+
+	bool opened(const socket &) noexcept;
 	ipport local_ipport(const socket &) noexcept;
 	ipport remote_ipport(const socket &) noexcept;
-	std::pair<size_t, size_t> bytes(const socket &) noexcept; // <in, out>
-	std::pair<size_t, size_t> calls(const socket &) noexcept; // <in, out>
 
 	const_buffer peer_cert_der(const mutable_buffer &, const socket &);
 	const_buffer peer_cert_der_sha256(const mutable_buffer &, const socket &);
