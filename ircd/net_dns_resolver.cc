@@ -238,7 +238,7 @@ void
 __attribute__((noreturn))
 ircd::net::dns::resolver::sendq_worker()
 {
-	while(1)
+	while(1) try
 	{
 		dock.wait([this]() noexcept
 		{
@@ -250,6 +250,18 @@ ircd::net::dns::resolver::sendq_worker()
 			ctx::sleep(milliseconds(send_rate));
 
 		sendq_work();
+	}
+	catch(const ctx::interrupted &)
+	{
+		continue;
+	}
+	catch(const std::exception &e)
+	{
+		log::critical
+		{
+			log, "worker unhandled :%s",
+			e.what(),
+		};
 	}
 }
 
@@ -293,7 +305,7 @@ catch(const std::out_of_range &e)
 void
 ircd::net::dns::resolver::timeout_worker()
 {
-	while(1)
+	while(1) try
 	{
 		// Dock here until somebody submits a request into the tag map. Also
 		// wait until recv_idle is asserted which indicates the UDP queue has
@@ -304,6 +316,18 @@ ircd::net::dns::resolver::timeout_worker()
 		});
 
 		check_timeouts(milliseconds(timeout));
+	}
+	catch(const ctx::interrupted &)
+	{
+		continue;
+	}
+	catch(const std::exception &e)
+	{
+		log::critical
+		{
+			log, "worker unhandled :%s",
+			e.what()
+		};
 	}
 }
 
@@ -504,7 +528,6 @@ catch(const std::exception &e)
 
 void
 ircd::net::dns::resolver::recv_worker()
-try
 {
 	const unique_buffer<mutable_buffer> buf
 	{
@@ -525,19 +548,24 @@ try
 		switch(make_error_code(e).value())
 		{
 			case int(std::errc::operation_canceled):
-				break;
+				return;
 
 			default:
-				throw;
+				log::error
+				{
+					log, "worker :%s",
+					e.what(),
+				};
 		}
 	}
-}
-catch(const std::exception &e)
-{
-	log::critical
+	catch(const std::exception &e)
 	{
-		log, "%s", e.what()
-	};
+		log::critical
+		{
+			log, "worker unhandled :%s",
+			e.what(),
+		};
+	}
 }
 
 std::tuple<ircd::net::ipport, ircd::mutable_buffer>
