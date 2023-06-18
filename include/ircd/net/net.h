@@ -56,6 +56,7 @@ namespace ircd::net
 {
 	uint64_t id(const socket &) noexcept;
 	bool opened(const socket &) noexcept;
+	int native_handle(const socket &) noexcept;
 	ipport local_ipport(const socket &) noexcept;
 	ipport remote_ipport(const socket &) noexcept;
 	std::pair<size_t, size_t> bytes(const socket &) noexcept; // <in, out>

@@ -232,6 +232,19 @@ catch(...)
 }
 
 [[gnu::hot]]
+int
+ircd::net::native_handle(const socket &socket)
+noexcept try
+{
+	ip::tcp::socket &sd(mutable_cast(socket));
+	return sd.lowest_layer().native_handle();
+}
+catch(...)
+{
+	return -1;
+}
+
+[[gnu::hot]]
 bool
 ircd::net::opened(const socket &socket)
 noexcept try
@@ -545,10 +558,9 @@ ircd::net::writable(const socket &socket)
 size_t
 ircd::net::flushing(const socket &socket)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	long value(0);
@@ -832,8 +844,8 @@ noexcept
 size_t
 ircd::net::readable(const socket &socket)
 {
-	ip::tcp::socket &sd(const_cast<net::socket &>(socket));
 	ip::tcp::socket::bytes_readable command{true};
+	ip::tcp::socket &sd(mutable_cast(socket));
 	sd.io_control(command);
 	return command.get();
 }
@@ -1482,10 +1494,9 @@ ircd::net::tstamp(socket &socket,
                   const int val)
 #if defined(SO_TIMESTAMPING) && defined(SOL_SOCKET)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	sys::call(::setsockopt, fd, SOL_SOCKET, SO_TIMESTAMPING, &val, sizeof(val));
@@ -1503,10 +1514,9 @@ ircd::net::pmtudisc(socket &socket,
                     const int val)
 #if defined(IP_MTU_DISCOVER) && defined(IPPROTO_IP)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	sys::call(::setsockopt, fd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
@@ -1524,10 +1534,9 @@ ircd::net::affinity(socket &socket,
                     const int cpu)
 #if defined(SO_INCOMING_CPU) && defined(SOL_SOCKET)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	sys::call(::setsockopt, fd, SOL_SOCKET, SO_INCOMING_CPU, &cpu, sizeof(cpu));
@@ -1545,10 +1554,9 @@ ircd::net::priority(socket &socket,
                     const int prio)
 #if defined(SO_PRIORITY) && defined(SOL_SOCKET)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	sys::call(::setsockopt, fd, SOL_SOCKET, SO_PRIORITY, &prio, sizeof(prio));
@@ -1566,10 +1574,9 @@ ircd::net::iptos(socket &socket,
                  const int tos)
 #if defined(IP_TOS) && defined(IPPROTO_IP)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	sys::call(::setsockopt, fd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
@@ -1586,10 +1593,9 @@ bool
 ircd::net::detach(socket &socket,
                   const int prog_fd)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	detach(fd, prog_fd);
@@ -1616,10 +1622,9 @@ bool
 ircd::net::attach(socket &socket,
                   const int prog_fd)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	attach(fd, prog_fd);
@@ -1732,10 +1737,9 @@ ircd::net::quickack(socket &socket,
                     const bool b)
 #if defined(TCP_QUICKACK) && defined(SOL_SOCKET)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	const int val(b);
@@ -1777,10 +1781,9 @@ ircd::net::nopush(socket &socket,
                   const bool b)
 #if defined(TCP_CORK) && defined(SOL_SOCKET)
 {
-	ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		sd.lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	const int val(b);
@@ -1867,10 +1870,9 @@ int
 ircd::net::tstamp(const socket &socket)
 #if defined(SO_TIMESTAMPING) && defined(SOL_SOCKET)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -1897,10 +1899,9 @@ ircd::net::pmtu(const socket &socket)
 		sys::call::NOTHROW
 	};
 
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -1920,10 +1921,9 @@ int
 ircd::net::pmtudisc(const socket &socket)
 #if defined(IP_MTU_DISCOVER) && defined(IPPROTO_IP)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -1943,10 +1943,9 @@ int
 ircd::net::affinity(const socket &socket)
 #if defined(SO_INCOMING_CPU) && defined(SOL_SOCKET)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -1966,10 +1965,9 @@ int
 ircd::net::priority(const socket &socket)
 #if defined(SO_PRIORITY) && defined(SOL_SOCKET)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -1989,10 +1987,9 @@ int
 ircd::net::iptos(const socket &socket)
 #if defined(IP_TOS) && defined(IPPROTO_IP)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -2012,10 +2009,9 @@ int
 ircd::net::attach(const socket &socket)
 #if defined(SO_ATTACH_BPF) && defined(SOL_SOCKET)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	int ret {-1};
@@ -2089,10 +2085,9 @@ bool
 ircd::net::quickack(const socket &socket)
 #if defined(TCP_QUICKACK) && defined(SOL_SOCKET)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	uint32_t ret;
@@ -2130,10 +2125,9 @@ bool
 ircd::net::nopush(const socket &socket)
 #if defined(TCP_CORK) && defined(SOL_SOCKET)
 {
-	const ip::tcp::socket &sd(socket);
 	const auto &fd
 	{
-		mutable_cast(sd).lowest_layer().native_handle()
+		native_handle(socket)
 	};
 
 	uint32_t ret;
