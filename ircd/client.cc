@@ -185,8 +185,9 @@ ircd::loghead(const mutable_buffer &buf,
 	char rembuf[64], locbuf[64];
 	return fmt::sprintf
 	{
-		buf, "socket:%lu local:%s remote:%s client:%lu %s %lu:%lu",
-		client.sock? net::id(*client.sock) : -1UL,
+		buf, "socket:%lu fd:%d local:%s remote:%s client:%lu %s %lu:%lu",
+		client.sock? net::id(*client.sock): -1UL,
+		client.sock? net::native_handle(*client.sock): -1,
 		string(locbuf, local(client)),
 		string(rembuf, remote(client)),
 		client.id,

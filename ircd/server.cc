@@ -273,8 +273,8 @@ ircd::server::create(const net::hostport &hostport,
 
 	log::debug
 	{
-		log, "peer(%p) for %s created; adding...",
-		peer.get(),
+		log, "peer:%lu for %s created; adding...",
+		peer->id,
 		peer->hostcanon,
 	};
 
@@ -1518,9 +1518,9 @@ ircd::server::peer::del(link &link)
 	char rembuf[64];
 	log::debug
 	{
-		log, "%s removing from peer(%p) %zu of %zu to %s",
+		log, "%s removing from peer:%lu %zu of %zu to %s",
 		loghead(link),
-		this,
+		id,
 		std::distance(begin(links), it),
 		links.size(),
 		string(rembuf, remote)
@@ -1617,8 +1617,8 @@ catch(const std::exception &e)
 	char buf[256];
 	log::error
 	{
-		log, "peer(%p) DNS resolution for '%s' :%s",
-		this,
+		log, "peer:%lu DNS resolution for '%s' :%s",
+		id,
 		string(buf, hostport),
 		e.what()
 	};
@@ -1681,8 +1681,8 @@ try
 
 	log::debug
 	{
-		log, "peer(%p) '%s' resolved '%s' SRV to '%s' rrs:%zu; now resolving %s...",
-		this,
+		log, "peer:%lu '%s' resolved '%s' SRV to '%s' rrs:%zu; now resolving %s...",
+		id,
 		this->hostcanon,
 		host(hp),
 		host(target),
@@ -1696,8 +1696,8 @@ catch(const std::exception &e)
 {
 	log::derror
 	{
-		log, "peer(%p) '%s' resolve '%s' SRV :%s",
-		this,
+		log, "peer:%lu '%s' resolve '%s' SRV :%s",
+		id,
 		this->hostcanon,
 		host(hp),
 		e.what()
@@ -1734,8 +1734,8 @@ try
 
 		log::debug
 		{
-			log, "peer(%p) resolved %s AAAA rrs:%zu resolving %s %s",
-			this,
+			log, "peer:%lu resolved %s AAAA rrs:%zu resolving %s %s",
+			id,
 			hostcanon,
 			rrs.size(),
 			host(target),
@@ -1781,8 +1781,8 @@ catch(const std::exception &e)
 {
 	log::derror
 	{
-		log, "peer(%p) '%s' resolve '%s' AAAA: %s",
-		this,
+		log, "peer:%lu '%s' resolve '%s' AAAA: %s",
+		id,
 		this->hostcanon,
 		host(target),
 		e.what()
@@ -1864,8 +1864,8 @@ catch(const std::exception &e)
 {
 	log::derror
 	{
-		log, "peer(%p) '%s' resolve '%s' A :%s",
-		this,
+		log, "peer:%lu '%s' resolve '%s' A :%s",
+		id,
 		this->hostcanon,
 		host(target),
 		e.what()
@@ -1892,8 +1892,8 @@ catch(const std::exception &e)
 {
 	log::derror
 	{
-		log, "peer(%p) open links :%s",
-		this,
+		log, "peer:%lu open links :%s",
+		id,
 		e.what()
 	};
 
@@ -1909,8 +1909,7 @@ ircd::server::peer::handle_finished()
 
 	log::debug
 	{
-		log, "peer(%p) id:%lu finished; tags:%zu wrote:%zu read:%zu err:%d :%s",
-		this,
+		log, "peer:%lu finished; tags:%zu wrote:%zu read:%zu err:%d :%s",
 		id,
 		tag_done,
 		write_bytes,
@@ -2299,9 +2298,11 @@ ircd::server::loghead(const mutable_buffer &buf,
 
 	return fmt::sprintf
 	{
-		buf, "socket:%lu local:%s remote:%s link:%lu peer:%lu",
+		buf, "socket:%lu fd:%d local:%s remote:%s link:%lu peer:%lu",
 		link.socket?
 			link.socket->id : 0UL,
+		link.socket?
+			native_handle(*link.socket) : -1,
 		local?
 			local : "0.0.0.0"_sv,
 		remote?

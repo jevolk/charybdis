@@ -172,8 +172,9 @@ ircd::net::loghead(const mutable_buffer &out,
 	char buf[2][128];
 	return fmt::sprintf
 	{
-		out, "socket:%lu local:%s remote:%s",
+		out, "socket:%lu fd:%d local:%s remote:%s",
 		id(socket),
+		native_handle(socket),
 		string(buf[0], local_ipport(socket)),
 		string(buf[1], remote_ipport(socket)),
 	};
@@ -2525,8 +2526,9 @@ noexcept try
 	if(unlikely(opened(*this) || timer_set))
 		throw panic
 		{
-			"socket(%p) must be done before dtor; open:%b fini:%b timer:%b",
-			this,
+			"socket:%lu fd:%d must be done before dtor; open:%b fini:%b timer:%b",
+			this->id,
+			native_handle(*this),
 			opened(*this),
 			fini,
 			timer_set,
@@ -2538,7 +2540,7 @@ catch(const std::exception &e)
 	{
 		log, "socket(%p) close :%s",
 		this,
-		e.what()
+		e.what(),
 	};
 
 	return;
@@ -2547,7 +2549,7 @@ catch(...)
 {
 	log::critical
 	{
-		log, "socket(%p) close: unexpected",
+		log, "socket(%p) close :unexpected",
 		this,
 	};
 
@@ -3362,8 +3364,8 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "socket(%p) async handler :unhandled exception :%s",
-		this,
+		log, "socket:%lu async handler :unhandled exception :%s",
+		this->id,
 		e.what()
 	};
 }
@@ -3380,8 +3382,8 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "socket(%p) async handler :unhandled exception :%s",
-		this,
+		log, "socket:%lu async handler :unhandled exception :%s",
+		this->id,
 		e.what()
 	};
 
