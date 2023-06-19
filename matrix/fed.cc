@@ -440,15 +440,15 @@ ircd::m::fed::backfill::backfill(const room::id &room_id,
                                  opts opts)
 :request{[&]
 {
+	if(!opts.remote)
+		opts.remote = room_id.host();
+
 	m::event::id::buf event_id_buf;
 	if(!opts.event_id)
 	{
 		event_id_buf = m::room::head::fetch::one(room_id, opts.remote);
 		opts.event_id = event_id_buf;
 	}
-
-	if(!opts.remote)
-		opts.remote = room_id.host();
 
 	if(likely(!defined(json::get<"method"_>(opts.request))))
 		json::get<"method"_>(opts.request) = "GET";
@@ -488,6 +488,13 @@ ircd::m::fed::state::state(const room::id &room_id,
 {
 	if(!opts.remote)
 		opts.remote = room_id.host();
+
+	m::event::id::buf event_id_buf;
+	if(!opts.event_id)
+	{
+		event_id_buf = m::room::head::fetch::one(room_id, opts.remote);
+		opts.event_id = event_id_buf;
+	}
 
 	if(likely(!defined(json::get<"method"_>(opts.request))))
 		json::get<"method"_>(opts.request) = "GET";
