@@ -7358,7 +7358,7 @@ console_cmd__key__get(opt &out, const string_view &line)
 {
 	const params param{line, " ",
 	{
-		"server_name", "[query_server]"
+		"server_name", "[query_server]", "[state_server]"
 	}};
 
 	const auto server_name
@@ -7378,23 +7378,66 @@ console_cmd__key__get(opt &out, const string_view &line)
 			param.at("[query_server]")
 		};
 
+		const auto state_server
+		{
+			param["[state_server]"]
+		};
+
 		const auto room_id
 		{
 			m::room_id(server_name)
 		};
 
-		const m::room::origins origins
-		{
-			room_id
-		};
-
 		std::vector<std::string> servers;
-		servers.reserve(origins.count());
-		origins.for_each([&servers]
-		(const auto &server)
+		if(state_server)
 		{
-			servers.emplace_back(server);
-		});
+			const unique_mutable_buffer buf{16_KiB};
+			m::fed::state::opts opts;
+			opts.remote = state_server;
+			m::fed::state request
+			{
+				room_id, buf, std::move(opts)
+			};
+
+			request.get(out.timeout);
+			const json::object response
+			{
+				request
+			};
+
+			const json::array &pdus
+			{
+				response["pdus"]
+			};
+
+			std::set<string_view> hostparts;
+			for(const json::object event : pdus)
+			{
+				const m::user::id sender
+				{
+					json::string{event["sender"]}
+				};
+
+				hostparts.emplace(sender.host());
+			}
+
+			servers = std::vector<std::string>
+			(
+				begin(hostparts), end(hostparts)
+			);
+		} else {
+			const m::room::origins origins
+			{
+				room_id
+			};
+
+			servers.reserve(origins.count());
+			origins.for_each([&servers]
+			(const auto &server)
+			{
+				servers.emplace_back(server);
+			});
+		}
 
 		std::vector<m::fed::key::server_key> queries(servers.size());
 		std::transform(begin(servers), end(servers), begin(queries), []
