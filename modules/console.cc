@@ -6453,6 +6453,100 @@ catch(const std::out_of_range &e)
 }
 
 bool
+console_cmd__peer__set(opt &out, const string_view &line)
+try
+{
+	const params param{line, " ",
+	{
+		"hostport", "key", "val"
+	}};
+
+	const auto &hostport
+	{
+		param.at("hostport")
+	};
+
+	const auto &key
+	{
+		param.at("key")
+	};
+
+	const auto &val
+	{
+		param.at<int>("val", net::sock_opts::IGN)
+	};
+
+	auto &peer
+	{
+		server::find(hostport)
+	};
+
+	auto &so
+	{
+		peer.sock_opts
+	};
+
+	switch(hash(key))
+	{
+		case "v6only"_:
+			so.v6only = val;
+			break;
+
+		case "keepalive"_:
+			so.keepalive = val;
+			break;
+
+		case "linger"_:
+			so.linger = val;
+			break;
+
+		case "read_bufsz"_:
+			so.read_bufsz = val;
+			break;
+
+		case "write_bufsz"_:
+			so.write_bufsz = val;
+			break;
+
+		case "read_lowat"_:
+			so.read_lowat = val;
+			break;
+
+		case "write_lowat"_:
+			so.write_lowat = val;
+			break;
+
+		case "iptos"_:
+			so.iptos = val;
+			break;
+
+		case "priority"_:
+			so.priority = val;
+			break;
+
+		case "pmtudisc"_:
+			so.pmtudisc = val;
+			break;
+
+		case "tstamp"_:
+			if(val == -1)
+				so.enable_tstamp();
+			else
+				so.tstamp = val;
+			break;
+	}
+
+	return true;
+}
+catch(const std::out_of_range &e)
+{
+	throw error
+	{
+		"Peer not found"
+	};
+}
+
+bool
 console_cmd__peer__request(opt &out, const string_view &line)
 try
 {
