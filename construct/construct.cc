@@ -739,7 +739,7 @@ __wrap_io_uring_queue_init(unsigned entries,
 	if constexpr((true))
 		ret = ::io_uring_queue_init_params
 		(
-			entries,
+			entries / 2, // huge default throws -ENOMEM under memory pressure
 			ring,
 			&params
 		);
