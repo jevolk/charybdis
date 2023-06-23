@@ -121,6 +121,9 @@ struct ircd::server::link
 	link(link &&) = delete;
 	link(const link &) = delete;
 	~link() noexcept;
+
+	static link *find(std::nothrow_t, const int fd) noexcept;
+	static link &find(const int fd);
 };
 
 inline bool

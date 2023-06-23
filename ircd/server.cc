@@ -2319,6 +2319,37 @@ ircd::server::loghead(const mutable_buffer &buf,
 	};
 }
 
+ircd::server::link &
+ircd::server::link::find(const int fd)
+{
+	link *const ret
+	{
+		find(std::nothrow, fd)
+	};
+
+	if(unlikely(!ret))
+		throw error
+		{
+			"link with socket descriptor %d not found.",
+			fd,
+		};
+
+	return *ret;
+}
+
+ircd::server::link *
+ircd::server::link::find(std::nothrow_t,
+                         const int fd)
+noexcept
+{
+	for(const auto &[name, peer] : peers)
+		for(auto &link : peer->links)
+			if(link.socket && native_handle(*link.socket) == fd)
+				return &link;
+
+	return nullptr;
+}
+
 //
 // link::link
 //
