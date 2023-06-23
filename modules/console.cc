@@ -6371,7 +6371,6 @@ console_cmd__peer__find(opt &out, const string_view &line)
 
 bool
 console_cmd__peer__cancel(opt &out, const string_view &line)
-try
 {
 	const params param{line, " ",
 	{
@@ -6399,17 +6398,9 @@ try
 	peer.cancel();
 	return true;
 }
-catch(const std::out_of_range &e)
-{
-	throw error
-	{
-		"Peer not found"
-	};
-}
 
 bool
 console_cmd__peer__close(opt &out, const string_view &line)
-try
 {
 	const params param{line, " ",
 	{
@@ -6444,17 +6435,9 @@ try
 	peer.err_clear();
 	return true;
 }
-catch(const std::out_of_range &e)
-{
-	throw error
-	{
-		"Peer not found"
-	};
-}
 
 bool
 console_cmd__peer__set(opt &out, const string_view &line)
-try
 {
 	const params param{line, " ",
 	{
@@ -6538,17 +6521,9 @@ try
 
 	return true;
 }
-catch(const std::out_of_range &e)
-{
-	throw error
-	{
-		"Peer not found"
-	};
-}
 
 bool
 console_cmd__peer__request(opt &out, const string_view &line)
-try
 {
 	const params param{line, " ",
 	{
@@ -6694,13 +6669,6 @@ try
 
 	server::for_each(each);
 	return true;
-}
-catch(const std::out_of_range &e)
-{
-	throw error
-	{
-		"Peer not found"
-	};
 }
 
 //

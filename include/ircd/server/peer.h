@@ -129,6 +129,9 @@ struct ircd::server::peer
 	peer(peer &&) = delete;
 	peer(const peer &) = delete;
 	~peer() noexcept;
+
+	static peer *find(std::nothrow_t, const net::hostport &);
+	static peer &find(const net::hostport &);
 };
 
 struct ircd::server::peer::err

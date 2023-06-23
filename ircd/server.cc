@@ -291,69 +291,42 @@ ircd::server::create(const net::hostport &hostport,
 	return it;
 }
 
-ircd::server::peer &
-ircd::server::find(const net::hostport &hostport)
-{
-	const auto hostcanon
-	{
-		server::canonize(hostport)
-	};
-
-	return *peers.at(hostcanon);
-}
-
 bool
 ircd::server::exists(const net::hostport &hostport)
 noexcept
 {
-	const auto hostcanon
+	const auto peer
 	{
-		server::canonize(hostport)
+		peer::find(std::nothrow, hostport)
 	};
 
-	return peers.find(hostcanon) != end(peers);
+	return peer != nullptr;
 }
 
 bool
 ircd::server::errclear(const net::hostport &hostport)
 {
-	const auto hostcanon
+	const auto peer
 	{
-		server::canonize(hostport)
+		peer::find(std::nothrow, hostport)
 	};
 
-	const auto it
-	{
-		peers.find(hostcanon)
-	};
-
-	if(it == end(peers))
-		return false;
-
-	auto &peer
-	{
-		*it->second
-	};
-
-	return peer.err_clear();
+	return peer?
+		peer->err_clear():
+		false;
 }
 
 bool
 ircd::server::avail(const net::hostport &hostport)
 noexcept
 {
-	const auto hostcanon
+	const auto peer
 	{
-		server::canonize(hostport)
+		peer::find(std::nothrow, hostport)
 	};
 
-	const auto it
-	{
-		peers.find(hostcanon)
-	};
-
-	return it != end(peers)?
-		!it->second->err_has():
+	return peer?
+		!peer->err_has():
 		false;
 }
 
@@ -361,18 +334,13 @@ bool
 ircd::server::linked(const net::hostport &hostport)
 noexcept
 {
-	const auto hostcanon
+	const auto peer
 	{
-		server::canonize(hostport)
+		peer::find(std::nothrow, hostport)
 	};
 
-	const auto it
-	{
-		peers.find(hostcanon)
-	};
-
-	return it != end(peers)?
-		it->second->link_count():
+	return peer?
+		peer->link_count():
 		false;
 }
 
@@ -380,18 +348,13 @@ bool
 ircd::server::errant(const net::hostport &hostport)
 noexcept
 {
-	const auto hostcanon
+	const auto peer
 	{
-		server::canonize(hostport)
+		peer::find(std::nothrow, hostport)
 	};
 
-	const auto it
-	{
-		peers.find(hostcanon)
-	};
-
-	return it != end(peers)?
-		it->second->err_has():
+	return peer?
+		peer->err_has():
 		false;
 }
 
@@ -399,18 +362,13 @@ ircd::string_view
 ircd::server::errmsg(const net::hostport &hostport)
 noexcept
 {
-	const auto hostcanon
+	const auto peer
 	{
-		server::canonize(hostport)
+		peer::find(std::nothrow, hostport)
 	};
 
-	const auto it
-	{
-		peers.find(hostcanon)
-	};
-
-	return it != end(peers)?
-		it->second->err_msg():
+	return peer?
+		peer->err_msg():
 		string_view{};
 }
 
@@ -827,6 +785,54 @@ ircd::server::peer::enable_ipv6
 
 decltype(ircd::server::peer::ids)
 ircd::server::peer::ids;
+
+ircd::server::peer &
+ircd::server::peer::find(const net::hostport &hostport)
+{
+	const auto hostcanon(server::canonize(hostport)); try
+	{
+		const auto ret
+		{
+			peers.at(hostcanon)
+		};
+
+		assert(ret);
+		return *ret;
+	}
+	catch(const std::out_of_range &)
+	{
+		throw error
+		{
+			"Peer '%s' not found",
+			hostcanon,
+		};
+	}
+}
+
+ircd::server::peer *
+ircd::server::peer::find(std::nothrow_t,
+                         const net::hostport &hostport)
+{
+	const auto hostcanon
+	{
+		server::canonize(hostport)
+	};
+
+	const auto it
+	{
+		peers.find(hostcanon)
+	};
+
+	if(it == end(peers))
+		return nullptr;
+
+	const auto ret
+	{
+		it->second
+	};
+
+	return ret;
+}
 
 //
 // peer::peer

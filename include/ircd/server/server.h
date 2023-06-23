@@ -82,6 +82,12 @@ ircd::server::init
 	~init() noexcept;
 };
 
+inline ircd::server::peer &
+ircd::server::find(const net::hostport &hostport)
+{
+	return peer::find(hostport);
+}
+
 inline size_t
 ircd::server::peer_count()
 {
