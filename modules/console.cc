@@ -12545,6 +12545,48 @@ console_cmd__room__msghtml(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__room__annotate(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"room_id", "user_id", "event_id", "key"
+	}};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::user::id sender
+	{
+		param.at("user_id")
+	};
+
+	const m::event::id event_id
+	{
+		param.at("event_id")
+	};
+
+	const string_view key
+	{
+		param.at("key")
+	};
+
+	const m::room room
+	{
+		room_id
+	};
+
+	const auto annote_id
+	{
+		annotate(room, sender, event_id, key)
+	};
+
+	out << annote_id << std::endl;
+	return true;
+}
+
+bool
 console_cmd__room__join(opt &out, const string_view &line)
 {
 	const params param{line, " ",
