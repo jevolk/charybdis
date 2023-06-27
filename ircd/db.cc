@@ -1777,7 +1777,6 @@ ircd::db::row::row(database &d,
                    const vector_view<const string_view> &colnames,
                    const vector_view<cell> &buf,
                    gopts opts)
-:vector_view<cell>{[&d, &colnames, &buf, &opts]
 {
 	using std::end;
 	using std::begin;
@@ -1829,12 +1828,11 @@ ircd::db::row::row(database &d,
 		};
 	}
 
-	return vector_view<cell>
+	static_cast<vector_view<cell> &>(*this) =
 	{
 		buf.data(), iterators.size()
 	};
-}()}
-{
+
 	if(key)
 		seek(*this, key, opts);
 }
