@@ -65,7 +65,6 @@ namespace ircd::allocator::je
 #include "dynamic.h"
 #include "callback.h"
 #include "node.h"
-#include "twolevel.h"
 
 namespace ircd
 {
