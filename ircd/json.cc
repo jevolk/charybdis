@@ -658,6 +658,7 @@ namespace ircd::json
 	static thread_local std::array<member, iov::max_size> member_buffer;
 	static thread_local std::array<object::member, iov::max_size> object_member_buffer;
 	static thread_local std::array<string_view, iov::max_size> value_buffer;
+	static thread_local allocator::monotonic<iov::max_size * 128> merge_alloca;
 }
 
 ircd::json::strung
@@ -783,9 +784,11 @@ ircd::json::merge(stack::object &out,
 {
 	struct val
 	{
-		//TODO: optimize with std::pmr::monotonic_buffer_resource et al
-		std::map<string_view, val, std::less<>> o;
-		std::vector<string_view> a;
+		using object_type = std::pmr::map<string_view, val, std::less<>>;
+		using array_type = std::pmr::vector<string_view>;
+
+		object_type o{&merge_alloca};
+		array_type a{&merge_alloca};
 		string_view v;
 
 		void _merge_object(const json::object &o)
@@ -805,7 +808,7 @@ ircd::json::merge(stack::object &out,
 
 		void merge(const string_view &v)
 		{
-			switch(json::type(v))
+			switch(json::type(v, std::nothrow))
 			{
 				case json::OBJECT:  _merge_object(v);  break;
 				case json::ARRAY:   _merge_array(v);   break;
@@ -831,10 +834,12 @@ ircd::json::merge(stack::object &out,
 		void _compose_object(json::stack &out) const
 		{
 			json::stack::chase c{out, true};
-			if(c.m)
+			if(likely(c.m))
 				_compose_object(out, *c.m);
-			else if(c.o)
+			else if(likely(c.o))
 				_compose_object(out, *c.o);
+			else
+				assert(0);
 		}
 
 		void _compose_array(json::stack &out) const
@@ -847,9 +852,9 @@ ircd::json::merge(stack::object &out,
 		void _compose_value(json::stack &out) const
 		{
 			json::stack::chase c{out, true};
-			if(c.a)
+			if(likely(c.a))
 				c.a->append(v);
-			else if(c.m)
+			else if(likely(c.m))
 				c.m->append(v);
 			else
 				assert(0);
@@ -865,12 +870,18 @@ ircd::json::merge(stack::object &out,
 				_compose_value(out);
 		}
 
-		val() = default;
-		val(const string_view &v)
+		val(const string_view v)
 		{
 			merge(v);
 		}
+
+		val() {}
 	};
+
+	const unwind release{[]
+	{
+		merge_alloca.release();
+	}};
 
 	val top;
 	for(const auto &o : v)
