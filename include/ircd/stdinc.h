@@ -62,6 +62,7 @@ extern "C"
 // Dynamic memory
 #include <RB_INC_NEW
 #include <RB_INC_MEMORY
+#include <RB_INC_MEMORY_RESOURCE
 
 // Containers
 #include <RB_INC_VARIANT
