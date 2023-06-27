@@ -37,6 +37,8 @@ namespace ircd::allocator
 /// snapshots and the result will be the count isolated between them.
 struct ircd::allocator::profile
 {
+	struct scope;
+
 	uint64_t alloc_count {0};
 	uint64_t free_count {0};
 	size_t alloc_bytes {0};
@@ -45,4 +47,19 @@ struct ircd::allocator::profile
 	/// Explicitly enabled by define at compile time only. Note: replaces
 	/// global `new` and `delete` when enabled.
 	static thread_local profile this_thread;
+};
+
+/// Convenience over the allocator::profile basic usage instructions. Create
+/// a default (zero) initialized allocator::profile instance outside of the
+/// scope and an instance of this inside the scope to measure; the former will
+/// be updated with the counts for the latter's scope.
+class ircd::allocator::profile::scope
+{
+	profile &p;
+
+  public:
+	scope(profile &) noexcept;
+	scope(scope &&) = delete;
+	scope(const scope &) = delete;
+	~scope() noexcept;
 };

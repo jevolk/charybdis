@@ -620,6 +620,23 @@ ircd::allocator::operator+=(profile &a,
 }
 
 //
+// allocator::profile::scope
+//
+
+ircd::allocator::profile::scope::scope(profile &p)
+noexcept
+:p{p}
+{
+	p = this_thread;
+}
+
+ircd::allocator::profile::scope::~scope()
+noexcept
+{
+	p = this_thread - p;
+}
+
+//
 // resource limits
 //
 
