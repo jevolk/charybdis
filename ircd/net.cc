@@ -1285,6 +1285,20 @@ ircd::net::open_opts::default_verify_certificate
 	{ "default",  true                                },
 };
 
+decltype(ircd::net::open_opts::default_verify_common_name)
+ircd::net::open_opts::default_verify_common_name
+{
+	{ "name",     "ircd.net.open.verify_common_name"  },
+	{ "default",  true                                },
+};
+
+decltype(ircd::net::open_opts::default_verify_self_signed)
+ircd::net::open_opts::default_verify_self_signed
+{
+	{ "name",     "ircd.net.open.verify_self_signed"  },
+	{ "default",  false                               },
+};
+
 decltype(ircd::net::open_opts::default_allow_self_signed)
 ircd::net::open_opts::default_allow_self_signed
 {
@@ -1304,6 +1318,27 @@ ircd::net::open_opts::default_allow_expired
 {
 	{ "name",     "ircd.net.open.allow_expired"  },
 	{ "default",  false                          },
+};
+
+decltype(ircd::net::open_opts::default_send_sni)
+ircd::net::open_opts::default_send_sni
+{
+	{ "name",     "ircd.net.open.send_sni"  },
+	{ "default",  true                      },
+};
+
+decltype(ircd::net::open_opts::default_handshake)
+ircd::net::open_opts::default_handshake
+{
+	{ "name",     "ircd.net.open.handshake"  },
+	{ "default",  true                       },
+};
+
+decltype(ircd::net::open_opts::default_secure)
+ircd::net::open_opts::default_secure
+{
+	{ "name",     "ircd.net.open.secure"  },
+	{ "default",  true                    },
 };
 
 /// Open new socket with future-based report.

@@ -38,9 +38,14 @@ struct ircd::net::open_opts
 	static conf::item<milliseconds> default_connect_timeout;
 	static conf::item<milliseconds> default_handshake_timeout;
 	static conf::item<bool> default_verify_certificate;
+	static conf::item<bool> default_verify_common_name;
+	static conf::item<bool> default_verify_self_signed;
 	static conf::item<bool> default_allow_self_signed;
 	static conf::item<bool> default_allow_self_chain;
 	static conf::item<bool> default_allow_expired;
+	static conf::item<bool> default_send_sni;
+	static conf::item<bool> default_handshake;
+	static conf::item<bool> default_secure;
 
 	/// Remote's hostname and port. This will be used for address resolution
 	/// if an ipport is not also provided later. The hostname will also be used
@@ -59,10 +64,10 @@ struct ircd::net::open_opts
 	const sock_opts *sopts { nullptr };
 
 	/// Option to disable SSL. Use false for plaintext socket.
-	bool secure { true };
+	bool secure { default_secure };
 
 	/// Option to toggle whether to perform the SSL handshake; you want true.
-	bool handshake { true };
+	bool handshake { default_handshake };
 
 	/// The duration allowed for the SSL handshake
 	milliseconds handshake_timeout { default_handshake_timeout };
@@ -75,13 +80,13 @@ struct ircd::net::open_opts
 	/// certificate is signed to the actual host we want to talk to. When
 	/// true, see the comments for `common_name`. Otherwise if false, any
 	/// common_name will pass muster.
-	bool verify_common_name { true };
+	bool verify_common_name { default_verify_common_name };
 
 	/// Option to toggle whether to perform CN verification for self-signed
 	/// certificates. This is set to false for compatibility purposes as many
 	/// self-signed certificates have either no CN or CN=localhost and none
 	/// of that really matters anyway.
-	bool verify_self_signed_common_name { false };
+	bool verify_self_signed_common_name { default_verify_self_signed };
 
 	/// The expected /CN of the target. This should be the remote's hostname,
 	/// If it is empty then `hostport.host` is used. If the signed /CN has
@@ -96,7 +101,7 @@ struct ircd::net::open_opts
 	/// Option to toggle whether server name identification is sent. If
 	/// false, it will not be sent regardless of the string values having
 	/// been set. If true, it will be sent regardless.
-	bool send_sni { true };
+	bool send_sni { default_send_sni };
 
 	/// Option to toggle whether to allow self-signed certificates. This
 	/// currently defaults to true to not break Matrix development but will
