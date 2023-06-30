@@ -27,6 +27,7 @@ struct ircd::server::link
 	static conf::item<size_t> tag_max_default;
 	static conf::item<size_t> tag_commit_max_default;
 	static conf::item<bool> write_async;
+	static conf::item<bool> write_tstamp;
 	static uint64_t ticker[];
 	static stats::item<uint64_t *> ops_write_wait;
 	static stats::item<uint64_t *> ops_write_now;

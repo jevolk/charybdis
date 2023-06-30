@@ -877,6 +877,10 @@ ircd::server::peer::peer(const net::hostport &hostport,
 
 	// Cert verify this name.
 	this->open_opts.common_name = host(canon);
+
+	// Enable txstamping
+	if(link::write_tstamp)
+		this->sock_opts.enable_tstamp();
 }
 
 ircd::server::peer::~peer()
@@ -2220,6 +2224,13 @@ ircd::server::link::write_async
 	{ "default",  bool(IRCD_USE_ASIO_IO_URING)   },
 };
 
+decltype(ircd::server::link::write_tstamp)
+ircd::server::link::write_tstamp
+{
+	{ "name",     "ircd.server.link.write.tstamp" },
+	{ "default",  false                           },
+};
+
 uint64_t
 ircd::server::link::ticker[8];
 
@@ -2749,10 +2760,17 @@ inline bool
 ircd::server::link::process_write_nbio(tag &tag,
                                        const const_buffers &buffers)
 {
-	ops_write_nbio++;
-
 	assert(socket);
 	assert(buffers::size(buffers));
+
+	ops_write_nbio++;
+	if(write_tstamp)
+	{
+		socket->out.usr = nanoseconds(time<nanoseconds>());
+		socket->out.sys = socket->out.usr;
+		socket->out.ack = socket->out.usr;
+	}
+
 	const size_t wrote
 	{
 		write_any(*socket, buffers)
@@ -2801,6 +2819,13 @@ ircd::server::link::process_write_async(tag &tag,
 	};
 
 	ops_write_async++;
+	if(write_tstamp)
+	{
+		socket->out.usr = nanoseconds(time<nanoseconds>());
+		socket->out.sys = socket->out.usr;
+		socket->out.ack = socket->out.usr;
+	}
+
 	net::write_few(*socket, buffers, std::move(handler));
 	return false;
 }

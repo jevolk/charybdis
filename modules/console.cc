@@ -6110,7 +6110,9 @@ console_cmd__peer__links(opt &out, const string_view &line)
 		<< std::setw(7) << std::right << "READS" << ' ' << ' '
 		<< std::setw(23) << std::left << "READ" << ' '
 		<< std::setw(7) << std::right << "WRITES" << ' ' << ' '
-		<< std::setw(23) << std::left << "WRITE" << ' '
+		<< std::setw(23) << std::left << "WROTE" << ' '
+		<< std::setw(9) << std::right << "TXTIME" << ' '
+		<< std::setw(9) << std::right << "RTTIME" << ' '
 		<< std::setw(7) << std::right << "DONE" << ' '
 		<< std::setw(4) << std::right << "COMI" << ' '
 		<< std::setw(4) << std::right << "UCOM" << ' ' << ' '
@@ -6146,7 +6148,7 @@ console_cmd__peer__links(opt &out, const string_view &line)
 		if(link.exclude)     flags[fi++] = 'e';
 		assert(fi < sizeof(flags));
 
-		char pbuf[2][32];
+		char pbuf[4][32];
 		out
 		<< std::setw(6) << std::right << peer.id << ':'
 		<< std::setw(2) << std::left << i << ' '
@@ -6159,6 +6161,8 @@ console_cmd__peer__links(opt &out, const string_view &line)
 		<< std::setw(23) << std::left << pretty(pbuf[0], iec(stat_read->bytes)) << ' '
 		<< std::setw(7) << std::right << stat_write->calls << ' ' << ' '
 		<< std::setw(23) << std::left << pretty(pbuf[1], iec(stat_write->bytes)) << ' '
+		<< std::setw(9) << std::right << pretty(pbuf[2], stat_write->sys, 1) << ' '
+		<< std::setw(9) << std::right << pretty(pbuf[3], stat_write->ack, 1) << ' '
 		<< std::setw(7) << std::right << link.tag_done << ' '
 		<< std::setw(4) << std::right << link.tag_committed() << ' '
 		<< std::setw(4) << std::right << link.tag_uncommitted() << ' ' << ' '

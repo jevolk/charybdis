@@ -18,6 +18,7 @@
 namespace ircd::net::errq
 {
 	struct msg;
+	struct txstamp;
 
 	template<class F>
 	static bool for_each(int, msghdr *, F&&);
@@ -27,9 +28,12 @@ namespace ircd::net::errq
 	static void handle_ip(const msg &);
 	static void handle_so_ts(const msg &);
 	static void handle_so(const msg &);
+
+	static void handle_txstamp(int);
 	static void handle(int, msghdr *) noexcept;
 
 	static thread_local char cmsgbuf[1024];
+	extern thread_local struct txstamp txstamp;
 }
 
 struct ircd::net::errq::msg
@@ -39,6 +43,14 @@ struct ircd::net::errq::msg
 	const cmsghdr *cmsg {nullptr};
 	const_buffer content;
 };
+
+struct ircd::net::errq::txstamp
+{
+	uint64_t ts;
+	uint32_t seq;
+	uint8_t type;
+}
+thread_local ircd::net::errq::txstamp;
 
 decltype(ircd::net::errq::log)
 ircd::net::errq::log
@@ -110,6 +122,7 @@ noexcept
 			return true;
 		});
 
+	memset(&txstamp, 0x0, sizeof(txstamp));
 
 	for_each(fd, msg, [](const auto &msg)
 	{
@@ -126,6 +139,49 @@ noexcept
 
 		return true;
 	});
+
+	if(likely(txstamp.ts))
+		handle_txstamp(fd);
+}
+
+void
+ircd::net::errq::handle_txstamp(const int fd)
+{
+	assert(txstamp.ts);
+
+	const auto link
+	{
+		server::link::find(std::nothrow, fd)
+	};
+
+	if(unlikely(!link || !link->socket))
+		return;
+
+	auto &stat
+	{
+		link->socket->out
+	};
+
+	nanoseconds ts
+	{
+		txstamp.ts
+	};
+
+	auto &val
+	{
+		txstamp.type == 0?   // Device enqueue timestamp.
+			stat.sys:
+		txstamp.type == 2?   // TCP acknowledge timestamp.
+			stat.ack:
+			ts               // Unhandled (ignored).
+	};
+
+	// There might be multiple results (i.e. multiple ACK's) for each transmit
+	// action. The first result will see val==stat.usr; the rest are ignored.
+	if(val != stat.usr || ts <= val)
+		return;
+
+	val = ts - stat.usr;
 }
 
 void
@@ -160,6 +216,9 @@ ircd::net::errq::handle_so_ts(const msg &msg)
 			body->tv.tv_sec,
 			body->tv.tv_nsec,
 		};
+
+	txstamp.ts = body->tv.tv_sec * 1'000'000'000UL;
+	txstamp.ts += body->tv.tv_nsec;
 }
 
 void
@@ -208,6 +267,8 @@ ircd::net::errq::handle_ip_ee_txstatus(const msg &msg,
 {
 	assert(ee->ee_origin == SO_EE_ORIGIN_TXSTATUS);
 
+	txstamp.type = ee->ee_info;
+	txstamp.seq = ee->ee_data;
 }
 
 template<class F>

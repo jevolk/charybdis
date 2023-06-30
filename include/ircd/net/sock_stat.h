@@ -28,6 +28,9 @@ struct ircd::net::sock_stat
 
 	size_t bytes {0};
 	size_t calls {0};
+	nanoseconds usr {0};
+	nanoseconds sys {0};
+	nanoseconds ack {0};
 
 	// [in, out]
 	static pair<const sock_stat *> get(const socket &) noexcept;
