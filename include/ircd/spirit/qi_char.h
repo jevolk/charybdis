@@ -12,17 +12,18 @@
 #define HAVE_IRCD_SPIRIT_QI_CHAR_H
 
 #if defined(__clang__)
-template<class Derived>
+template<class Derived,
+         class Attr>
 struct [[clang::internal_linkage, gnu::visibility("internal")]]
 boost::spirit::qi::char_parser
 <
 	Derived,
 	typename boost::spirit::char_encoding::standard::char_type,
-	typename boost::mpl::if_c<true, boost::spirit::unused_type, typename boost::spirit::char_encoding::standard::char_type>::type
+	Attr
 >
 :primitive_parser
 <
-	literal_char<char_encoding::standard, true, false>
+	Derived
 >
 {
 	using CharEncoding = boost::spirit::char_encoding::standard;
@@ -33,15 +34,15 @@ boost::spirit::qi::char_parser
 	         class Iterator>
 	struct attribute
 	{
-		using type = char_type;
+		using type = Attr;
 	};
 
-	template<class Iterator,
+	template<class It,
 	         class Context,
 	         class Skipper,
 	         class Attribute>
 	[[gnu::hot]]
-	bool parse(Iterator &__restrict__ start, const Iterator &__restrict__ stop, Context &c, const Skipper &s, Attribute &a) const
+	bool parse(It &__restrict__ start, const It &__restrict__ stop, Context &c, const Skipper &s, Attribute &a) const
 	{
 		qi::skip_over(start, stop, s);
 		if(likely(start != stop))
@@ -82,7 +83,7 @@ boost::spirit::qi::literal_char<boost::spirit::char_encoding::standard, true, fa
 	};
 
   private:
-	const char_type ch alignas(16);
+	const char_type ch alignas(4);
 
   public:
 	template<class CharParam,
@@ -130,8 +131,8 @@ boost::spirit::qi::char_range<boost::spirit::char_encoding::standard, false>
 	using char_encoding = CharEncoding;
 
   private:
-	const char_type from alignas(16);
-	const char_type to alignas(16);
+	const char_type from alignas(4);
+	const char_type to alignas(4);
 
   public:
 	template<class CharParam,
