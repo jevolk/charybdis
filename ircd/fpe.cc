@@ -94,7 +94,7 @@ ircd::fpe::reflect(const mutable_buffer &buf,
 		});
 	}};
 
-	for(size_t i(0); i < sizeof(flags) * 8; ++i)
+	for(size_t i(0); i < bitsof(flags); ++i)
 		if(flags & (1 << i))
 			append(1 << i);
 

@@ -24,7 +24,7 @@ inline namespace util
 	// OR this with a string size to trigger a shrink_to_fit() after closure.
 	constexpr const size_t SHRINK_TO_FIT
 	{
-		1UL << (sizeof(size_t) * 8 - 1)
+		1UL << (sizeof(size_t) * (CHAR_BIT) - 1)
 	};
 
 	// Simple string generation by copy from existing buffer.

@@ -25,7 +25,7 @@ struct ircd::util::bitset
 
 	static constexpr size_t word_bits
 	{
-		sizeof(word) * 8
+		bitsof<word>()
 	};
 
 	static constexpr size_t words
@@ -65,7 +65,7 @@ ircd::util::bitset<N>::bitset(const uint128_t val)
 {
 	const auto bits
 	{
-		std::min(sizeof(buf) * 8, sizeof(val) * 8)
+		std::min(bitsof(buf), bitsof(val))
 	};
 
 	size_t i{0};
@@ -152,7 +152,7 @@ ircd::util::bitset<N>::byte(const size_t pos)
 const
 {
 	constexpr auto max(words - 1);
-	const auto off(pos / 8);
+	const auto off(pos / CHAR_BIT);
 	if(!__builtin_is_constant_evaluated())
 		assert(off <= max);
 
@@ -164,5 +164,5 @@ constexpr size_t
 ircd::util::bitset<N>::bit(const size_t pos)
 const
 {
-	return pos % 8;
+	return pos % CHAR_BIT;
 }

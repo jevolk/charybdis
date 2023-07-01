@@ -50,12 +50,12 @@ noexcept
 
 	static_assert
 	(
-		b % 8 == 0, "[emulated] xmmx register only rotates left at bytewise resolution."
+		b % CHAR_BIT == 0, "[emulated] xmmx register only rotates left at bytewise resolution."
 	);
 
 	constexpr int B
 	{
-		b / 8
+		b / CHAR_BIT
 	};
 
 	constexpr auto S

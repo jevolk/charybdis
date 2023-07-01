@@ -50,12 +50,12 @@ noexcept
 
 	static_assert
 	(
-		b % 8 == 0, "[emulated] xmmx register only shifts left at bytewise resolution."
+		b % CHAR_BIT == 0, "[emulated] xmmx register only shifts left at bytewise resolution."
 	);
 
 	constexpr int B
 	{
-		b / 8
+		b / CHAR_BIT
 	};
 
 	V arg(a), ret(a);
@@ -78,10 +78,10 @@ noexcept
 {
 	static_assert
 	(
-		b % 8 == 0, "xmmx register only shifts left at bytewise resolution."
+		b % CHAR_BIT == 0, "xmmx register only shifts left at bytewise resolution."
 	);
 
-	return T(_mm_bslli_si128(u128x1(a), b / 8));
+	return T(_mm_bslli_si128(u128x1(a), b / CHAR_BIT));
 }
 #else
 template<int b,
@@ -105,10 +105,10 @@ noexcept
 {
 	static_assert
 	(
-		b % 8 == 0, "ymmx register only shifts left at bytewise resolution."
+		b % CHAR_BIT == 0, "ymmx register only shifts left at bytewise resolution."
 	);
 
-	return T(_mm256_slli_si256(u256x1(a), b / 8));
+	return T(_mm256_slli_si256(u256x1(a), b / CHAR_BIT));
 }
 #else
 template<int b,

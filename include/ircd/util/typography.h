@@ -108,6 +108,24 @@ ssizeof()
 }
 
 //
+//	sizeof() in bits
+//
+
+template<class T>
+constexpr auto
+bitsof(T&&)
+{
+	return sizeof(T) * CHAR_BIT;
+}
+
+template<class T>
+constexpr auto
+bitsof()
+{
+	return sizeof(T) * CHAR_BIT;
+}
+
+//
 // Test if type is forward declared or complete
 //
 
