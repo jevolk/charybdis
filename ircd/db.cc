@@ -178,27 +178,31 @@ try
 		fs::base::db
 	};
 
-	if(!fs::is_dir(dbdir) && (ircd::read_only || ircd::maintenance))
+	if(!fs::is_dir(dbdir) && ircd::read_only)
 		log::warning
 		{
-			log, "Not creating database directory `%s' in read-only/maintenance mode.", dbdir
+			log, "Not creating database directory `%s' in read-only/maintenance mode.",
+			dbdir
 		};
 	else if(fs::mkdir(dbdir))
 		log::notice
 		{
-			log, "Created new database directory at `%s'", dbdir
+			log, "Created new database directory at `%s'",
+			dbdir
 		};
 	else
 		log::info
 		{
-			log, "Using database directory at `%s'", dbdir
+			log, "Using database directory at `%s'",
+			dbdir
 		};
 }
 catch(const fs::error &e)
 {
 	log::error
 	{
-		log, "Database directory error: %s", e.what()
+		log, "Database directory error: %s",
+		e.what()
 	};
 
 	throw;
