@@ -1488,6 +1488,15 @@ dnl
 dnl Miscellaneous operating system specific
 dnl
 
+AM_COND_IF(LINUX,
+[
+	AM_COND_IF(GCC,
+	[
+		dnl historical; conflicts with computed includes.
+		CPPUNDEFINE([linux])
+	])
+])
+
 AM_COND_IF(MINGW,
 [
 	AC_DEFINE(HAVE_WIN32, [1], [Define to 1 if you are on windows])
