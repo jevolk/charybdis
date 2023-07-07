@@ -39,6 +39,11 @@ AC_DEFUN([CPPDEFINE],
 	fi
 ])
 
+AC_DEFUN([CPPUNDEFINE],
+[
+	RB_VAR_PREPEND([CPPFLAGS], ["-U$1"])
+])
+
 AC_DEFUN([AM_COND_IF_NOT],
 [
 	AM_COND_IF([$1], [], [$2])
