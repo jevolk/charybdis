@@ -284,8 +284,10 @@ noexcept try
 	// without having to send a ctrl-c for it, that is provided here. This does
 	// not actually take effect until it's processed in the ios.run() below.
 	if(cmdline || !execute.empty())
-		construct::console::interactive_when_done = cmdline,
+	{
+		construct::console::interactive_when_done = cmdline;
 		construct::console::spawn();
+	}
 
 	// If the user wants to immediately process console commands
 	// non-interactively from a program argument input, that is enqueued here.
@@ -561,8 +563,8 @@ applyargs()
 	if(single)
 	{
 		ircd::maintenance.set("true");
-		cmdline = !debugmode;
 		nobackfill = true;
+		cmdline |= !debugmode;
 	}
 
 	if(bootstrap)
