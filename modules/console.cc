@@ -13489,13 +13489,19 @@ console_cmd__user__rooms(opt &out, const string_view &line)
 	{
 		const m::event::fetch event
 		{
-			std::nothrow, room.get("m.room.member", user.user_id)
+			std::nothrow, room.get(std::nothrow, "m.room.member", user.user_id)
 		};
 
 		out
 		<< std::setw(6) << std::right << membership
-		<< ' '
-		<< m::pretty_oneline(event)
+		<< ' ';
+
+		if(likely(event.valid))
+			m::pretty_oneline(out, event);
+		else
+			out << room.room_id;
+
+		out
 		<< std::endl;
 	});
 
