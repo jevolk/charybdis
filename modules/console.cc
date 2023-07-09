@@ -11995,8 +11995,7 @@ console_cmd__room__acquire__list(opt &out, const string_view &line)
 			<< std::right << std::setw(9) << long(a->opts.ref.second)
 			<< "] "
 			<< std::left << std::setw(50) << trunc(result.event_id, 60)
-			<< " "
-			<< std::endl;
+			<< '\n';
 	}
 
 	return true;
