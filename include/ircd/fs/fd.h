@@ -20,7 +20,7 @@ namespace ircd::fs
 	ulong fstype(const fd &);
 	ulong device(const fd &);
 	uint64_t write_life(const fd &) noexcept;
-	void write_life(const fd &, const uint64_t);
+	bool write_life(const fd &, const uint64_t);
 	size_t advise(const fd &, const int, const size_t = 0, const opts & = opts_default);
 	size_t evict(const fd &, const size_t size = 0, const opts & = opts_default);
 }

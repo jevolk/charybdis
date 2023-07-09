@@ -777,13 +777,16 @@ size_t
 ircd::fs::prefetch(const fd &fd,
                    const size_t count,
                    const read_opts &opts)
+#if defined(POSIX_FADV_WILLNEED)
 {
-	#if defined(POSIX_FADV_WILLNEED)
-		return advise(fd, POSIX_FADV_WILLNEED, count, opts);
-	#else
-		return 0UL;
-	#endif
+	return advise(fd, POSIX_FADV_WILLNEED, count, opts);
 }
+#else
+{
+	#warning "Missing POSIX_FADV_WILLNEED on this platform."
+	return 0;
+}
+#endif
 
 bool
 ircd::fs::incore(const fd &fd,
@@ -2306,31 +2309,27 @@ ircd::fs::fd::opts::direct_io_enable
 	{ "persist",  false                          },
 };
 
-#if defined(POSIX_FADV_DONTNEED)
 size_t
 ircd::fs::evict(const fd &fd,
                 const size_t count,
                 const opts &opts)
+#if defined(POSIX_FADV_DONTNEED)
 {
 	return advise(fd, POSIX_FADV_DONTNEED, count, opts);
 }
 #else
-#warning "POSIX_FADV_DONTNEED not available on this platform."
-size_t
-ircd::fs::evict(const fd &fd,
-                const size_t count,
-                const opts &opts)
 {
-	return 0UL;
+	#warning "POSIX_FADV_DONTNEED not available on this platform."
+	return 0;
 }
 #endif
 
-#if defined(HAVE_POSIX_FADVISE)
 size_t
 ircd::fs::advise(const fd &fd,
                  const int advice,
                  const size_t count,
                  const opts &opts)
+#if defined(HAVE_POSIX_FADVISE)
 {
 	static const size_t max_count
 	{
@@ -2356,45 +2355,45 @@ ircd::fs::advise(const fd &fd,
 	return count;
 }
 #else
-#warning "posix_fadvise(2) not available for this compilation."
-size_t
-ircd::fs::advise(const fd &fd,
-                 const int advice,
-                 const size_t count,
-                 const opts &opts)
 {
-	return 0UL;
+	#warning "posix_fadvise(2) not available for this compilation."
+	return 0;
 }
 #endif
 
-#if defined(HAVE_FCNTL_H) && defined(F_SET_FILE_RW_HINT)
-void
+bool
 ircd::fs::write_life(const fd &fd,
                      const uint64_t hint)
+#if defined(HAVE_FCNTL_H) && defined(F_SET_FILE_RW_HINT)
 {
 	if(!support::rwh_write_life)
-		return;
+		return false;
 
 	syscall(::fcntl, int(fd), F_SET_FILE_RW_HINT, &hint);
+	return true;
 }
 #else
-#warning "F_SET_FILE_RW_HINT not supported on platform."
-void
-ircd::fs::write_life(const fd &fd,
-                     const uint64_t hint)
 {
+	#warning "F_SET_FILE_RW_HINT not supported on platform."
+	return false;
 }
 #endif
 
-#if defined(HAVE_FCNTL_H) && defined(F_GET_FILE_RW_HINT)
 uint64_t
 ircd::fs::write_life(const fd &fd)
 noexcept try
+#if defined(HAVE_FCNTL_H) && defined(F_GET_FILE_RW_HINT)
 {
 	uint64_t ret;
 	syscall(::fcntl, int(fd), F_GET_FILE_RW_HINT, &ret);
 	return ret;
 }
+#else
+{
+	#warning "F_GET_FILE_RW_HINT not supported on platform."
+	return 0;
+}
+#endif
 catch(const std::system_error &e)
 {
 	log::derror
@@ -2406,26 +2405,16 @@ catch(const std::system_error &e)
 
 	return 0;
 }
-#else
-#warning "F_GET_FILE_RW_HINT not supported on platform."
-uint64_t
-ircd::fs::write_life(const fd &fd)
-{
-	return 0UL;
-}
-#endif
 
-#ifdef HAVE_SYS_STAT_H
 ulong
 ircd::fs::device(const fd &fd)
+#ifdef HAVE_SYS_STAT_H
 {
 	struct stat st{0};
 	syscall(::fstat, fd, &st);
 	return st.st_dev;
 }
 #else
-ulong
-ircd::fs::device(const fd &fd)
 {
 	static_assert
 	(
@@ -2434,17 +2423,15 @@ ircd::fs::device(const fd &fd)
 }
 #endif
 
-#ifdef HAVE_SYS_STATFS_H
 ulong
 ircd::fs::fstype(const fd &fd)
+#ifdef HAVE_SYS_STATFS_H
 {
 	struct statfs f{0};
 	syscall(::fstatfs, fd, &f);
 	return f.f_type;
 }
 #else
-ulong
-ircd::fs::fstype(const fd &fd)
 {
 	static_assert
 	(
@@ -2453,23 +2440,19 @@ ircd::fs::fstype(const fd &fd)
 }
 #endif
 
-#ifdef __linux__
 size_t
 ircd::fs::block_size(const fd &fd)
+#ifdef __linux__
 {
 	return 512UL;
 }
 #elif defined(HAVE_SYS_STAT_H)
-size_t
-ircd::fs::block_size(const fd &fd)
 {
 	struct stat st;
 	syscall(::fstat, fd, &st);
 	return st.st_blksize;
 }
 #else
-size_t
-ircd::fs::block_size(const fd &fd)
 {
 	return info::page_size;
 }
