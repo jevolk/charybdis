@@ -3065,9 +3065,14 @@ console_cmd__ctx__list(opt &out, const string_view &line)
 		"name",
 	}};
 
-	const auto name_filter
+	const auto name_expr
 	{
 		param["name"]
+	};
+
+	const globular_imatch name_match
+	{
+		name_expr
 	};
 
 	out << ' '
@@ -3107,11 +3112,11 @@ console_cmd__ctx__list(opt &out, const string_view &line)
 	    << ":NAME"
 	    << std::endl;
 
-	ctx::for_each([&out, &name_filter]
+	ctx::for_each([&out, &name_expr, &name_match]
 	(auto &ctx)
 	{
-		if(name_filter)
-			if(name(ctx) != name_filter)
+		if(name_expr)
+			if(!name_match(name(ctx)))
 				return true;
 
 		out << std::setw(5) << std::right << id(ctx);
