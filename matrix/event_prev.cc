@@ -95,16 +95,9 @@ size_t
 ircd::m::event::prev::prev_events_exist()
 const
 {
-	// the spec max is really 20 but we accept a little more in this
-	// subroutine for whatever forward reason...
-	static const auto max
-	{
-		32UL
-	};
-
 	const auto num
 	{
-		std::min(prev_events_count(), max)
+		std::min(prev_events_count(), MAX)
 	};
 
 	size_t i(0);
@@ -119,7 +112,7 @@ const
 		m::exists_count({ids, i})
 	};
 
-	assert(ret <= max && ret <= prev_events_count());
+	assert(ret <= MAX && ret <= prev_events_count());
 	return ret;
 }
 
