@@ -129,11 +129,13 @@ ircd::db::database::env::random_access_file final
 	static const fs::fd::opts default_opts;
 
 	database &d;
+	string_view name;
 	fs::fd::opts opts;
 	fs::fd fd;
 	size_t _buffer_align;
 	int8_t ionice {0};
 	bool aio;
+	char _namebuf[48];
 
 	bool use_direct_io() const noexcept override;
 	size_t GetRequiredBufferAlignment() const noexcept override;
@@ -160,12 +162,14 @@ ircd::db::database::env::random_rw_file final
 	static const fs::fd::opts default_opts;
 
 	database &d;
+	string_view name;
 	fs::fd::opts opts;
 	fs::fd fd;
 	size_t _buffer_align;
 	int8_t ionice {0};
 	bool nodelay {false};
 	bool aio;
+	char _namebuf[48];
 
 	bool use_direct_io() const noexcept override;
 	size_t GetRequiredBufferAlignment() const noexcept override;
@@ -190,6 +194,7 @@ ircd::db::database::env::sequential_file final
 	static const fs::fd::opts default_opts;
 
 	database &d;
+	string_view name;
 	ctx::mutex mutex;
 	fs::fd::opts opts;
 	fs::fd fd;
@@ -197,6 +202,7 @@ ircd::db::database::env::sequential_file final
 	off_t offset {0};
 	int8_t ionice {0};
 	bool aio;
+	char _namebuf[48];
 
 	bool use_direct_io() const noexcept override;
 	size_t GetRequiredBufferAlignment() const noexcept override;
@@ -221,6 +227,7 @@ ircd::db::database::env::writable_file
 	static conf::item<bool> internal_filesize;
 
 	database &d;
+	string_view name;
 	ctx::mutex mutex;
 	rocksdb::EnvOptions env_opts;
 	fs::fd::opts opts;
@@ -232,6 +239,7 @@ ircd::db::database::env::writable_file
 	size_t logical_offset {0};
 	size_t preallocation_block_size {0};
 	ssize_t preallocation_last_block {-1};
+	char _namebuf[48];
 
 	bool IsSyncThreadSafe() const noexcept override;
 	size_t GetUniqueId(char* id, size_t max_size) const noexcept override;
