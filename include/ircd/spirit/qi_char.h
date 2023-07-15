@@ -131,8 +131,7 @@ boost::spirit::qi::char_range<boost::spirit::char_encoding::standard, false>
 	using char_encoding = CharEncoding;
 
   private:
-	const char_type from alignas(4);
-	const char_type to alignas(4);
+	const int from, to;
 
   public:
 	template<class CharParam,
@@ -141,20 +140,19 @@ boost::spirit::qi::char_range<boost::spirit::char_encoding::standard, false>
 	bool test(const CharParam ch_, Context &) const
 	{
 		using ischar = typename traits::ischar<CharParam, char_encoding>;
-		using ircd::boolmask;
 
 		#ifndef NDEBUG
 		ircd::always_assert(ischar::call(ch_));
 		#endif
 
-		const char_type ch(ch_);
-		const char_type res[2]
+		const int ch(ch_);
+		const int cmp[2]
 		{
-			boolmask<char_type>(ch >= from),
-			boolmask<char_type>(ch <= to),
+			ch - from,        // ch >= from
+			ch - to - 1,      // ch <= to
 		};
 
-		return res[0] & res[1];
+		return ~cmp[0] & cmp[1] & 0x80000000U;
 	}
 
 	template<class Context>
