@@ -10,6 +10,45 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// fed/file.h
+//
+
+ircd::m::fed::file::file(const media::mxc &mxc,
+                         const mutable_buffer &buf_,
+                         opts opts)
+:request{[&]
+{
+	if(likely(!opts.remote))
+		opts.remote = mxc.server;
+
+	if(likely(!defined(json::get<"method"_>(opts.request))))
+		json::get<"method"_>(opts.request) = opts.head?
+			"HEAD": "GET";
+
+	mutable_buffer buf{buf_};
+	if(likely(!defined(json::get<"uri"_>(opts.request))))
+	{
+		thread_local char mxc_buf[2][2048];
+		json::get<"uri"_>(opts.request) = fmt::sprintf
+		{
+			buf, "/_matrix/media/r0/download/%s/%s",
+			url::encode(mxc_buf[0], mxc.server),
+			url::encode(mxc_buf[1], mxc.mediaid),
+		};
+
+		consume(buf, size(json::get<"uri"_>(opts.request)));
+	}
+
+	return request
+	{
+		buf, std::move(opts)
+	};
+}()}
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // fed/hierarchy.h
 //
 

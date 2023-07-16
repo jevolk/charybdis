@@ -34,6 +34,7 @@
 #include "send.h"
 #include "groups.h"
 #include "hierarchy.h"
+#include "file.h"
 
 /// Federation Interface
 namespace ircd::m::fed

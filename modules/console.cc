@@ -15978,6 +15978,55 @@ console_cmd__fed__prelink(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__fed__file(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"mxc", "remote", "op"
+	}};
+
+	const m::media::mxc mxc
+	{
+		param.at("mxc")
+	};
+
+	const string_view remote
+	{
+		param["remote"]?:
+			mxc.server
+	};
+
+	const bool get
+	{
+		has(param["op"], "get")
+	};
+
+	const unique_mutable_buffer buf
+	{
+		16_KiB
+	};
+
+	m::fed::file::opts opts;
+	opts.remote = remote;
+	opts.head = !get;
+	m::fed::file request
+	{
+		mxc, buf, std::move(opts)
+	};
+
+	const auto code
+	{
+		request.get(out.timeout)
+	};
+
+	out
+	<< request.in.head
+	<< std::endl;
+
+	return true;
+}
+
+bool
 console_cmd__fed__hierarchy(opt &out, const string_view &line)
 {
 	const params param{line, " ",

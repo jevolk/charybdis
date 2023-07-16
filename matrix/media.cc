@@ -163,7 +163,7 @@ std::pair
 	ircd::http::response::head,
 	ircd::unique_buffer<ircd::mutable_buffer>
 >
-ircd::m::media::file::download(const mutable_buffer &buf_,
+ircd::m::media::file::download(const mutable_buffer &buf,
                                const mxc &mxc,
                                string_view remote,
                                server::request::opts *const opts)
@@ -171,23 +171,13 @@ ircd::m::media::file::download(const mutable_buffer &buf_,
 	assert(remote || !my_host(mxc.server));
 	assert(!remote || !my_host(remote));
 
-	mutable_buffer buf{buf_};
-	fed::request::opts fedopts;
-	fedopts.remote = remote?: mxc.server;
-	json::get<"method"_>(fedopts.request) = "GET";
-	thread_local char mxc_buf[2][2048];
-	json::get<"uri"_>(fedopts.request) = fmt::sprintf
-	{
-		buf, "/_matrix/media/r0/download/%s/%s",
-		url::encode(mxc_buf[0], mxc.server),
-		url::encode(mxc_buf[1], mxc.mediaid),
-	};
-	consume(buf, size(json::get<"uri"_>(fedopts.request)));
-
 	//TODO: --- This should use the progress callback to build blocks
-	fed::request remote_request
+	fed::file::opts fedopts;
+	fedopts.sopts = opts;
+	fedopts.remote = remote?: mxc.server;
+	fed::file remote_request
 	{
-		buf, std::move(fedopts)
+		mxc, buf, std::move(fedopts)
 	};
 
 	if(!remote_request.wait(seconds(download_timeout), std::nothrow))
