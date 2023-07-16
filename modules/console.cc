@@ -15947,6 +15947,55 @@ console_cmd__feds__send(opt &out, const string_view &line)
 	return true;
 }
 
+bool
+console_cmd__feds__file(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"room_id", "mxc"
+	}};
+
+	const auto room_id
+	{
+		m::room_id(param["room_id"])
+	};
+
+	const m::media::mxc mxc
+	{
+		param.at("mxc")
+	};
+
+	size_t count[2] {0};
+	m::feds::opts opts;
+	opts.op = m::feds::op::file;
+	opts.timeout = out.timeout;
+	opts.room_id = room_id;
+	opts.arg[0] = param["mxc"];
+	opts.argi[0] = false;
+	m::feds::execute(opts, [&out, &count]
+	(const auto &result)
+	{
+		count[bool(result.eptr)]++;
+
+		out << (result.eptr? '-' : '+')
+		    << " "
+		    << std::setw(40) << std::left << result.origin
+		    << " ";
+
+		if(result.eptr)
+			out << what(result.eptr);
+
+		out << std::endl;
+		return true;
+	});
+
+	out
+	<< '\n'
+	<< count[0] << ':' << count[1]
+	<< std::endl;
+	return true;
+}
+
 //
 // fed
 //

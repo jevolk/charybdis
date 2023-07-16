@@ -64,6 +64,7 @@ enum class ircd::m::feds::op
 	version,
 	keys,
 	send,
+	file,
 };
 
 /// Result structure created internally when a result arrives and passed to

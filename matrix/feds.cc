@@ -30,6 +30,7 @@ namespace ircd::m::feds
 	static request_list version(const opts &, const closure &);
 	static request_list keys(const opts &, const closure &);
 	static request_list send(const opts &, const closure &);
+	static request_list file(const opts &, const closure &);
 }
 #pragma GCC visibility pop
 
@@ -127,6 +128,10 @@ ircd::m::feds::execute::execute(const vector_view<const opts> &optsv,
 			list.splice(list.end(), send(opts, closure));
 			continue;
 
+		case op::file:
+			list.splice(list.end(), file(opts, closure));
+			continue;
+
 		case op::noop:
 			continue;
 	}
@@ -136,6 +141,29 @@ ircd::m::feds::execute::execute(const vector_view<const opts> &optsv,
 		timeout = std::max(opts.timeout, timeout);
 
 	ret = handler(list, timeout, closure);
+}
+
+ircd::m::feds::request_list
+ircd::m::feds::file(const opts &opts,
+                    const closure &closure)
+{
+	const auto make_request{[&opts]
+	(auto &request, const auto &origin)
+	{
+		m::fed::file::opts fedopts;
+		fedopts.head = !opts.argi[0];
+		fedopts.remote = string_view
+		{
+			strlcpy{request.origin, origin}
+		};
+
+		return m::fed::file
+		{
+			opts.arg[0], request.buf, std::move(fedopts)
+		};
+	}};
+
+	return for_each_in_room<m::fed::file>(opts, closure, make_request);
 }
 
 ircd::m::feds::request_list
