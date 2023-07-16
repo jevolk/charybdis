@@ -3849,7 +3849,12 @@ ircd::server::tag::read_head(const const_buffer &buffer,
 	assert(pb.completed() == pb.size());
 	assert(pb.completed() == state.head_read);
 	state.status = http::status(head.status);
-	state.content_length = head.content_length;
+
+	// Get the content length unless we made a HEAD request.
+	const string_view method(req.out.method);
+	state.content_length = method != "HEAD"?
+		head.content_length:
+		0;
 
 	// Proffer the HTTP head to the peer instance which owns the link working
 	// this tag so it can learn from any header data.
