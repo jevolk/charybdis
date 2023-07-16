@@ -1625,6 +1625,7 @@ ircd::m::fed::request::request(const mutable_buffer &buf_,
 
 	// Generate the request head including the X-Matrix into buffer.
 	opts.out.head = opts.request(buf, addl_headers);
+	strlcpy(opts.out.method, json::get<"method"_>(opts.request));
 
 	// Setup some buffering features which can optimize the server::request
 	if(!size(opts.in))

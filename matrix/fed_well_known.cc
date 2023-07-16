@@ -589,6 +589,7 @@ ircd::m::fed::well_known::submit(request &req)
 
 	server::out out;
 	out.head = window.completed();
+	strlcpy(out.method, "GET"_sv);
 
 	// Remaining space in buffer is used for received head; note that below
 	// we specify this same buffer for in.content, but that's a trick

@@ -44,6 +44,11 @@ struct ircd::server::out
 	/// invocation, the head has been fully written.
 	std::function<void (const_buffer, const_buffer)> progress;
 
+	/// The request method is stored here rather than frequently parsing and
+	/// extracting it out of the head buffer. If the user does not copy the
+	/// method here prior to submit a parse and extraction will be made.
+	char method[8] {0};
+
 	/// Call server::out::gethead(request) to extract the details of the HTTP
 	/// request being sent by the request. This may not always be available,
 	/// like in some cases after the request was canceled.

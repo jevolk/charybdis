@@ -49,6 +49,7 @@ ircd::rest::request::request(const rfc3986::uri &uri,
 		};
 
 		opts.sout.head = window.completed();
+		strlcpy(opts.sout.method, opts.method);
 	}
 
 	if(empty(opts.sout.content))
@@ -127,6 +128,7 @@ ircd::rest::request::request(const mutable_buffer &out,
 		};
 
 		opts.sout.head = window.completed();
+		strlcpy(opts.sout.method, opts.method);
 	}
 
 	if(empty(opts.sout.content))

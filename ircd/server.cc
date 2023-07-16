@@ -977,6 +977,18 @@ try
 	// Run a GC over the links and tags for this peer first.
 	cleanup_canceled();
 
+	// If the method wasn't copied into the opts by the user do it now.
+	if(!request.out.method[0])
+	{
+		const http::request::head head
+		{
+			request.out.gethead(request)
+		};
+
+		assert(head.method);
+		strlcpy(request.out.method, head.method);
+	}
+
 	// Select the best link for this request or create anew.
 	link *const ret
 	{
