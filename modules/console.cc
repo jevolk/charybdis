@@ -12553,6 +12553,54 @@ console_cmd__room__msghtml(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__room__msgimg(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"room_id", "user_id", "url", "body"
+	}};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::user::id sender
+	{
+		param.at("user_id")
+	};
+
+	const string_view url
+	{
+		param.at("url")
+	};
+
+	const m::media::mxc mxc
+	{
+		url
+	};
+
+	const string_view body
+	{
+		param["body"]?:
+			mxc.mediaid
+	};
+
+	const m::room room
+	{
+		room_id
+	};
+
+	const auto event_id
+	{
+		msgimg(room, sender, url, body)
+	};
+
+	out << event_id << std::endl;
+	return true;
+}
+
+bool
 console_cmd__room__annotate(opt &out, const string_view &line)
 {
 	const params param{line, " ",

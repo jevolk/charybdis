@@ -93,6 +93,22 @@ ircd::m::notice(const room &room,
 }
 
 ircd::m::event::id::buf
+ircd::m::msgimg(const room &room,
+                const m::id::user &sender,
+                const string_view &url,
+                const string_view &body,
+                const json::members &info)
+{
+	return message(room, sender,
+	{
+		{ "msgtype",         "m.image"               },
+		{ "body",            { body, json::STRING }  },
+		{ "url",             { url,  json::STRING }  },
+		{ "info",            info                    },
+	});
+}
+
+ircd::m::event::id::buf
 ircd::m::msghtml(const room &room,
                  const m::id::user &sender,
                  const string_view &html,

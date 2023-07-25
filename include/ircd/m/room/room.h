@@ -79,6 +79,7 @@ namespace ircd::m
 	event::id::buf message(const room &, const id::user &sender, const json::members &content);
 	event::id::buf message(const room &, const id::user &sender, const string_view &body, const string_view &msgtype = "m.text");
 	event::id::buf msghtml(const room &, const id::user &sender, const string_view &html, const string_view &alt = {}, const string_view &msgtype = "m.notice");
+	event::id::buf msgimg(const room &, const id::user &sender, const string_view &url, const string_view &body, const json::members &info = {});
 	event::id::buf notice(const room &, const id::user &sender, const string_view &body);
 	event::id::buf notice(const room &, const string_view &body); // sender is @ircd
 	event::id::buf redact(const room &, const id::user &sender, const id::event &, const string_view &reason);
