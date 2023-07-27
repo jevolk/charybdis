@@ -5743,7 +5743,7 @@ try
 	(const string_view &prop)
 	{
 		const auto name(lstrip(prop, "rocksdb."));
-		size_t val(0); try
+		ssize_t val(0); try
 		{
 			val = c?
 				db::property<db::prop_int>(c, prop):
@@ -5781,6 +5781,7 @@ try
 		});
 	}};
 
+	size_t walsz(0), wals(0);
 	if(c)
 	{
 		out << db::describe(c).explain
@@ -5789,10 +5790,17 @@ try
 		closeout("size", [&] { out << pretty(iec(bytes(c))); });
 		closeout("files", [&] { out << file_count(c); });
 	} else {
+		for(const auto &info : db::database::wal::info::vector{d})
+		{
+			walsz += info.size;
+			wals += 1;
+		}
+
 		closeout("uuid", [&] { out << uuid(d); });
 		closeout("size", [&] { out << pretty(iec(bytes(d))); });
 		closeout("columns", [&] { out << d.columns.size(); });
 		closeout("files", [&] { out << file_count(d); });
+		closeout("wal-files", [&] { out << wals; });
 		closeout("sequence", [&] { out << sequence(d); });
 	}
 
@@ -5812,21 +5820,23 @@ try
 	property("rocksdb.num-deletes-active-mem-table");
 	property("rocksdb.mem-table-flush-pending");
 	property("rocksdb.num-running-flushes");
+	property("rocksdb.num-snapshots");
+	property("rocksdb.oldest-snapshot-time");
 	property("rocksdb.compaction-pending");
 	property("rocksdb.num-running-compactions");
 	sizeprop("rocksdb.estimate-pending-compaction-bytes");
-	property("rocksdb.num-snapshots");
-	property("rocksdb.oldest-snapshot-time");
-	sizeprop("rocksdb.size-all-mem-tables");
-	sizeprop("rocksdb.cur-size-all-mem-tables");
-	sizeprop("rocksdb.cur-size-active-mem-table");
 	sizeprop("rocksdb.estimate-table-readers-mem");
-	sizeprop("rocksdb.block-cache-capacity");
-	sizeprop("rocksdb.block-cache-usage");
-	sizeprop("rocksdb.block-cache-pinned-usage");
+	sizeprop("rocksdb.cur-size-active-mem-table");
+	sizeprop("rocksdb.cur-size-all-mem-tables");
+	sizeprop("rocksdb.size-all-mem-tables");
 	if(!c)
-		closeout("row cache size", [&] { out << pretty(iec(db::usage(cache(d)))); });
-
+	{
+		closeout("wal-files-size", [&] { out << pretty(iec(walsz)); });
+		closeout("row-cache-size", [&] { out << pretty(iec(db::usage(cache(d)))); });
+	}
+	sizeprop("rocksdb.block-cache-pinned-usage");
+	sizeprop("rocksdb.block-cache-usage");
+	sizeprop("rocksdb.block-cache-capacity");
 	sizeprop("rocksdb.estimate-live-data-size");
 	sizeprop("rocksdb.live-sst-files-size");
 	sizeprop("rocksdb.total-sst-files-size");
