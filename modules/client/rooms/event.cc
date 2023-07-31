@@ -12,6 +12,11 @@
 
 using namespace ircd;
 
+static void
+remote_fetch_eval(const m::resource::request &request,
+                  const m::room::id &room_id,
+                  const m::event::id &event_id);
+
 m::resource::response
 get__event(client &client,
            const m::resource::request &request,
@@ -27,6 +32,9 @@ get__event(client &client,
 	{
 		url::decode(event_id, request.parv[2])
 	};
+
+	if(!m::exists(event_id) && m::exists(room_id))
+		remote_fetch_eval(request, room_id, event_id);
 
 	const m::room room
 	{
@@ -73,5 +81,63 @@ get__event(client &client,
 		{
 			out.completed()
 		}
+	};
+}
+
+void
+remote_fetch_eval(const m::resource::request &request,
+                  const m::room::id &room_id,
+                  const m::event::id &event_id)
+try
+{
+	auto fetch
+	{
+		m::fetch::start(
+		{
+			.op = m::fetch::op::event,
+			.room_id = room_id,
+			.event_id = event_id,
+		})
+	};
+
+	const auto response
+	{
+		fetch.get()
+	};
+
+	const json::object body
+	{
+		response
+	};
+
+	const json::array pdus
+	{
+		body["pdus"]
+	};
+
+	m::vm::opts vmopts;
+	vmopts.user_id = request.user_id;
+	vmopts.phase.set(m::vm::phase::NOTIFY, false);
+	vmopts.phase.set(m::vm::phase::FETCH_PREV, false);
+	vmopts.phase.set(m::vm::phase::FETCH_STATE, false);
+	vmopts.wopts.appendix.set(m::dbs::appendix::ROOM_HEAD, false);
+	m::vm::eval
+	{
+		pdus, vmopts
+	};
+}
+catch(const ctx::interrupted &e)
+{
+	throw;
+}
+catch(const std::exception &e)
+{
+	log::error
+	{
+		"Failed to fetch %s in %s for %s :%s",
+		string_view{event_id},
+		string_view{room_id},
+		string_view{request.user_id},
+		e.what(),
 	};
 }
