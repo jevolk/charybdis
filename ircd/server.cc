@@ -2815,7 +2815,9 @@ ircd::server::link::process_write_async(tag &tag,
 	if(tag.state.sp.expired())
 	{
 		assert(!tag.committed());
+		#if BOOST_VERSION >= 107700
 		assert(socket->cancel_write.slot().is_connected());
+		#endif
 		tag.state.sp = weak_from(*socket);
 	}
 
@@ -3322,7 +3324,9 @@ noexcept
 	if(!tag.state.sp.expired())
 	{
 		const auto socket(tag.state.sp.lock());
+		#if BOOST_VERSION >= 107700
 		socket->cancel_write.emit(asio::cancellation_type::terminal);
+		#endif
 	}
 
 	// The cancellation is a straightforward facsimile except in the case of

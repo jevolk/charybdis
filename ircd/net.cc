@@ -259,6 +259,7 @@ ircd::net::flush(socket &socket)
 	nodelay(socket, false);
 }
 
+#if BOOST_VERSION >= 107700
 /// Callback after everything is sent.
 void
 ircd::net::write_all(socket &socket,
@@ -298,7 +299,9 @@ catch(const boost::system::system_error &e)
 	assert(false);
 	throw_system_error(e);
 }
+#endif
 
+#if BOOST_VERSION >= 107700
 /// Callback after as much as possible is sent.
 void
 ircd::net::write_few(socket &socket,
@@ -338,6 +341,7 @@ catch(const boost::system::system_error &e)
 	assert(false);
 	throw_system_error(e);
 }
+#endif
 
 /// Yields ircd::ctx until all buffers are sent.
 ///
