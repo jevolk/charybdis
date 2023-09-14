@@ -418,6 +418,8 @@ GPU_ASFLAGS += -Rpass-analysis=asm-printer
 # SPV
 #
 
+if LLVM_SPIRV
+
 SPV_CPPFLAGS = $(GPU_CPPFLAGS)
 SPV_CPPFLAGS += -D__OPENCL_VERSION__=120
 
@@ -437,6 +439,8 @@ CLEANFILES += gpt_gpu.spv.cc
 libircd_la_SOURCES += gpt_gpu.spv.cc
 gpt_gpu.spv.cc: gpt_gpu.spv
 	$(XXD) -i $^ $@
+
+endif
 
 #
 # GCN-HSA

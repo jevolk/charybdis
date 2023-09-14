@@ -2754,6 +2754,8 @@ AC_PATH_PROGS(LLVM_OPT, [opt-${CXX_EPOCH} opt])
 AC_PATH_PROGS(LLVM_LINK, [llvm-link-${CXX_EPOCH} llvm-link])
 AC_PATH_PROGS(LLVM_SPIRV, [llvm-spirv-${CXX_EPOCH} llvm-spirv])
 
+AM_CONDITIONAL([LLVM_SPIRV], [test -n "$LLVM_SPIRV"])
+
 dnl
 dnl
 dnl Arm NN
