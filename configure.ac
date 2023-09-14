@@ -2732,8 +2732,12 @@ AC_ARG_ENABLE(opencl, RB_HELP_STRING([--enable-opencl], [Enable OpenCL support])
 [
 	enable_opencl=$enableval
 ], [
-	enable_opencl="yes"
+	enable_opencl="no"
 ])
+
+if test x"$enable_opencl" == x"no"; then
+	have_opencl="no"
+fi
 
 AC_MSG_RESULT([$enable_opencl])
 AM_CONDITIONAL([OPENCL], [test "x$have_opencl" = "xyes" && test "x$enable_opencl" = "xyes" ])
