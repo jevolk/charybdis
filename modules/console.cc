@@ -1052,7 +1052,7 @@ console_cmd__fs__dev(opt &out, const string_view &line)
 	<< std::setw(14) << std::right << "SECTORS" << ' '
 	<< std::setw(26) << "SIZE" << ' '
 	<< std::setw(10) << std::right << "REV" << ' '
-	<< std::setw(20) << std::left << "MODEL" << ' '
+	<< std::setw(36) << std::left << "MODEL" << ' '
 	<< std::setw(16) << std::left << "VENDOR" << ' '
 	<< std::setw(24) << std::left << "SCHED" << ' '
 	<< std::endl;
@@ -1078,7 +1078,7 @@ console_cmd__fs__dev(opt &out, const string_view &line)
 		<< std::setw(14) << std::right << dev.sectors << ' '
 		<< std::setw(26) << pretty(pbuf, iec(dev.sectors * dev.sector_size)) << ' '
 		<< std::setw(10) << std::right << dev.rev << ' '
-		<< std::setw(20) << std::left << dev.model << ' '
+		<< std::setw(36) << std::left << dev.model << ' '
 		<< std::setw(16) << std::left << dev.vendor << ' '
 		<< std::setw(24) << std::left << dev.scheduler << ' '
 		<< std::endl;
