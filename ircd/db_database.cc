@@ -3885,7 +3885,6 @@ int64_t
 ircd::db::database::rate_limiter::GetSingleBurstBytes()
 const noexcept
 {
-	always_assert(false);
 	return bytes_per_second;
 }
 
@@ -3900,7 +3899,6 @@ bool
 ircd::db::database::rate_limiter::IsRateLimited(OpType op)
 noexcept
 {
-	always_assert(false);
 	return false;
 }
 
