@@ -2863,7 +2863,7 @@ AM_CONDITIONAL([URING], [test "x$have_uring" = "xyes"])
 
 AM_COND_IF([URING],
 [
-	RB_VAR_APPEND([LIBS], ["-luring"])
+	RB_VAR_APPEND([URING_LIBS], ["-luring"])
 	IRCD_DEFINE(USE_URING, [1], [liburing's availability for use.])
 ], [
 	IRCD_DEFINE(USE_URING, [0], [liburing's availability for use.])
