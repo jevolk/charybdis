@@ -188,14 +188,14 @@ struct ircd::m::vm::opts
 	/// ACCEPT is ignored in the mask.
 	fault_t errorlog
 	{
-		~(EXISTS)
+		~(EXISTS | BOUNCE)
 	};
 
 	/// Mask of faults that are logged to the warning facility in vm::log
 	/// ACCEPT is ignored in the mask.
 	fault_t warnlog
 	{
-		EXISTS
+		EXISTS | BOUNCE
 	};
 
 	/// Mask of faults that are transcribed to the json::stack output.
