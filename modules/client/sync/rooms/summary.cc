@@ -45,7 +45,7 @@ ircd::m::sync::room_summary_linear(data &data)
 		return false;
 
 	assert(data.event);
-	if(at<"type"_>(*data.event) != "m.room.member")
+	if(json::get<"type"_>(*data.event) != "m.room.member")
 		return false;
 
 	const auto &room{*data.room};
