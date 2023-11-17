@@ -4178,6 +4178,8 @@ try
 	const auto query_col{[&database]
 	(const string_view &colname, const auto &output)
 	{
+		using db::cache;
+
 		const db::column column
 		{
 			database, colname
@@ -4201,6 +4203,8 @@ try
 	const auto query_row{[&database]
 	(const auto &output)
 	{
+		using db::cache;
+
 		const stats s
 		{
 			.count = db::count(cache(database)),
@@ -4297,7 +4301,7 @@ try
 			database, colname
 		};
 
-		db::clear(cache(column));
+		db::clear(db::cache(column));
 		out << "Cleared caches for '" << name(database) << "' '" << colname << "'"
 		    << std::endl;
 	}};
@@ -4312,7 +4316,7 @@ try
 
 		const bool removed[]
 		{
-			db::remove(cache(column), key),
+			db::remove(db::cache(column), key),
 		};
 
 		out << "Removed key from";
@@ -5834,7 +5838,7 @@ try
 	if(!c)
 	{
 		closeout("wal-files-size", [&] { out << pretty(iec(walsz)); });
-		closeout("row-cache-size", [&] { out << pretty(iec(db::usage(cache(d)))); });
+		closeout("row-cache-size", [&] { out << pretty(iec(db::usage(db::cache(d)))); });
 	}
 	sizeprop("rocksdb.block-cache-pinned-usage");
 	sizeprop("rocksdb.block-cache-usage");

@@ -218,6 +218,7 @@ libircd_la_SOURCES += rfc3986.cc
 libircd_la_SOURCES += rfc1035.cc
 libircd_la_SOURCES += http.cc
 libircd_la_SOURCES += http2.cc
+libircd_la_SOURCES += cache.cc
 libircd_la_SOURCES += db_fixes.cc
 libircd_la_SOURCES += db_port.cc
 libircd_la_SOURCES += db_allocator.cc

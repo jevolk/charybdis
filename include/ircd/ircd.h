@@ -99,6 +99,7 @@
 #include "fs/fs.h"
 #include "ios/ios.h"
 #include "ctx/ctx.h"
+#include "cache.h"
 #include "cl/cl.h"
 #include "gpt/gpt.h"
 #include "exec.h"

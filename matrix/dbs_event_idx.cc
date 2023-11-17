@@ -96,6 +96,7 @@ ircd::m::dbs::desc::event_idx
 	.compression = bool(compress_enable)? string_view{event_idx__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 	.target_file_size = { size_t(event_idx__file__size__max), 1UL },
+	.cache_secondary = false,
 };
 
 //

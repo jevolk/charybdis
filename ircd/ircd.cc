@@ -338,6 +338,7 @@ noexcept try
 	ctx::ole::init _ole_;    // Thread OffLoad Engine
 	fs::init _fs_;           // Local filesystem
 	cl::init _cl_;           // OpenCL
+	cache::init _cache_;     // Shared Cache
 	magic::init _magic_;     // libmagic
 	magick::init _magick_;   // ImageMagick
 	openssl::init _ossl_;    // openssl crypto

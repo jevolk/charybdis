@@ -1097,7 +1097,8 @@ try
 		this->stats,
 		this->allocator,
 		this->name,
-		32_MiB //TODO: conf
+		64_MiB, //TODO: conf
+		true
 	)
 }
 ,descriptors
@@ -2209,7 +2210,15 @@ ircd::db::database::column::column(database &d,
 	// Setup the cache for assets.
 	const auto &cache_size(this->descriptor->cache_size);
 	if(cache_size != 0)
-		table_opts.block_cache = std::make_shared<database::cache>(this->d, this->stats, this->allocator, this->name, cache_size);
+		table_opts.block_cache = std::make_shared<database::cache>
+		(
+			this->d,
+			this->stats,
+			this->allocator,
+			this->name,
+			cache_size,
+			this->descriptor->cache_secondary
+		);
 
 	// RocksDB will create an 8_MiB block_cache if we don't create our own.
 	// To honor the user's desire for a zero-size cache, this must be set.
@@ -3893,6 +3902,12 @@ ircd::db::database::cache::DEFAULT_HI_PRIO
 	0.25
 };
 
+decltype(ircd::db::database::cache::log)
+ircd::db::database::cache::log
+{
+	"db.cache"
+};
+
 //
 // cache::cache
 //
@@ -3901,7 +3916,8 @@ ircd::db::database::cache::cache(database *const &d,
                                  std::shared_ptr<struct database::stats> stats,
                                  std::shared_ptr<struct database::allocator> allocator,
                                  std::string name,
-                                 const ssize_t &initial_capacity)
+                                 const ssize_t initial_capacity,
+                                 const bool secondary)
 #if defined(IRCD_DB_HAS_CACHE_WRAPPER)
 :rocksdb::CacheWrapper{nullptr}
 ,d{d}
@@ -3914,16 +3930,29 @@ ircd::db::database::cache::cache(database *const &d,
 ,name{std::move(name)}
 ,stats{std::move(stats)}
 ,allocator{std::move(allocator)}
-,c{rocksdb::NewLRUCache(rocksdb::LRUCacheOptions
+,secondary
 {
-	size_t(std::max(initial_capacity, ssize_t(0)))
-	,DEFAULT_SHARD_BITS
-	,DEFAULT_STRICT
-	,DEFAULT_HI_PRIO
-	#ifdef IRCD_DB_HAS_ALLOCATOR
-	,this->allocator
+	#ifdef IRCD_DB_HAS_CACHE_SECONDARY
+	secondary && ircd::cache?
+		std::make_shared<struct cache::secondary>(this):
+		std::shared_ptr<struct cache::secondary>{}
 	#endif
-})}
+}
+,c{rocksdb::NewLRUCache([&]
+{
+	rocksdb::LRUCacheOptions ret;
+	ret.capacity = size_t(std::max(initial_capacity, ssize_t(0)));
+	ret.num_shard_bits = DEFAULT_SHARD_BITS;
+	ret.strict_capacity_limit = DEFAULT_STRICT;
+	ret.high_pri_pool_ratio = DEFAULT_HI_PRIO;
+	#ifdef IRCD_DB_HAS_ALLOCATOR
+	ret.memory_allocator = this->allocator;
+	#endif
+	#ifdef IRCD_DB_HAS_CACHE_SECONDARY
+	ret.secondary_cache = this->secondary;
+	#endif
+	return ret;
+}())}
 {
 	#ifdef IRCD_DB_HAS_CACHE_WRAPPER
 	this->CacheWrapper::target_ = this->c;
@@ -3931,7 +3960,7 @@ ircd::db::database::cache::cache(database *const &d,
 
 	assert(bool(c));
 	#ifdef IRCD_DB_HAS_ALLOCATOR
-	assert(c->memory_allocator() == this->allocator.get());
+	assert(c->memory_allocator() == this->allocator.get() || this->secondary);
 	#endif
 }
 
@@ -3949,14 +3978,24 @@ const noexcept
 		c->Name();
 }
 
-#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
+#if defined(IRCD_DB_HAS_CACHE_TIERED)
 rocksdb::Status
 ircd::db::database::cache::Insert(const Slice &key,
                                   ObjectPtr value,
                                   const CacheItemHelper *const helper,
                                   size_t charge,
                                   Handle **const handle,
-                                  Priority priority)
+                                  Priority pri,
+                                  const Slice &compressed,
+                                  CompressionType compression)
+#elif defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
+rocksdb::Status
+ircd::db::database::cache::Insert(const Slice &key,
+                                  ObjectPtr value,
+                                  const CacheItemHelper *const helper,
+                                  size_t charge,
+                                  Handle **const handle,
+                                  Priority pri)
 #else
 rocksdb::Status
 ircd::db::database::cache::Insert(const Slice &key,
@@ -3964,7 +4003,7 @@ ircd::db::database::cache::Insert(const Slice &key,
                                   size_t charge,
                                   deleter del,
                                   Handle **const handle,
-                                  Priority priority)
+                                  Priority pri)
 #endif
 noexcept
 {
@@ -3973,40 +4012,51 @@ noexcept
 	assert(bool(c));
 	assert(bool(stats));
 
-	const rocksdb::Status &ret
+	const rocksdb::Status ret
 	{
-		#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
-		c->Insert(key, value, helper, charge, handle, priority)
+		#if defined(IRCD_DB_HAS_CACHE_TIERED)
+		c->Insert(key, value, helper, charge, handle, pri, compressed, compression)
+		#elif defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
+		c->Insert(key, value, helper, charge, handle, pri)
 		#else
-		c->Insert(key, value, charge, del, handle, priority)
+		c->Insert(key, value, charge, del, handle, pri)
 		#endif
 	};
 
-	stats->recordTick(Tickers::BLOCK_CACHE_ADD, ret.ok());
-	stats->recordTick(Tickers::BLOCK_CACHE_ADD_FAILURES, !ret.ok());
-	stats->recordTick(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT, ret.ok()? charge : 0UL);
+	const bool added
+	{
+		ret.ok()
+	};
 
-	if constexpr(RB_DEBUG_DB_CACHE)
+	stats->recordTick(Tickers::BLOCK_CACHE_ADD, added);
+	stats->recordTick(Tickers::BLOCK_CACHE_ADD_FAILURES, !added);
+	stats->recordTick(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT, added? charge: 0);
+
+	if constexpr(RB_DEBUG_DB_CACHE & 0x1)
 	{
 		const std::string &role
 		{
 			#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
 			helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s
+			#else
+			"*"s
 			#endif
 		};
 
-		char pbuf[48];
+		char pbuf[2][48];
 		log::debug
 		{
-			log, "[%s]'%s' CACHE:L1 %-4s +%zu:%zu %s %s :%s%s",
+			log, "[%s]'%s' CACHE:L1 %-4s +%zu-%zu %s %s len:%zu :%s%s",
 			db::name(*d),
 			this->name,
-			ret.ok()? "ADD"s: ret.ToString(),
+			added? "ADD"s: ret.ToString(),
 			stats->getTickerCount(Tickers::BLOCK_CACHE_ADD),
 			stats->getTickerCount(Tickers::BLOCK_CACHE_ADD_FAILURES),
-			pretty(pbuf, iec(stats->getTickerCount(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT))),
+			pretty(pbuf[0], iec(stats->getTickerCount(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT))),
+			reflect(pri),
 			role,
-			trunc(slice(key), 16),
+			charge,
+			u2a(pbuf[1], trunc(slice(key), 16)),
 			size(slice(key)) > 16? "..."_sv: string_view{},
 		};
 	}
@@ -4071,26 +4121,37 @@ noexcept
 	this->stats->recordTick(Tickers::BLOCK_CACHE_HIT, bool(ret));
 	this->stats->recordTick(Tickers::BLOCK_CACHE_MISS, !bool(ret));
 
-	if constexpr(RB_DEBUG_DB_CACHE)
+	if constexpr(RB_DEBUG_DB_CACHE & 0x1)
 		if(likely(RB_DEBUG_DB_CACHE_HIT || !ret))
 		{
 			const std::string &role
 			{
 				#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
 				helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s
+				#else
+				"*"s
 				#endif
 			};
 
+			const string_view prio
+			{
+				#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
+				reflect(pri)
+				#endif
+			};
+
+			char pbuf[1][32];
 			log::debug
 			{
-				log, "[%s]'%s' CACHE:L1 %-4s +%zu:%zu %s :%s%s",
+				log, "[%s]'%s' CACHE:L1 %-4s +%zu-%zu %s %s :%s%s",
 				db::name(*d),
 				this->name,
 				ret? "HIT": "MISS",
 				stats->getTickerCount(Tickers::BLOCK_CACHE_HIT),
 				stats->getTickerCount(Tickers::BLOCK_CACHE_MISS),
+				prio,
 				role,
-				trunc(slice(key), 16),
+				u2a(pbuf[0], trunc(slice(key), 16)),
 				size(slice(key)) > 16? "..."_sv: string_view{},
 			};
 		}
@@ -4284,6 +4345,459 @@ noexcept
 	return c->CreateStandalone(key, ptr, helper, charge, allow_uncharged);
 }
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// database::cache::secondary
+//
+#if defined(IRCD_DB_HAS_CACHE_SECONDARY)
+
+ircd::db::database::cache::secondary::secondary(cache *const primary)
+noexcept
+:primary
+{
+	primary
+}
+,inserts
+{
+	{{0}}
+}
+{
+}
+
+ircd::db::database::cache::secondary::~secondary()
+noexcept
+{
+}
+
+rocksdb::Status
+ircd::db::database::cache::secondary::Insert(const Slice &key,
+                                             ObjectPtr obj,
+                                             const ItemHelper *const helper,
+                                             bool force)
+noexcept try
+{
+	using rocksdb::Tickers;
+
+	assert(primary);
+	assert(primary->stats);
+	const auto &stats(*primary->stats);
+
+	assert(helper);
+	const auto &role
+	{
+		helper->role
+	};
+
+	assert(helper->size_cb);
+	if(unlikely(!helper->size_cb))
+		return Status::OK();
+
+	const auto value_size
+	{
+		helper->size_cb(obj)
+	};
+
+	const bool inserting
+	{
+		true
+		&& value_size
+	};
+
+	assert(size(key) >= 16);
+	const auto key_hash
+	{
+		inserting? hash_key(key): 0
+	};
+
+	const bool inserted
+	{
+		ircd::cache &&
+		ircd::cache->put(key_hash, inserting? value_size: 0, [&]
+		(const mutable_buffer buf)
+		{
+			assert(helper->saveto_cb);
+			assert(size(buf) >= value_size);
+			throw_on_error
+			{
+				helper->saveto_cb(obj, 0, value_size, data(buf))
+			};
+		})
+	};
+
+	auto &[insert_bytes, insert_count, ignore_count, unused_0]
+	{
+		inserts.at(uint(role))
+	};
+
+	insert_bytes += inserted? value_size: 0;
+	insert_count += bool(inserted);
+	ignore_count += !inserted;
+
+	char pbuf[2][48];
+	if constexpr(RB_DEBUG_DB_CACHE & 0x2)
+		log::debug
+		{
+			log, "[%s]'%s' CACHE:L2 %-4s %s+%lu (%s) len:%zu key:%s",
+			db::name(*primary->d),
+			primary->name,
+			inserted? "ADD": "IGN",
+			rocksdb::GetCacheEntryRoleName(role),
+			insert_count,
+			pretty(pbuf[0], iec(insert_bytes), 1),
+			value_size,
+			u2a(pbuf[1], slice(key)),
+		};
+
+	assert(!force);
+	return Status::OK();
+}
+catch(const std::exception &e)
+{
+	assert(primary);
+	char kbuf[32];
+	log::error
+	{
+		log, "[%s]'%s' CACHE:L2 insert key:%s :%s",
+		db::name(*primary->d),
+		primary->name,
+		u2a(kbuf, slice(key)),
+		e.what(),
+	};
+
+	return Status::Aborted(slice(string_view(e.what())));
+}
+
+#if defined(IRCD_DB_HAS_CACHE_TIERED)
+rocksdb::Status
+ircd::db::database::cache::secondary::InsertSaved(const Slice &key,
+                                                  const Slice &saved,
+                                                  CompressionType compression,
+                                                  CacheTier tier)
+#else
+rocksdb::Status
+ircd::db::database::cache::secondary::InsertSaved(const Slice &key,
+                                                  const Slice &saved)
+#endif
+noexcept
+{
+	assert(false);
+	return Status::NotSupported();
+}
+
+std::unique_ptr<ircd::db::database::cache::secondary::ResultHandle>
+ircd::db::database::cache::secondary::Lookup(const Slice &key,
+                                             const ItemHelper *const helper,
+                                             CreateContext *const creator,
+                                             bool wait,
+                                             bool drop,
+                                             bool &kept)
+noexcept try
+{
+	using role = rocksdb::CacheEntryRole;
+	using rocksdb::Tickers;
+
+	#if defined(IRCD_DB_HAS_CACHE_TIERED)
+	static const auto compress{CompressionType::kNoCompression};
+	static const auto source{CacheTier::kVolatileTier};
+	#endif
+
+	assert(primary);
+	assert(primary->stats);
+	auto &stats(*primary->stats);
+
+	assert(helper);
+	const auto &create_cb
+	{
+		helper->without_secondary_compat && helper->without_secondary_compat->create_cb?
+			helper->without_secondary_compat->create_cb:
+			helper->create_cb
+	};
+
+	assert(this->primary);
+	struct database::allocator *const alloc
+	{
+		this->primary->allocator.get()
+	};
+
+	assert(size(key) >= 16);
+	const auto key_hash
+	{
+		hash_key(key)
+	};
+
+	std::unique_ptr<handle> ret;
+	ircd::cache &&
+	ircd::cache->get(key_hash, [&ret, &create_cb, &alloc, &creator]
+	(const const_buffer &buf)
+	{
+		assert(!ret);
+		ret = std::make_unique<handle>();
+
+		assert(creator);
+		assert(create_cb);
+		throw_on_error
+		{
+			#if defined(IRCD_DB_HAS_CACHE_TIERED)
+			create_cb(slice(buf), compress, source, creator, alloc, &ret->val, &ret->charge)
+			#else
+			create_cb(slice(buf), creator, alloc, &ret->val, &ret->charge)
+			#endif
+		};
+	});
+
+	kept = ircd::cache && drop && ret?
+		!ircd::cache->del(key_hash):
+		bool(ret);
+
+	stats.recordTick(Tickers::SECONDARY_CACHE_HITS, bool(ret));
+	switch(helper->role)
+	{
+		case role::kDataBlock:
+			stats.recordTick(Tickers::SECONDARY_CACHE_DATA_HITS, bool(ret));
+			break;
+
+		case role::kFilterBlock:
+			stats.recordTick(Tickers::SECONDARY_CACHE_FILTER_HITS, bool(ret));
+			break;
+
+		case role::kIndexBlock:
+			stats.recordTick(Tickers::SECONDARY_CACHE_INDEX_HITS, bool(ret));
+			break;
+
+		default:
+			break;
+	}
+
+	if constexpr(RB_DEBUG_DB_CACHE & 0x2)
+		if(likely(RB_DEBUG_DB_CACHE_HIT || !ret))
+		{
+			char kbuf[32];
+			log::debug
+			{
+				log, "[%s]'%s' CACHE:L2 %-4s +%zu[%zu:%zu:%zu] w:%b d:%b %s key:%s",
+				db::name(*primary->d),
+				primary->name,
+				ret? "HIT": "MISS",
+				stats.getTickerCount(Tickers::SECONDARY_CACHE_HITS),
+				stats.getTickerCount(Tickers::SECONDARY_CACHE_FILTER_HITS),
+				stats.getTickerCount(Tickers::SECONDARY_CACHE_INDEX_HITS),
+				stats.getTickerCount(Tickers::SECONDARY_CACHE_DATA_HITS),
+				wait,
+				drop,
+				helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s,
+				u2a(kbuf, slice(key)),
+			};
+		}
+
+	assert(size(key) == 16);
+	return ret;
+}
+catch(const std::exception &e)
+{
+	assert(primary);
+	char kbuf[32];
+	log::error
+	{
+		log, "[%s]'%s' CACHE:L2 lookup %s key:%s :%s",
+		db::name(*primary->d),
+		primary->name,
+		helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s,
+		u2a(kbuf, slice(key)),
+		e.what(),
+	};
+
+	return {};
+}
+catch(...)
+{
+	assert(primary);
+	char kbuf[32];
+	log::critical
+	{
+		log, "[%s]'%s' CACHE:L2 lookup %s key:%s <unhandled>",
+		db::name(*primary->d),
+		primary->name,
+		helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s,
+		u2a(kbuf, slice(key)),
+	};
+
+	return {};
+}
+
+void
+ircd::db::database::cache::secondary::Erase(const Slice &key)
+noexcept
+{
+	assert(primary);
+	assert(primary->stats);
+	auto &stats(*primary->stats);
+
+	assert(size(key) >= 16);
+	const auto key_hash
+	{
+		hash_key(key)
+	};
+
+	const bool dropped
+	{
+		ircd::cache &&
+		ircd::cache->del(key_hash)
+	};
+
+	if constexpr(RB_DEBUG_DB_CACHE & 0x2)
+	{
+		char kbuf[32];
+		log::logf
+		{
+			log, dropped? log::level::DEBUG: log::level::DWARNING,
+			"[%s]'%s' CACHE:L2 %s key:%s",
+			db::name(*primary->d),
+			primary->name,
+			dropped? "DROPPED": "MISSING",
+			u2a(kbuf, slice(key)),
+		};
+	}
+}
+
+void
+ircd::db::database::cache::secondary::WaitAll(std::vector<ResultHandle *> handle)
+noexcept
+{
+	//assert(false);
+}
+
+rocksdb::Status
+ircd::db::database::cache::secondary::SetCapacity(size_t val)
+noexcept
+{
+	assert(false);
+	return Status::NotSupported();
+}
+
+rocksdb::Status
+ircd::db::database::cache::secondary::GetCapacity(size_t &val)
+noexcept
+{
+	val = 0;
+	assert(false);
+	return Status::NotSupported();
+}
+
+rocksdb::Status
+ircd::db::database::cache::secondary::Deflate(size_t increase)
+noexcept
+{
+	assert(false);
+	return Status::NotSupported();
+}
+
+rocksdb::Status
+ircd::db::database::cache::secondary::Inflate(size_t increase)
+noexcept
+{
+	assert(false);
+	return Status::NotSupported();
+}
+
+bool
+ircd::db::database::cache::secondary::SupportForceErase()
+const noexcept
+{
+	return true;
+}
+
+const char *
+ircd::db::database::cache::secondary::Name()
+const noexcept
+{
+	assert(primary);
+	return primary->name.c_str();
+}
+
+ircd::uint128_t
+ircd::db::database::cache::secondary::hash_key(const Slice &key)
+const noexcept
+{
+	char buf[96];
+	const string_view preimage
+	{
+		preimage_key(buf, key)
+	};
+
+	const auto ret
+	{
+		//util::hash<uint128_t>(preimage)
+		byte_view<uint128_t>(preimage)
+	};
+
+	return ret;
+}
+
+ircd::string_view
+ircd::db::database::cache::secondary::preimage_key(const mutable_buffer &buf,
+                                                   const Slice &key)
+const noexcept
+{
+	assert(primary);
+	const string_view &col_name
+	{
+		primary->name
+	};
+
+	mutable_buffer out(buf);
+	consume(out, copy(out, slice(key)));
+	//consume(out, copy(out, '\0'));
+	//consume(out, copy(out, col_name));
+	return string_view
+	{
+		begin(buf), begin(out)
+	};
+}
+
+//
+// cache::secondary::handle
+//
+
+ircd::db::database::cache::secondary::handle::~handle()
+noexcept
+{
+}
+
+void
+ircd::db::database::cache::secondary::handle::Wait()
+noexcept
+{
+	assert(false);
+}
+
+[[gnu::hot]]
+bool
+ircd::db::database::cache::secondary::handle::IsReady()
+noexcept
+{
+	return true;
+}
+
+[[gnu::hot]]
+size_t
+ircd::db::database::cache::secondary::handle::Size()
+noexcept
+{
+	assert(this->IsReady());
+	return charge;
+}
+
+[[gnu::hot]]
+ircd::db::database::cache::secondary::ObjectPtr
+ircd::db::database::cache::secondary::handle::Value()
+noexcept
+{
+	assert(this->IsReady());
+	return val;
+}
+
+#endif IRCD_DB_HAS_CACHE_SECONDARY
 
 ///////////////////////////////////////////////////////////////////////////////
 //

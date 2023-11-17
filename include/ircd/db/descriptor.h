@@ -153,4 +153,8 @@ struct ircd::db::descriptor
 	/// Determines whether data in the write_buffer is moved into the cache or
 	/// dropped once the buffer is written (flushed).
 	bool cache_writes {false};
+
+	/// Determines whether data evicted from the cache is moved to a second-
+	/// tier cache or dropped.
+	bool cache_secondary {true};
 };

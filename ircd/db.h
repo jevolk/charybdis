@@ -65,6 +65,9 @@
 #if __has_include(<rocksdb/advanced_cache.h>)
 #include <rocksdb/advanced_cache.h>
 #endif
+#if __has_include(<rocksdb/secondary_cache.h>)
+#include <rocksdb/secondary_cache.h>
+#endif
 #pragma clang attribute pop
 
 #include "db_has.h"
@@ -252,24 +255,31 @@ ircd::db::database::cache final
 :rocksdb::Cache
 #endif
 {
+	struct secondary;
+
 	using Slice = rocksdb::Slice;
 	using Status = rocksdb::Status;
 	using deleter = void (*)(const Slice &key, void *value);
 	using callback = void (*)(void *, size_t);
 	using Statistics = rocksdb::Statistics;
+	using CompressionType = rocksdb::CompressionType;
 
 	static const int DEFAULT_SHARD_BITS;
 	static const double DEFAULT_HI_PRIO;
 	static const bool DEFAULT_STRICT;
+	static log::log log;
 
 	database *d;
 	std::string name;
 	std::shared_ptr<struct database::stats> stats;
 	std::shared_ptr<struct database::allocator> allocator;
+	std::shared_ptr<struct cache::secondary> secondary;
 	std::shared_ptr<rocksdb::Cache> c;
 
 	const char *Name() const noexcept override;
-	#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
+	#if defined(IRCD_DB_HAS_CACHE_TIERED)
+	Status Insert(const Slice &key, ObjectPtr, const CacheItemHelper *, size_t charge, Handle **, Priority, const Slice &, CompressionType) noexcept override;
+	#elif defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
 	Status Insert(const Slice &key, ObjectPtr, const CacheItemHelper *, size_t charge, Handle **, Priority) noexcept override;
 	#else
 	Status Insert(const Slice &key, void *value, size_t charge, deleter, Handle **, Priority) noexcept override;
@@ -323,10 +333,77 @@ ircd::db::database::cache final
 	      std::shared_ptr<struct database::stats>,
 	      std::shared_ptr<struct database::allocator>,
 	      std::string name,
-	      const ssize_t &initial_capacity = -1);
+	      const ssize_t initial_capacity = -1,
+	      const bool secondary = false);
 
 	~cache() noexcept override;
 };
+
+#ifdef IRCD_DB_HAS_CACHE_SECONDARY
+struct [[gnu::visibility("hidden")]]
+ircd::db::database::cache::secondary final
+:rocksdb::SecondaryCache
+{
+	struct handle;
+
+	using Slice = rocksdb::Slice;
+	using Status = rocksdb::Status;
+	using ItemHelper = rocksdb::Cache::CacheItemHelper;
+	using CreateContext = rocksdb::Cache::CreateContext;
+	using ResultHandle = rocksdb::SecondaryCacheResultHandle;
+	using ObjectPtr = rocksdb::Cache::ObjectPtr;
+	using CompressionType = rocksdb::CompressionType;
+	using CacheTier = rocksdb::CacheTier;
+
+	cache *primary;
+	std::array<uint64_t[4], rocksdb::kNumCacheEntryRoles> inserts;
+
+  private:
+	string_view preimage_key(const mutable_buffer &, const Slice &key) const noexcept;
+	uint128_t hash_key(const Slice &key) const noexcept;
+
+  public:
+	const char *Name() const noexcept override;
+	bool SupportForceErase() const noexcept override;
+	Status Inflate(size_t) noexcept override;
+	Status Deflate(size_t) noexcept override;
+	Status GetCapacity(size_t &) noexcept override;
+	Status SetCapacity(size_t) noexcept override;
+	void WaitAll(std::vector<ResultHandle *>) noexcept override;
+	void Erase(const Slice &) noexcept override;
+	std::unique_ptr<ResultHandle> Lookup(const Slice &, const ItemHelper *, CreateContext *, bool, bool, bool &) noexcept override;
+	#if defined(IRCD_DB_HAS_CACHE_TIERED)
+	Status InsertSaved(const Slice &, const Slice &, CompressionType, CacheTier) noexcept override;
+	#else
+	Status InsertSaved(const Slice &, const Slice &) noexcept override;
+	#endif
+	Status Insert(const Slice &, ObjectPtr, const ItemHelper *, bool) noexcept override;
+
+	secondary(cache *) noexcept;
+	~secondary() noexcept override;
+};
+#endif
+
+#ifdef IRCD_DB_HAS_CACHE_SECONDARY
+struct [[gnu::visibility("hidden")]]
+ircd::db::database::cache::secondary::handle final
+:rocksdb::SecondaryCacheResultHandle
+{
+	ObjectPtr val {nullptr};
+	size_t charge {0};
+
+  public:
+	ObjectPtr Value() noexcept override;
+	size_t Size() noexcept override;
+	bool IsReady() noexcept override;
+	void Wait() noexcept override;
+
+	handle() = default;
+	handle(const handle &) = delete;
+	handle &operator=(const handle &) = delete;
+	~handle() noexcept override;
+};
+#endif
 
 struct [[gnu::visibility("hidden")]]
 ircd::db::database::comparator final
