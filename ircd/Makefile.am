@@ -351,8 +351,8 @@ rfc3986.lo:           AM_CXXFLAGS := ${AM_CXXFLAGS} ${SPIRIT_UNIT_CXXFLAGS}
 server.lo:            AM_CPPFLAGS := ${AM_CPPFLAGS} ${ASIO_UNIT_CPPFLAGS}
 if SODIUM
 sodium.lo:            AM_CPPFLAGS := @SODIUM_CPPFLAGS@ ${AM_CPPFLAGS}
-tokens.lo:            AM_CPPFLAGS := @BOOST_CPPFLAGS@ ${AM_CPPFLAGS}
 endif
+tokens.lo:            AM_CPPFLAGS := @BOOST_CPPFLAGS@ ${AM_CPPFLAGS}
 
 ###############################################################################
 #
