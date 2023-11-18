@@ -2024,7 +2024,9 @@ ircd::db::database::column::column(database &d,
 	//
 
 	// Block based table index type.
-	if constexpr(ROCKSDB_MAJOR > 6 || (ROCKSDB_MAJOR == 6 && ROCKSDB_MINOR >= 6))
+	if constexpr(db::version >= semantic_version(8, 6, 7))
+		table_opts.format_version = 6; // RocksDB >= 8.6.7 compat only; otherwise use 5
+	else if constexpr(db::version >= semantic_version(6, 6, 6))
 		table_opts.format_version = 5; // RocksDB >= 6.6.x compat only; otherwise use 4
 	else
 		table_opts.format_version = 4; // RocksDB >= 5.16.x compat only; otherwise use 3.

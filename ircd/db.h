@@ -77,6 +77,11 @@ namespace ircd::db
 	struct throw_on_error;
 	struct error_to_status;
 
+	constexpr semantic_version version
+	{
+		ROCKSDB_MAJOR, ROCKSDB_MAJOR, ROCKSDB_MINOR
+	};
+
 	constexpr auto BLOCKING      { rocksdb::ReadTier::kReadAllTier      };
 	constexpr auto NON_BLOCKING  { rocksdb::ReadTier::kBlockCacheTier   };
 
