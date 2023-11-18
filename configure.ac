@@ -1758,7 +1758,7 @@ AC_SUBST(ICU_LIBS, [])
 AC_ARG_WITH(icu-includes,
 RB_HELP_STRING([--with-icu-includes=[[[DIR]]]], [Path to unicode include directory]),
 [
-	RB_VAR_APPEND([ICU_CPPFLAGS], ["-isystem $withval"])
+	RB_VAR_APPEND([ICU_CPPFLAGS], ["-isystem$withval"])
 ])
 
 AC_ARG_WITH(icu-libs,
@@ -2190,7 +2190,7 @@ AC_SUBST(GMP_LIBS, [])
 AC_ARG_WITH(gmp-includes,
 RB_HELP_STRING([--with-gmp-includes=[[[DIR]]]], [Path to libgmp include directory]),
 [
-	GMP_CPPFLAGS="-isystem $withval"
+	GMP_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(gmp-libs,
@@ -2233,7 +2233,7 @@ AC_SUBST(PBC_LIBS, [])
 AC_ARG_WITH(pbc-includes,
 RB_HELP_STRING([--with-pbc-includes=[[[DIR]]]], [Path to libpbc include directory]),
 [
-	PBC_CPPFLAGS="-isystem $withval"
+	PBC_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(pbc-libs,
@@ -2251,7 +2251,7 @@ RB_HELP_STRING([--with-included-pbc], [Use the libpbc sources from included subm
 	with_included_pbc="yes"
 	AC_DEFINE(HAVE_PBC, 1, [Define to 1 if libpbc is available.])
 
-	PBC_CPPFLAGS="-isystem $PWD/deps/pbc/include"
+	PBC_CPPFLAGS="-isystem$PWD/deps/pbc/include"
 	PBC_LDFLAGS="-L$PWD/deps/pbc/"
 	PBC_LIBS="$PWD/deps/pbc/libpbc.a"
 
@@ -2347,7 +2347,7 @@ RB_HELP_STRING([--with-imagemagick-includes=[[[DIR]]]], [Path to imagemagick inc
 [
 	RB_VAR_APPEND([IMAGEMAGICK_CPPFLAGS], ["-I$withval"])
 ], [
-	RB_VAR_APPEND([IMAGEMAGICK_CPPFLAGS], [-isystem /usr/include/GraphicsMagick/])
+	RB_VAR_APPEND([IMAGEMAGICK_CPPFLAGS], [-isystem/usr/include/GraphicsMagick/])
 ])
 
 AC_ARG_WITH(imagemagick-libs,
@@ -2472,9 +2472,9 @@ AC_SUBST(LLVM_LIBS, [])
 AC_ARG_WITH(llvm-includes,
 RB_HELP_STRING([--with-llvm-includes=[[[DIR]]]], [Path to libllvm include directory]),
 [
-	LLVM_CPPFLAGS="-isystem $withval"
+	LLVM_CPPFLAGS="-isystem$withval"
 ], [
-	LLVM_CPPFLAGS="-isystem /usr/lib/llvm-${CXX_EPOCH}/include"
+	LLVM_CPPFLAGS="-isystem/usr/lib/llvm-${CXX_EPOCH}/include"
 ])
 
 AC_ARG_WITH(llvm-libs,
@@ -2523,7 +2523,7 @@ AC_ARG_WITH(drm-includes,
 RB_HELP_STRING([--with-drm-includes=[[[DIR]]]], [Path to DRM include directory]),
 [
 	drm_incdir="$withval"
-	DRM_CPPFLAGS="-isystem $withval"
+	DRM_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(drm-libs,
@@ -2573,7 +2573,7 @@ AC_ARG_WITH(rocm-includes,
 RB_HELP_STRING([--with-rocm-includes=[[[DIR]]]], [Path to ROCm include directory]),
 [
 	rocm_incdir="$withval"
-	ROCM_CPPFLAGS="-isystem $withval -isystem ${withval}/hsa"
+	ROCM_CPPFLAGS="-isystem$withval -isystem${withval}/hsa"
 ], [])
 
 AC_ARG_WITH(rocm-libs,
@@ -2638,7 +2638,7 @@ AC_ARG_WITH(gpa-includes,
 RB_HELP_STRING([--with-gpa-includes=[[[DIR]]]], [Path to GPA include directory]),
 [
 	gpa_incdir="$withval"
-	GPA_CPPFLAGS="-isystem $withval"
+	GPA_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(gpa-libs,
@@ -2703,7 +2703,7 @@ AC_ARG_WITH(opencl-includes,
 RB_HELP_STRING([--with-opencl-includes=[[[DIR]]]], [Path to OpenCL include directory]),
 [
 	opencl_incdir="$withval"
-	OPENCL_CPPFLAGS="-isystem $withval"
+	OPENCL_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(opencl-libs,
@@ -2770,7 +2770,7 @@ AC_ARG_WITH(armnn-includes,
 RB_HELP_STRING([--with-armnn-includes=[[[DIR]]]], [Path to Arm NN include directory]),
 [
 	armnn_incdir="$withval"
-	ARMNN_CPPFLAGS="-isystem $withval"
+	ARMNN_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(armnn-libs,
@@ -2825,7 +2825,7 @@ AC_SUBST(URING_LIBS, [])
 AC_ARG_WITH(uring-includes,
 RB_HELP_STRING([--with-uring-includes=[[[DIR]]]], [Path to uring include directory]),
 [
-	RB_VAR_APPEND([URING_CPPFLAGS], ["-isystem $withval"])
+	RB_VAR_APPEND([URING_CPPFLAGS], ["-isystem$withval"])
 ])
 
 AC_ARG_WITH(uring-libs,
@@ -2887,7 +2887,7 @@ AC_ARG_WITH(boost-includes,
 RB_HELP_STRING([--with-boost-includes=[[[DIR]]]], [Path to boost include directory]),
 [
 	boost_incdir="$withval"
-	BOOST_CPPFLAGS="-isystem $withval"
+	BOOST_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(boost-libs,
@@ -2923,7 +2923,7 @@ RB_HELP_STRING([--with-included-boost[[[=built]]]], [Use the boost sources from 
 	])
 
 	BOOST_LDFLAGS="-L$boost_libdir"
-	BOOST_CPPFLAGS="-isystem $PWD/deps/boost/include"
+	BOOST_CPPFLAGS="-isystem$PWD/deps/boost/include"
 
 	boost_version="$withval"
 	if test x"$boost_version" == x"yes"; then
@@ -3022,7 +3022,7 @@ AC_SUBST(ROCKSDB_LIBS, [])
 AC_ARG_WITH(rocksdb-includes,
 RB_HELP_STRING([--with-rocksdb-includes=[[[DIR]]]], [Path to RocksDB include directory]),
 [
-	ROCKSDB_CPPFLAGS="-isystem $withval"
+	ROCKSDB_CPPFLAGS="-isystem$withval"
 ], [])
 
 AC_ARG_WITH(rocksdb-libs,
@@ -3039,7 +3039,7 @@ RB_HELP_STRING([--with-included-rocksdb[[[=version]]]], [Use the RocksDB sources
 	with_included_rocksdb="yes"
 
 	AC_MSG_NOTICE([Shared RocksDB linkage requires running charybdis with an intact build directory])
-	ROCKSDB_CPPFLAGS="-isystem $PWD/deps/rocksdb/include"
+	ROCKSDB_CPPFLAGS="-isystem$PWD/deps/rocksdb/include"
 	ROCKSDB_LDFLAGS="-L$PWD/deps/rocksdb/"
 	RB_VAR_APPEND([ROCKSDB_LDFLAGS], ["-Wl,-rpath=$PWD/deps/rocksdb"])
 	ROCKSDB_LIBS="-lrocksdb"
@@ -3097,7 +3097,7 @@ RB_HELP_STRING([--with-included-js[[[=shared]]]], [Use the JS engine (SpiderMonk
 	with_included_js="yes"
 
 	AC_SUBST(JS_CPPFLAGS)
-	RB_VAR_APPEND([JS_CPPFLAGS], ["-isystem $PWD/deps/gecko-dev/js/src/build_OPT.OBJ/dist/include"])
+	RB_VAR_APPEND([JS_CPPFLAGS], ["-isystem$PWD/deps/gecko-dev/js/src/build_OPT.OBJ/dist/include"])
 	#JS_CPPFLAGS+=" -I$PWD/deps/gecko-dev/js/src/build_OPT.OBJ/dist/include"
 
 	AC_SUBST(JS_LDFLAGS)
