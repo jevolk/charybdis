@@ -341,7 +341,7 @@ if PBC
 pbc.lo:               AM_CPPFLAGS := @PBC_CPPFLAGS@ ${AM_CPPFLAGS}
 endif
 if PNG
-png.o:                AM_CPPFLAGS := @PNG_CPPFLAGS@ ${AM_CPPFLAGS}
+png.lo:               AM_CPPFLAGS := @PNG_CPPFLAGS@ ${AM_CPPFLAGS}
 endif PNG
 prof.lo:              AM_CPPFLAGS := @BOOST_CPPFLAGS@ ${AM_CPPFLAGS}
 rfc1459.lo:           AM_CPPFLAGS := ${AM_CPPFLAGS} ${SPIRIT_UNIT_CPPFLAGS}
