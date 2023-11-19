@@ -1388,7 +1388,7 @@ RB_CHK_SYSHEADER(cpuid.h, [CPUID_H])
 
 dnl arm platform
 RB_CHK_SYSHEADER(arm_acle.h, [ARM_ACLE_H])
-RB_CHK_SYSHEADER(arm_cmse.h, [ARM_ACLE_H])
+RB_CHK_SYSHEADER(arm_cmse.h, [ARM_CMSE_H])
 RB_CHK_SYSHEADER(arm_neon.h, [ARM_NEON_H])
 RB_CHK_SYSHEADER(arm_sve.h, [ARM_SVE_H])
 
