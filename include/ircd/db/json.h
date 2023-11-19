@@ -30,7 +30,7 @@ namespace ircd::db
 
 template<class tuple,
          class... args>
-tuple
+inline tuple
 ircd::db::make_tuple(args&&... a)
 {
 	tuple ret;
@@ -39,7 +39,7 @@ ircd::db::make_tuple(args&&... a)
 }
 
 template<class tuple>
-size_t
+inline size_t
 ircd::db::assign(tuple &t,
                  const row &row,
                  const string_view &keyeq)
@@ -52,7 +52,7 @@ ircd::db::assign(tuple &t,
 }
 
 template<class tuple>
-size_t
+inline size_t
 ircd::db::assign(tuple &t,
                  const row &row)
 {
@@ -64,7 +64,7 @@ ircd::db::assign(tuple &t,
 }
 
 template<class tuple>
-bool
+inline bool
 ircd::db::assign(tuple &t,
                  const cell &cell)
 {
@@ -82,7 +82,7 @@ ircd::db::assign(tuple &t,
 }
 
 template<class tuple>
-bool
+inline bool
 ircd::db::assign(tuple &t,
                  const cell &cell,
                  const string_view &keyeq)
@@ -101,7 +101,7 @@ ircd::db::assign(tuple &t,
 }
 
 template<class tuple>
-void
+inline void
 ircd::db::_assign_invalid(tuple &t,
                           const cell &cell)
 {
@@ -139,7 +139,7 @@ ircd::db::_assign_invalid(tuple &t,
 }
 
 template<class tuple>
-void
+inline void
 ircd::db::_assign_valid(tuple &t,
                         const cell &cell)
 {
