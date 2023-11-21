@@ -1901,11 +1901,12 @@ ircd::db::database::column::column(database &d,
 
 	this->options.max_write_buffer_number = 12;
 	this->options.min_write_buffer_number_to_merge = 2;
-	this->options.max_write_buffer_number_to_maintain = 0;
 	#if ROCKSDB_MAJOR > 6 \
 	|| (ROCKSDB_MAJOR == 6 && ROCKSDB_MINOR > 5) \
 	|| (ROCKSDB_MAJOR == 6 && ROCKSDB_MINOR == 5 && ROCKSDB_PATCH >= 2)
 		this->options.max_write_buffer_size_to_maintain = 0; //this->options.write_buffer_size * 4;
+	#else
+		this->options.max_write_buffer_number_to_maintain = 0;
 	#endif
 
 	this->options.arena_block_size = std::clamp
