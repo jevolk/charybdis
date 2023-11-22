@@ -3320,20 +3320,30 @@ noexcept
 	stats->recordTick(Tickers::BLOCK_CACHE_ADD_FAILURES, !ret.ok());
 	stats->recordTick(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT, ret.ok()? charge : 0UL);
 
-	char pbuf[48];
 	if constexpr(RB_DEBUG_DB_CACHE)
+	{
+		const std::string &role
+		{
+			#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
+			helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s
+			#endif
+		};
+
+		char pbuf[48];
 		log::debug
 		{
-			log, "[%s]'%s' CACHED %-3s +%zu:%zu %s :%s%s",
+			log, "[%s]'%s' CACHE:L1 %-4s +%zu:%zu %s %s :%s%s",
 			db::name(*d),
 			this->name,
-			ret.ok()? "OK"s: ret.ToString(),
+			ret.ok()? "ADD"s: ret.ToString(),
 			stats->getTickerCount(Tickers::BLOCK_CACHE_ADD),
 			stats->getTickerCount(Tickers::BLOCK_CACHE_ADD_FAILURES),
-			pretty(pbuf, si(stats->getTickerCount(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT))),
+			pretty(pbuf, iec(stats->getTickerCount(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT))),
+			role,
 			trunc(slice(key), 16),
 			size(slice(key)) > 16? "..."_sv: string_view{},
 		};
+	}
 
 	return ret;
 }
@@ -3397,17 +3407,27 @@ noexcept
 
 	if constexpr(RB_DEBUG_DB_CACHE)
 		if(likely(RB_DEBUG_DB_CACHE_HIT || !ret))
+		{
+			const std::string &role
+			{
+				#ifdef IRCD_DB_HAS_CACHE_ITEMHELPER
+				helper? rocksdb::GetCacheEntryRoleName(helper->role): "*"s
+				#endif
+			};
+
 			log::debug
 			{
-				log, "[%s]'%s' CACHE %-4s +%zu:%zu :%s%s",
+				log, "[%s]'%s' CACHE:L1 %-4s +%zu:%zu %s :%s%s",
 				db::name(*d),
 				this->name,
 				ret? "HIT": "MISS",
 				stats->getTickerCount(Tickers::BLOCK_CACHE_HIT),
 				stats->getTickerCount(Tickers::BLOCK_CACHE_MISS),
+				role,
 				trunc(slice(key), 16),
 				size(slice(key)) > 16? "..."_sv: string_view{},
 			};
+		}
 
 	return ret;
 }
