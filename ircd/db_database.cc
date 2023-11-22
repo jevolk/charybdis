@@ -2841,7 +2841,7 @@ noexcept
 {
 	log::debug
 	{
-		log, "[%s] job:%d ctx:%lu flush start '%s' :%s",
+		log, "[%s] job:%d ctx:%lu flushing '%s' :%s",
 		d->name,
 		info.job_id,
 		info.thread_id,
@@ -2889,9 +2889,10 @@ noexcept
 	//assert(info.thread_id == ctx::id(*ctx::current));
 }
 
+#ifdef IRCD_DB_HAS_ON_COMPACTION_BEGIN
 void
-ircd::db::database::events::OnCompactionCompleted(rocksdb::DB *const db,
-                                                  const rocksdb::CompactionJobInfo &info)
+ircd::db::database::events::OnCompactionBegin(rocksdb::DB *const db,
+                                              const rocksdb::CompactionJobInfo &info)
 noexcept
 {
 	using rocksdb::CompactionReason;
@@ -2904,6 +2905,70 @@ noexcept
 			log::level::WARNING:
 		info.compaction_reason == CompactionReason::kUniversalSortedRunNum?
 			log::level::WARNING:
+			log::level::INFO
+	};
+
+	char prebuf[128];
+	const string_view prefix
+	{
+		fmt::sprintf
+		{
+			prebuf, "[%s] job:%d ctx:%lu compact",
+			d->name,
+			info.job_id,
+			info.thread_id,
+		}
+	};
+
+	uint64_t datasz(0), idxsz(0), tidxsz(0);
+	uint64_t idxs(0), blks(0), keys(0), dels(0);
+	for(const auto &[name, prop] : info.table_properties)
+	{
+		assert(prop);
+		idxs += prop->index_partitions;
+		blks += prop->num_data_blocks;
+		keys += prop->num_entries;
+		dels += prop->num_deletions;
+		tidxsz += prop->top_level_index_size;
+		idxsz += prop->index_size;
+		datasz += prop->data_size;
+	}
+
+	char pbuf[1][48];
+	log::logf
+	{
+		log, level,
+		"%s lev[%d -> %d] files:%zu idxs:%zu blks:%zu keys:%zu dels:%zu data[%s] %s '%s'",
+		prefix,
+		info.base_input_level,
+		info.output_level,
+		info.input_files.size(),
+		idxs,
+		blks,
+		keys,
+		dels,
+		pretty(pbuf[0], iec(datasz)),
+		reflect(info.compaction_reason),
+		info.cf_name,
+	};
+
+	assert(info.status == rocksdb::Status::OK());
+	assert(info.thread_id == ctx::id(*ctx::current));
+	assert(info.input_files.size() == info.input_file_infos.size());
+}
+#endif
+
+void
+ircd::db::database::events::OnCompactionCompleted(rocksdb::DB *const db,
+                                                  const rocksdb::CompactionJobInfo &info)
+noexcept
+{
+	using rocksdb::CompactionReason;
+
+	const log::level level
+	{
+		info.status != rocksdb::Status::OK()?
+			log::level::ERROR:
 			log::level::INFO
 	};
 
@@ -2968,6 +3033,123 @@ noexcept
 
 	assert(info.thread_id == ctx::id(*ctx::current));
 }
+
+#ifdef IRCD_DB_HAS_ON_SUBCOMPACTION
+void
+ircd::db::database::events::OnSubcompactionBegin(const rocksdb::SubcompactionJobInfo &info)
+noexcept
+{
+	using rocksdb::CompactionReason;
+
+	const log::level level
+	{
+		info.status != rocksdb::Status::OK()?
+			log::level::ERROR:
+			log::level::DEBUG
+	};
+
+	char prebuf[128];
+	const string_view prefix
+	{
+		fmt::sprintf
+		{
+			prebuf, "[%s] job:%d ctx:%lu compact",
+			d->name,
+			info.job_id,
+			info.thread_id,
+		}
+	};
+
+	log::logf
+	{
+		log, level,
+		"%s lev[%d -> %d] sub:%d enter '%s'",
+		prefix,
+		info.base_input_level,
+		info.output_level,
+		info.subcompaction_job_id,
+		info.cf_name,
+	};
+
+	assert(info.status == rocksdb::Status::OK());
+	assert(info.thread_id == ctx::id(*ctx::current));
+}
+#endif
+
+#ifdef IRCD_DB_HAS_ON_SUBCOMPACTION
+void
+ircd::db::database::events::OnSubcompactionCompleted(const rocksdb::SubcompactionJobInfo &info)
+noexcept
+{
+	using rocksdb::CompactionReason;
+
+	const log::level level
+	{
+		info.status != rocksdb::Status::OK()?
+			log::level::ERROR:
+			log::level::DEBUG
+	};
+
+	char prebuf[128];
+	const string_view prefix
+	{
+		fmt::sprintf
+		{
+			prebuf, "[%s] job:%d ctx:%lu compact",
+			d->name,
+			info.job_id,
+			info.thread_id,
+		}
+	};
+
+	log::logf
+	{
+		log, level,
+		"%s lev[%d -> %d] sub:%d leave '%s' (%d): %s",
+		prefix,
+		info.base_input_level,
+		info.output_level,
+		info.subcompaction_job_id,
+		info.cf_name,
+		int(info.status.code()),
+		info.status.getState()?: "OK",
+	};
+
+	const bool bytes_same
+	{
+		info.stats.total_input_bytes == info.stats.total_output_bytes
+	};
+
+	char pbuf[8][48];
+	if(!bytes_same)
+		log::info
+		{
+			log, "%s key[%zu -> %zu (%zu)] %s -> %s | falloc:%s write:%s rsync:%s fsync:%s total:%s",
+			prefix,
+			info.stats.num_input_records,
+			info.stats.num_output_records,
+			info.stats.num_records_replaced,
+			pretty(pbuf[0], iec(info.stats.total_input_bytes)),
+			bytes_same? "same": pretty(pbuf[1], iec(info.stats.total_output_bytes)),
+			pretty(pbuf[2], nanoseconds(info.stats.file_prepare_write_nanos), true),
+			pretty(pbuf[3], nanoseconds(info.stats.file_write_nanos), true),
+			pretty(pbuf[4], nanoseconds(info.stats.file_range_sync_nanos), true),
+			pretty(pbuf[5], nanoseconds(info.stats.file_fsync_nanos), true),
+			pretty(pbuf[6], microseconds(info.stats.elapsed_micros), true),
+		};
+
+	if(info.stats.num_corrupt_keys > 0)
+		log::critical
+		{
+			log, "[%s] job:%d reported %lu corrupt keys.",
+			d->name,
+			info.job_id,
+			info.stats.num_corrupt_keys
+		};
+
+	assert(info.thread_id == ctx::id(*ctx::current));
+}
+#endif
 
 void
 ircd::db::database::events::OnTableFileDeleted(const rocksdb::TableFileDeletionInfo &info)

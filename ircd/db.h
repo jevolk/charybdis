@@ -518,7 +518,14 @@ ircd::db::database::events final
 
 	void OnFlushBegin(rocksdb::DB *, const rocksdb::FlushJobInfo &) noexcept override;
 	void OnFlushCompleted(rocksdb::DB *, const rocksdb::FlushJobInfo &) noexcept override;
+	#ifdef IRCD_DB_HAS_ON_COMPACTION_BEGIN
+	void OnCompactionBegin(rocksdb::DB *, const rocksdb::CompactionJobInfo &) noexcept override;
+	#endif
 	void OnCompactionCompleted(rocksdb::DB *, const rocksdb::CompactionJobInfo &) noexcept override;
+	#ifdef IRCD_DB_HAS_ON_SUBCOMPACTION
+	void OnSubcompactionBegin(const rocksdb::SubcompactionJobInfo &) noexcept override;
+	void OnSubcompactionCompleted(const rocksdb::SubcompactionJobInfo &) noexcept override;
+	#endif
 	void OnTableFileDeleted(const rocksdb::TableFileDeletionInfo &) noexcept override;
 	void OnTableFileCreated(const rocksdb::TableFileCreationInfo &) noexcept override;
 	void OnTableFileCreationStarted(const rocksdb::TableFileCreationBriefInfo &) noexcept override;
