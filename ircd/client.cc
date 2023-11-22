@@ -499,7 +499,7 @@ try
 		RB_DEBUG_LEVEL
 	};
 
-	if constexpr(RB_DEBUG_LEVEL)
+	if constexpr(RB_LOG_LEVEL > 7)
 		log::debug
 		{
 			log, "%s enter",
@@ -512,7 +512,7 @@ try
 		return;
 	}
 
-	if constexpr(RB_DEBUG_LEVEL)
+	if constexpr(RB_LOG_LEVEL > 7)
 	{
 		char buf[64];
 		log::debug
