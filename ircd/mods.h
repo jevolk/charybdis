@@ -40,11 +40,11 @@ ircd::mods::mod
 	std::string path;
 	load_mode::type mode;
 	std::deque<mod *> children;
-	std::map<std::string, std::string> exports;
 	boost::dll::shared_library handle;
-	const std::string _name;
-	const std::string _location;
+	std::string _name;
+	std::string _location;
 	mapi::header *header;
+	std::map<std::string, std::string> exports;
 
   public:
 	// Metadata

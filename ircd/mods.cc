@@ -83,6 +83,7 @@ ircd::mapi::import_section_names[]
 bool
 ircd::mapi::static_destruction;
 
+[[gnu::cold]]
 bool
 ircd::mods::unload(mod &mod)
 noexcept
@@ -225,14 +226,6 @@ try
 {
 	mode
 }
-,exports{[this]
-{
-	std::map<std::string, std::string> ret;
-	for(auto section(mapi::import_section_names); *section; ++section)
-		ret.merge(mods::mangles(this->path, *section));
-
-	return ret;
-}()}
 ,handle{[this]
 {
 	// Can't interrupt this ctx during the dlopen() as long as exceptions
@@ -310,13 +303,17 @@ try
 	if(mapi_check && header->magic != IRCD_MAPI_MAGIC)
 		throw error
 		{
-			"Bad magic [%04X] need: [%04X]", header->magic, IRCD_MAPI_MAGIC
+			"Bad magic [%04X] need: [%04X]",
+			header->magic,
+			IRCD_MAPI_MAGIC
 		};
 
 	if(mapi_check && header->version != IRCD_MAPI_VERSION)
 		throw error
 		{
-			"Unknown MAPI version [%u] expecting: [%u]", header->version, IRCD_MAPI_VERSION
+			"Unknown MAPI version [%u] expecting: [%u]",
+			header->version,
+			IRCD_MAPI_VERSION
 		};
 
 	if(mapi_check && header->serial < IRCD_MAPI_SERIAL)
@@ -335,6 +332,10 @@ try
 	// Set some basic metadata
 	(*this)["name"] = name();
 	(*this)["location"] = location();
+
+	// Discover exported symbols.
+	for(auto section(mapi::import_section_names); *section; ++section)
+		exports.merge(mods::mangles(this->path, *section));
 
 	if(!loading.empty())
 	{
@@ -361,6 +362,7 @@ catch(const boost::system::system_error &e)
 	throw_system_error(e);
 }
 
+[[gnu::cold]]
 ircd::mods::mod::~mod()
 noexcept try
 {
