@@ -82,7 +82,7 @@ echo "*** Generating Charybdis build..."
 run_or_die $ACLOCAL -I tools/m4
 run_or_die $LIBTOOLIZE --force --copy
 run_or_die $AUTOHEADER
-run_or_die $AUTOCONF
+run_or_die $AUTOCONF --warnings=no-obsolete
 run_or_die $AUTOMAKE --add-missing --copy
 #run_or_die $SHTOOLIZE all
 
