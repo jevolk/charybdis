@@ -604,3 +604,45 @@ ircd::db::error_to_status
 	error_to_status(const std::system_error &);
 	error_to_status(const std::exception &);
 };
+
+inline size_t
+ircd::db::size(const rocksdb::PinnableSlice &ps)
+{
+	return size(static_cast<const rocksdb::Slice &>(ps));
+}
+
+inline const char *
+ircd::db::data(const rocksdb::PinnableSlice &ps)
+{
+	return data(static_cast<const rocksdb::Slice &>(ps));
+}
+
+inline ircd::string_view
+ircd::db::slice(const rocksdb::PinnableSlice &ps)
+{
+	return slice(static_cast<const rocksdb::Slice &>(ps));
+}
+
+inline size_t
+ircd::db::size(const rocksdb::Slice &slice)
+{
+	return slice.size();
+}
+
+inline const char *
+ircd::db::data(const rocksdb::Slice &slice)
+{
+	return slice.data();
+}
+
+inline ircd::string_view
+ircd::db::slice(const rocksdb::Slice &sk)
+{
+	return { sk.data(), sk.size() };
+}
+
+inline rocksdb::Slice
+ircd::db::slice(const string_view &sv)
+{
+	return { sv.data(), sv.size() };
+}

@@ -5692,63 +5692,6 @@ ircd::db::val(const rocksdb::Iterator &it)
 }
 
 //
-// PinnableSlice
-//
-
-[[gnu::hot]]
-size_t
-ircd::db::size(const rocksdb::PinnableSlice &ps)
-{
-	return size(static_cast<const rocksdb::Slice &>(ps));
-}
-
-[[gnu::hot]]
-const char *
-ircd::db::data(const rocksdb::PinnableSlice &ps)
-{
-	return data(static_cast<const rocksdb::Slice &>(ps));
-}
-
-[[gnu::hot]]
-ircd::string_view
-ircd::db::slice(const rocksdb::PinnableSlice &ps)
-{
-	return slice(static_cast<const rocksdb::Slice &>(ps));
-}
-
-//
-// Slice
-//
-
-[[gnu::hot]]
-size_t
-ircd::db::size(const rocksdb::Slice &slice)
-{
-	return slice.size();
-}
-
-[[gnu::hot]]
-const char *
-ircd::db::data(const rocksdb::Slice &slice)
-{
-	return slice.data();
-}
-
-[[gnu::hot]]
-rocksdb::Slice
-ircd::db::slice(const string_view &sv)
-{
-	return { sv.data(), sv.size() };
-}
-
-[[gnu::hot]]
-ircd::string_view
-ircd::db::slice(const rocksdb::Slice &sk)
-{
-	return { sk.data(), sk.size() };
-}
-
-//
 // reflect
 //
 
