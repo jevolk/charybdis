@@ -31,7 +31,11 @@ AM_CPPFLAGS += -include ircd/mods/mapi.h
 endif
 
 if GCC
+if GCC13
+AM_CXXFLAGS += -ftls-model=global-dynamic
+else
 AM_CXXFLAGS += -ftls-model=local-dynamic
+endif
 endif
 
 if LTO
