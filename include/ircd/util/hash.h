@@ -18,59 +18,59 @@
 namespace ircd {
 inline namespace util
 {
-	template<size_t PRIME = 7681>
-	constexpr size_t hash(const string_view str, size_t i = 0, size_t r = PRIME) noexcept;
+	template<class T,
+	         size_t PRIME,
+	         class it>
+	constexpr T hash(it, const it, T r = PRIME) noexcept;
 
-	template<size_t PRIME = 7681>
-	constexpr size_t hash(const char16_t *const str, size_t i = 0, size_t r = PRIME) noexcept;
+	template<class T = size_t,
+	         size_t PRIME = 7681>
+	constexpr T hash(const string_view, T r = PRIME) noexcept;
 
-	// Note that at runtime this hash uses multiplication on every character
-	// which can consume many cycles...
-	template<size_t PRIME = 7681>
-	size_t hash(const std::u16string &str, size_t i = 0, size_t r = PRIME) noexcept;
+	template<class T = size_t,
+	         size_t PRIME = 7681>
+	constexpr T hash(const std::u16string_view, T r = PRIME) noexcept;
 }}
 
-/// Runtime hashing of a std::u16string (for js). Non-cryptographic.
-template<size_t PRIME>
+/// Hashing of a wider string_view. Non-cryptographic.
+template<class T,
+         size_t PRIME>
 [[gnu::pure]]
-inline size_t
-ircd::util::hash(const std::u16string &str,
-                 size_t i,
-                 size_t r)
+constexpr T
+ircd::util::hash(const std::u16string_view str,
+                 T r)
 noexcept
 {
-	for(; i < str.size(); ++i)
-		r = str[i] ^ (r * 33ULL);
-
-	return r;
+	return hash<T, PRIME>(begin(str), end(str), r);
 }
 
-/// Runtime hashing of a string_view. Non-cryptographic.
-template<size_t PRIME>
+/// Hashing of a string_view. Non-cryptographic.
+template<class T,
+         size_t PRIME>
 [[gnu::pure]]
-constexpr size_t
+constexpr T
 ircd::util::hash(const string_view str,
-                 size_t i,
-                 size_t r)
+                 T r)
 noexcept
 {
-	for(; i < str.size(); ++i)
-		r = str[i] ^ (r * 33ULL);
-
-	return r;
+	return hash<T, PRIME>(begin(str), end(str), r);
 }
 
-/// Compile-time hashing of a wider string literal (for js). Non-cryptographic.
-template<size_t PRIME>
+/// Hashing of an iterable range. Non-cryptographic.
+template<class T,
+         size_t PRIME,
+         class it>
 [[gnu::pure]]
-constexpr size_t
-ircd::util::hash(const char16_t *const str,
-                 size_t i,
-                 size_t r)
+constexpr T
+ircd::util::hash(it a,
+                 const it b,
+                 T r)
 noexcept
 {
-	for(assert(str); str[i]; ++i)
-		r = str[i] ^ (r * 33ULL);
+	for(; a != b; ++a)
+		r = (*a) ^ (r * 33);
 
+	r |= 1;
+	r *= r;
 	return r;
 }
