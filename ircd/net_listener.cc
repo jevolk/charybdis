@@ -354,7 +354,7 @@ noexcept
 void
 ircd::net::acceptor::open()
 {
-	static const auto &max_connections
+	static const auto max_connections
 	{
 		//TODO: XXX
 		//boost::asio::ip::tcp::socket::max_connections   <-- linkage failed?

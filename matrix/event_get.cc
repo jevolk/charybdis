@@ -285,7 +285,7 @@ ircd::m::get(std::nothrow_t,
 		return 0;
 
 	static const auto MAX {64UL};
-	const auto &num
+	const auto num
 	{
 		std::min(event_idx.size(), MAX)
 	};

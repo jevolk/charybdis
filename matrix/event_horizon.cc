@@ -119,7 +119,7 @@ const
 
 	for(auto it(m::dbs::event_horizon.begin(key)); it; ++it)
 	{
-		const auto &event_idx
+		const auto event_idx
 		{
 			std::get<0>(m::dbs::event_horizon_key(it->first))
 		};
@@ -147,9 +147,9 @@ ircd::m::event::horizon::for_every(const closure_bool &closure)
 			parts.first
 		};
 
-		const auto &event_idx
+		const auto event_idx
 		{
-			byte_view<event::idx>(parts.second)
+			byte_view<event::idx>{parts.second}
 		};
 
 		if(!closure(event_id, event_idx))

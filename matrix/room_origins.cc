@@ -187,12 +187,12 @@ const
 	if(!it)
 		return false;
 
-	const string_view &key
+	const string_view key
 	{
 		lstrip(it->first, "\0"_sv)
 	};
 
-	const string_view &key_origin
+	const string_view key_origin
 	{
 		std::get<0>(dbs::room_joined_key(key))
 	};

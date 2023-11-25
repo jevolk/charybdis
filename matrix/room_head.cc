@@ -265,7 +265,7 @@ const
 			dbs::room_head_key(it->first)
 		};
 
-		const event::idx &event_idx
+		const event::idx event_idx
 		{
 			byte_view<event::idx>{it->second}
 		};
