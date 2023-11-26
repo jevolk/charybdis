@@ -2839,9 +2839,37 @@ ircd::db::database::events::OnFlushBegin(rocksdb::DB *const db,
                                          const rocksdb::FlushJobInfo &info)
 noexcept
 {
-	log::debug
+	using rocksdb::FlushReason;
+
+	log::level level; switch(info.flush_reason)
 	{
-		log, "[%s] job:%d ctx:%lu flushing '%s' :%s",
+		case FlushReason::kTest:
+			level = log::level::INFO;
+			break;
+
+		case FlushReason::kErrorRecovery:
+			level = log::level::WARNING;
+			break;
+
+		case FlushReason::kWalFull:
+		case FlushReason::kWriteBufferFull:
+			level = log::level::DWARNING;
+			break;
+
+		case FlushReason::kManualFlush:
+		case FlushReason::kManualCompaction:
+			level = log::level::DEBUG;
+			break;
+
+		default:
+			level = log::level::DEBUG;
+			break;
+	};
+
+	log::logf
+	{
+		log, level,
+		"[%s] job:%d ctx:%lu flushing '%s' :%s",
 		d->name,
 		info.job_id,
 		info.thread_id,
@@ -3184,7 +3212,7 @@ noexcept
 		info.status == rocksdb::Status::OK()?
 			log::level::DEBUG:
 		info.status == rocksdb::Status::ShutdownInProgress()?
-			log::level::INFO:
+			log::level::DWARNING:
 		info.status == rocksdb::Status::Aborted()?
 			log::level::WARNING:
 			log::level::ERROR
@@ -3377,6 +3405,10 @@ noexcept
 	{
 		column.stall == WriteStallCondition::kNormal?
 			log::level::INFO:
+		column.stall == WriteStallCondition::kStopped?
+			log::level::ERROR:
+		column.stall == WriteStallCondition::kDelayed?
+			log::level::WARNING:
 			log::level::WARNING
 	};
 
