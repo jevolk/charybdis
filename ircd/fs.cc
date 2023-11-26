@@ -2364,17 +2364,17 @@ ircd::fs::advise(const fd &fd,
 bool
 ircd::fs::write_life(const fd &fd,
                      const uint64_t hint)
-#if defined(HAVE_FCNTL_H) && defined(F_SET_FILE_RW_HINT)
+#if defined(HAVE_FCNTL_H) && defined(F_SET_RW_HINT)
 {
 	if(!support::rwh_write_life)
 		return false;
 
-	syscall(::fcntl, int(fd), F_SET_FILE_RW_HINT, &hint);
+	syscall(::fcntl, int(fd), F_SET_RW_HINT, &hint);
 	return true;
 }
 #else
 {
-	#warning "F_SET_FILE_RW_HINT not supported on platform."
+	#warning "F_SET_RW_HINT not supported on platform."
 	return false;
 }
 #endif
@@ -2382,15 +2382,15 @@ ircd::fs::write_life(const fd &fd,
 uint64_t
 ircd::fs::write_life(const fd &fd)
 noexcept try
-#if defined(HAVE_FCNTL_H) && defined(F_GET_FILE_RW_HINT)
+#if defined(HAVE_FCNTL_H) && defined(F_GET_RW_HINT)
 {
 	uint64_t ret;
-	syscall(::fcntl, int(fd), F_GET_FILE_RW_HINT, &ret);
+	syscall(::fcntl, int(fd), F_GET_RW_HINT, &ret);
 	return ret;
 }
 #else
 {
-	#warning "F_GET_FILE_RW_HINT not supported on platform."
+	#warning "F_GET_RW_HINT not supported on platform."
 	return 0;
 }
 #endif
@@ -2398,7 +2398,7 @@ catch(const std::system_error &e)
 {
 	log::derror
 	{
-		log, "fcntl(F_GET_FILE_RW_HINT) fd:%d :%s",
+		log, "fcntl(F_GET_RW_HINT) fd:%d :%s",
 		int(fd),
 		e.what()
 	};
