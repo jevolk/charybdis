@@ -153,6 +153,9 @@ struct ircd::m::homeserver::opts
 	/// operation after having processed these events.
 	string_view bootstrap_vector_path;
 
+	/// Whether to perform initial bootstrap; ignored unless database empty.
+	bool bootstrap {true};
+
 	/// Whether to run initial backfill jobs after startup.
 	bool backfill {true};
 

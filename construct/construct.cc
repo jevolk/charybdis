@@ -231,11 +231,13 @@ noexcept try
 	// stack which are the basis for our matrix homeserver. When the stack
 	// unwinds, the homeserver will go out of service.
 	struct ircd::m::homeserver::opts opts;
-	opts.origin = origin;
 	opts.server_name = server_name;
-	opts.bootstrap_vector_path = bootstrap;
+	opts.origin = origin;
 	opts.backfill = !nobackfill;
 	opts.autoapps = !noautoapps;
+	opts.bootstrap_vector_path = bootstrap;
+	opts.bootstrap &= ircd::string_view(bootstrap) != "console";
+	opts.bootstrap &= ircd::string_view(bootstrap) != "execute";
 	const std::function<void (ircd::main_continuation)> homeserver
 	{
 		[&opts](const ircd::main_continuation &main)
@@ -568,7 +570,10 @@ applyargs()
 	}
 
 	if(bootstrap)
+	{
 		ircd::maintenance.set("true");
+		cmdline |= std::string_view(bootstrap) == "console";
+	}
 
 	if(defaults)
 		ircd::defaults.set("true");

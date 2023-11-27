@@ -320,7 +320,7 @@ try
 		&& dbs::events
 	};
 
-	if(need_bootstrap)
+	if(need_bootstrap && opts->bootstrap)
 		bootstrap();
 
 	// If the database is empty here there's nothing left to do; this is not

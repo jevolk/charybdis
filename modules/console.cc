@@ -19642,6 +19642,44 @@ console_cmd__app__signal(opt &out, const string_view &line)
 }
 
 //
+// bootstrap
+//
+
+bool
+console_cmd__bootstrap(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"file"
+	}};
+
+	const auto path
+	{
+		param.at("file")
+	};
+
+	auto &homeserver
+	{
+		m::my()
+	};
+
+	assert(homeserver.opts);
+	auto opts(*homeserver.opts);
+	opts.bootstrap_vector_path = path;
+	const scope_restore homeserver_opts
+	{
+		homeserver.opts, &opts
+	};
+
+	homeserver.bootstrap();
+
+	out
+	<< "bootstrap complete."
+	<< std::endl;
+	return true;
+}
+
+//
 // cl
 //
 
