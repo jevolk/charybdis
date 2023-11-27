@@ -154,6 +154,17 @@ try
 		log, "Bootstrap event generation completed nominally."
 	};
 }
+catch(const ctx::interrupted &e)
+{
+	log::warning
+	{
+		log, "bootstrap %s :%s",
+		server_name(*this),
+		e.what(),
+	};
+
+	throw;
+}
 catch(const std::exception &e)
 {
 	log::logf
@@ -162,20 +173,29 @@ catch(const std::exception &e)
 		"Failed to bootstrap server '%s' on network '%s' :%s",
 		server_name(*this),
 		origin(*this),
-		e.what()
+		e.what(),
 	};
 
 	throw ircd::panic
 	{
-		"bootstrap %s error :%s",
+		"bootstrap %s :%s",
 		server_name(*this),
-		e.what()
+		e.what(),
 	};
+}
+catch(const ctx::terminated &)
+{
+	log::critical
+	{
+		log, "bootstrap %s terminated without completion.",
+		server_name(*this),
+	};
+
+	throw;
 }
 
 void
 ircd::m::bootstrap_event_vector(homeserver &homeserver)
-try
 {
 	assert(homeserver.opts);
 	const auto &hs_opts
@@ -408,23 +428,4 @@ try
 		path,
 		stopwatch.pretty(pbuf[1]),
 	};
-}
-catch(const std::exception &e)
-{
-	throw ircd::error
-	{
-		"bootstrap %s :terminated without completion :%s",
-		server_name(homeserver),
-		e.what(),
-	};
-}
-catch(const ctx::terminated &)
-{
-	log::critical
-	{
-		log, "bootstrap %s :terminated without completion.",
-		server_name(homeserver),
-	};
-
-	throw;
 }
