@@ -41,7 +41,8 @@ ircd::m::dbs::desc::room_state__cache__size
 	},
 	[](conf::item<void> &)
 	{
-		const size_t &value{room_state__cache__size};
+		size_t value{room_state__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(dbs::room_state), value);
 	}
 };

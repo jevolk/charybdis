@@ -32,6 +32,15 @@ ircd::m::dbs::cache_comp_enable
 	{ "default",  false                          },
 };
 
+/// Scales the default cache sizes. Each increment will double the size of all
+/// caches from their configured value; each decrement will halve the size.
+decltype(ircd::m::dbs::cache_scale)
+ircd::m::dbs::cache_scale
+{
+	{ "name",     "ircd.m.dbs.cache.scale" },
+	{ "default",  0L                       },
+};
+
 /// Coarse toggle for the prefetch phase before the transaction building
 /// handlers (indexers) are called. If this is false, prefetching will be
 /// disabled; otherwise the opts passed to write() control whether
@@ -516,4 +525,15 @@ ircd::m::dbs::prefetch_event_idx(const vector_view<const event::id> &event_id,
 	}
 
 	return ret;
+}
+
+size_t
+ircd::m::dbs::cache_scaled(size_t value)
+{
+	if(int(cache_scale) >= 0)
+		value <<= int(cache_scale);
+	else
+		value >>= std::abs(int(cache_scale));
+
+	return value;
 }

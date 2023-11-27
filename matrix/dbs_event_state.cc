@@ -46,7 +46,8 @@ ircd::m::dbs::desc::event_state__cache__size
 	},
 	[](conf::item<void> &)
 	{
-		const size_t &value{event_state__cache__size};
+		size_t value{event_state__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(dbs::event_state), value);
 	}
 };

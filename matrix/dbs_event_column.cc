@@ -64,7 +64,8 @@ ircd::m::dbs::desc::event_id__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "event_id"_>()));
-		const size_t &value{event_id__cache__size};
+		size_t value{event_id__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -150,7 +151,8 @@ ircd::m::dbs::desc::type__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "type"_>()));
-		const size_t &value{type__cache__size};
+		size_t value{type__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -236,7 +238,8 @@ ircd::m::dbs::desc::content__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "content"_>()));
-		const size_t &value{content__cache__size};
+		size_t value{content__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -339,7 +342,8 @@ ircd::m::dbs::desc::room_id__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "room_id"_>()));
-		const size_t &value{room_id__cache__size};
+		size_t value{room_id__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -424,7 +428,8 @@ ircd::m::dbs::desc::sender__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "sender"_>()));
-		const size_t &value{sender__cache__size};
+		size_t value{sender__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -509,7 +514,8 @@ ircd::m::dbs::desc::state_key__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "state_key"_>()));
-		const size_t &value{state_key__cache__size};
+		size_t value{state_key__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -596,7 +602,8 @@ ircd::m::dbs::desc::origin_server_ts__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "origin_server_ts"_>()));
-		const size_t &value{origin_server_ts__cache__size};
+		size_t value{origin_server_ts__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };
@@ -682,7 +689,8 @@ ircd::m::dbs::desc::depth__cache__size
 	[](conf::item<void> &)
 	{
 		auto &column(event_column.at(json::indexof<event, "depth"_>()));
-		const size_t &value{depth__cache__size};
+		size_t value{depth__cache__size};
+		value = dbs::cache_scaled(value);
 		db::capacity(db::cache(column), value);
 	}
 };

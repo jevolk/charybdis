@@ -21,6 +21,7 @@ namespace ircd::m::dbs
 	// General confs
 	extern conf::item<bool> cache_enable;
 	extern conf::item<bool> cache_comp_enable;
+	extern conf::item<long> cache_scale;
 	extern conf::item<bool> prefetch_enable;
 	extern conf::item<size_t> mem_write_buffer_size;
 	extern conf::item<size_t> sst_write_buffer_size;
@@ -65,6 +66,8 @@ namespace ircd::m::dbs::appendix
 // Some internal utils (here for now)
 namespace ircd::m::dbs
 {
+	size_t cache_scaled(size_t value);
+
 	size_t prefetch_event_idx(const vector_view<const event::id> &in, const opts &);
 	bool prefetch_event_idx(const event::id &, const opts &);
 
