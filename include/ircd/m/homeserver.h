@@ -47,6 +47,9 @@ struct ircd::m::homeserver
 	struct opts;
 	struct conf;
 
+	/// m.hs log facility
+	static log::log log;
+
 	/// Internal state; use m::my().
 	static homeserver *primary;
 

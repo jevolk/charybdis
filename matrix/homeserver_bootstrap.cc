@@ -107,7 +107,7 @@ try
 	if(my_id.hostname() == "localhost")
 		log::warning
 		{
-			"The server's name is configured to localhost. This is probably not what you want."
+			log, "The server's name is configured to localhost. This is probably not what you want."
 		};
 
 	assert(key);
@@ -240,7 +240,7 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 	char pbuf[4][48];
 	log::notice
 	{
-		log, "Bootstrapping database from events @ `%s' %s",
+		homeserver::log, "Bootstrapping database from events @ `%s' %s",
 		path,
 		pretty(pbuf[0], iec(size(map))),
 	};
@@ -377,7 +377,7 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 
 		log::info
 		{
-			log, "Bootstrap %3.2lf%% %s in %s | seq:%zu accept:%zu fault:%zu | %zu event/s; input %s/s; output %s/s",
+			homeserver::log, "Bootstrap %3.2lf%% %s in %s | seq:%zu accept:%zu fault:%zu | %zu event/s; input %s/s; output %s/s",
 			(ebytes[1] / double(size(string_view(events)))) * 100.0,
 			pretty(pbuf[0], iec(ebytes[1])),
 			stopwatch.pretty(pbuf[1]),
@@ -398,7 +398,7 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 	{
 		log::critical
 		{
-			log, "Bootstrap retired:%zu count:%zu accept:%zu offset:%zu :%s",
+			homeserver::log, "Bootstrap retired:%zu count:%zu accept:%zu offset:%zu :%s",
 			vm::sequence::retired,
 			count,
 			accept,
@@ -421,7 +421,7 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 
 	log::notice
 	{
-		log, "Bootstrapped count:%zu retired:%zu in %s from `%s' in %s",
+		homeserver::log, "Bootstrapped count:%zu retired:%zu in %s from `%s' in %s",
 		count,
 		vm::sequence::retired,
 		pretty(pbuf[0], iec(size(string_view(events)))),

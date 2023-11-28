@@ -29,6 +29,12 @@ ircd::util::instance_map<ircd::string_view, ircd::m::homeserver, std::less<>>::m
 	allocator
 };
 
+decltype(ircd::m::homeserver::log)
+ircd::m::homeserver::log
+{
+	"m.hs"
+};
+
 [[gnu::hot]]
 ircd::m::user::id
 ircd::m::me()
@@ -446,7 +452,8 @@ ircd::m::homeserver::key::key(const struct opts &opts)
 	if(!fs::exists(sk_file) && !ircd::read_only && !ircd::maintenance)
 		log::notice
 		{
-			m::log, "Creating ed25519 secret key @ `%s'", sk_file
+			log, "Creating ed25519 secret key @ `%s'",
+			sk_file
 		};
 
 	return sk_file;
@@ -533,7 +540,7 @@ ircd::m::homeserver::key::key(const struct opts &opts)
 	{
 		log::warning
 		{
-			m::log, "Cannot issue events originating from '%s' :No signing key available.",
+			log, "Cannot issue events originating from '%s' :No signing key available.",
 			opts.origin,
 		};
 
@@ -542,7 +549,7 @@ ircd::m::homeserver::key::key(const struct opts &opts)
 
 	log::info
 	{
-		m::log, "Secret key for %s at `%s'. Public key is %s identified as '%s'",
+		log, "Secret key for %s at `%s'. Public key is %s identified as '%s'",
 		opts.origin,
 		secret_key_path,
 		public_key_b64,
@@ -604,7 +611,7 @@ ircd::m::homeserver::conf::conf(const struct opts &opts)
 	{
 		log::error
 		{
-			"Failed to initialize conf item '%s' :%s",
+			log, "Failed to initialize conf item '%s' :%s",
 			key,
 			e.what()
 		};
@@ -665,7 +672,7 @@ const
 	{
 		log::error
 		{
-			"Failed to create conf item '%s' :%s",
+			log, "Failed to create conf item '%s' :%s",
 			key,
 			e.what()
 		};
@@ -871,7 +878,9 @@ try
 
 	log::debug
 	{
-		"Updating conf [%s] => [%s]", key, value
+		log, "Updating conf [%s] => [%s]",
+		key,
+		value
 	};
 
 	ircd::conf::set(key, value);
@@ -881,7 +890,7 @@ catch(const std::exception &e)
 {
 	log::error
 	{
-		"Failed to set conf item '%s' :%s",
+		log, "Failed to set conf item '%s' :%s",
 		json::get<"state_key"_>(event),
 		e.what()
 	};
