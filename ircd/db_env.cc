@@ -2118,7 +2118,11 @@ noexcept try
 			reflect(hint),
 		};
 
-	this->hint = hint;
+	assert(this->hint != hint || hint == WriteLifeTimeHint::WLTH_NOT_SET);
+	if(std::exchange(this->hint, hint) == hint)
+		return;
+
+	assert(this->hint == hint);
 	fs::write_life(fd, this->hint);
 }
 catch(const std::system_error &e)
