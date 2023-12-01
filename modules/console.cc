@@ -5502,16 +5502,18 @@ try
 		param.at("dbname")
 	};
 
-	const auto &colname
-	{
-		param["column|file"]
-	};
-
 	const auto &fname
 	{
-		!startswith(colname, '/')?
+		!startswith(param["column|file"], '/')?
 			string_view{}:
-			lstrip(colname, '/')
+			lstrip(param["column|file"], '/')
+	};
+
+	const auto &colname
+	{
+		!fname?
+			param["column|file"]:
+			string_view{}
 	};
 
 	auto &database
@@ -5519,11 +5521,53 @@ try
 		db::database::get(dbname)
 	};
 
+	if(fname == "*")
+	{
+		for(const auto &file : db::files(database))
+		{
+			if(!endswith(file, ".sst"))
+				continue;
+
+			const fmt::bsprintf<128> cmd
+			{
+				"%s /%s", dbname, file
+			};
+
+			if(!console_cmd__db__check(out, cmd))
+				return false;
+		}
+
+		return true;
+	}
+
 	if(fname)
 	{
+		util::timer timer;
 		check(database, fname);
-		out << "Check of file " << fname << " in " << dbname << " completed without error."
-		    << std::endl;
+		out
+		<< "Check of file "
+		<< fname
+		<< " in "
+		<< dbname
+		<< " completed without error in "
+		<< timer.pretty()
+		<< '.'
+		<< std::endl;
+		return true;
+	}
+
+	if(colname == "*")
+	{
+		for(const auto &column : database.columns)
+		{
+			const fmt::bsprintf<128> cmd
+			{
+				"%s %s", dbname, name(*column)
+			};
+
+			if(!console_cmd__db__check(out, cmd))
+				return false;
+		}
 
 		return true;
 	}
@@ -5535,17 +5579,29 @@ try
 			database[colname]
 		};
 
+		util::timer timer;
 		check(column);
-		out << "Check of " << colname << " in " << dbname << " completed without error."
-		    << std::endl;
-
+		out
+		<< "Check of "
+		<< colname
+		<< " in "
+		<< dbname
+		<< " completed without error in "
+		<< timer.pretty()
+		<< '.'
+		<< std::endl;
 		return true;
 	}
 
+	util::timer timer;
 	check(database);
-	out << "Check of " << dbname << " completed without error."
-	    << std::endl;
-
+	out
+	<< "Check of "
+	<< dbname
+	<< " completed without error in "
+	<< timer.pretty()
+	<< '.'
+	<< std::endl;
 	return true;
 }
 catch(const std::out_of_range &e)
