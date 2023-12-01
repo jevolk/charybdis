@@ -19,11 +19,6 @@
 //
 // #define RB_PROF_ALLOC
 
-namespace ircd::allocator
-{
-	static size_t advise_hugepage(void *const &, const size_t &, const size_t &);
-}
-
 #if defined(MADV_NORMAL) && defined(POSIX_MADV_NORMAL)
 	static_assert(MADV_NORMAL == POSIX_MADV_NORMAL);
 #endif
@@ -43,6 +38,21 @@ namespace ircd::allocator
 #if defined(MADV_DONTNEED) && defined(POSIX_MADV_DONTNEED)
 	static_assert(MADV_DONTNEED == POSIX_MADV_DONTNEED);
 #endif
+
+namespace ircd::allocator
+{
+	static const auto thp_size
+	{
+		info::thp_size
+	};
+
+	static const auto has_madvise
+	{
+		has(info::thp_enable, "[madvise]"_sv)
+	};
+
+	static size_t advise_hugepage(void *const &, const size_t &, const size_t &);
+}
 
 [[gnu::hot]]
 char *
@@ -72,9 +82,7 @@ ircd::allocator::allocate(const size_t alignment,
 
 	assert(ret != nullptr);
 	assert(uintptr_t(ret) % alignment == 0);
-
-	if(likely(info::thp_size))
-		advise_hugepage(ret, alignment, size);
+	advise_hugepage(ret, alignment, size);
 
 	#ifdef RB_PROF_ALLOC
 	auto &this_thread(ircd::allocator::profile::this_thread);
@@ -93,13 +101,16 @@ ircd::allocator::advise_hugepage(void *const &ptr,
 #if defined(MADV_HUGEPAGE)
 try
 {
-	if(likely(alignment < info::thp_size))
+	if(likely(alignment < thp_size))
 		return 0;
 
-	if(likely(alignment % size_t(info::thp_size) != 0))
+	if(!thp_size)
 		return 0;
 
-	if(!has(info::thp_enable, "[madvise]"))
+	if(likely(alignment % thp_size != 0))
+		return 0;
+
+	if(!has_madvise)
 		return 0;
 
 	sys::call(::madvise, ptr, size, MADV_HUGEPAGE);
