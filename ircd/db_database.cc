@@ -2093,6 +2093,12 @@ ircd::db::database::column::column(database &d,
 	if(bloom_bits)
 		table_opts.filter_policy.reset(rocksdb::NewBloomFilterPolicy(bloom_bits, false));
 
+	#ifdef IRCD_DB_HAS_CACHE_PREPOPULATE
+	table_opts.prepopulate_block_cache = this->descriptor->cache_writes?
+		rocksdb::BlockBasedTableOptions::PrepopulateBlockCache::kFlushOnly:
+		rocksdb::BlockBasedTableOptions::PrepopulateBlockCache::kDisable;
+	#endif
+
 	// Tickers::READ_AMP_TOTAL_READ_BYTES / Tickers::READ_AMP_ESTIMATE_USEFUL_BYTES
 	//table_opts.read_amp_bytes_per_bit = 8;
 

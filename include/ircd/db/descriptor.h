@@ -143,4 +143,8 @@ struct ircd::db::descriptor
 	/// Circuit-breaker to disable automatic compaction specifically for this
 	/// column from this descriptor.
 	bool compaction {true};
+
+	/// Determines whether data in the write_buffer is moved into the cache or
+	/// dropped once the buffer is written (flushed).
+	bool cache_writes {false};
 };
