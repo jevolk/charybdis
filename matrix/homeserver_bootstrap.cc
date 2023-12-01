@@ -11,7 +11,32 @@
 namespace ircd::m
 {
 	static void bootstrap_event_vector(homeserver &);
+
+	extern conf::item<bool> bootstrap_conform;
+	extern conf::item<bool> bootstrap_stringify;
+	extern conf::item<ssize_t> bootstrap_nothrows;
 }
+
+decltype(ircd::m::bootstrap_conform)
+ircd::m::bootstrap_conform
+{
+	{ "name",     "ircd.m.hs.bootstrap.conform" },
+	{ "default",  false                         },
+};
+
+decltype(ircd::m::bootstrap_stringify)
+ircd::m::bootstrap_stringify
+{
+	{ "name",     "ircd.m.hs.bootstrap.stringify" },
+	{ "default",  false                           },
+};
+
+decltype(ircd::m::bootstrap_nothrows)
+ircd::m::bootstrap_nothrows
+{
+	{ "name",     "ircd.m.hs.bootstrap.nothrows" },
+	{ "default",  -1L                            },
+};
 
 void
 ircd::m::homeserver::bootstrap()
@@ -277,21 +302,6 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 	vmopts.wopts.appendix.set(dbs::appendix::ROOM_HEAD, false);
 	vmopts.wopts.appendix.set(dbs::appendix::ROOM_HEAD_RESOLVE, false);
 
-	// Perform normal static-conformity checks; there's no reason to accept
-	// inputs that wouldn't normally be accepted. While inputs are supposed
-	// to be trusted and authentic, their correctness should still be checked;
-	// attempting to recover from a catastrophic failure might be the reason
-	// for the rebuild.
-	vmopts.phase.set(vm::phase::CONFORM, true);
-
-	//TODO: XXX
-	// This workaround is required for internal rooms to work, for now.
-	vmopts.non_conform.set(event::conforms::MISMATCH_ORIGIN_SENDER);
-
-	// Indicates the input JSON is canonical (to optimize eval).
-	//vmopts.json_source = true;
-	vmopts.non_conform.set(event::conforms::MISMATCH_HASHES);
-
 	// Optimize eval if we assume there's only one copy of each event in the
 	// input array.
 	vmopts.unique = false;
@@ -300,11 +310,29 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 	// in the input. This assumption is made when bootstrapping fresh DB.
 	vmopts.replays = sequence(*dbs::events) == 0;
 
-	// Error control
-	//vmopts.nothrows = -1UL;
-
 	// Outputs to infolog for each event; may be noisy;
 	vmopts.infolog_accept = false;
+
+	// Error control mask
+	vmopts.nothrows = ssize_t(bootstrap_nothrows);
+
+	//TODO: XXX
+	// This workaround is required for internal rooms to work, for now.
+	vmopts.non_conform.set(event::conforms::MISMATCH_ORIGIN_SENDER);
+
+	// Optimize eval by trusting hashes and missing content as provided.
+	vmopts.non_conform.set(event::conforms::MISMATCH_HASHES);
+	vmopts.require_content = 0;
+
+	// Perform normal static-conformity checks; there's no reason to accept
+	// inputs that wouldn't normally be accepted. While inputs are supposed
+	// to be trusted and authentic, their correctness should still be checked;
+	// attempting to recover from a catastrophic failure might be the reason
+	// for the rebuild.
+	vmopts.phase.set(vm::phase::CONFORM, bool(bootstrap_conform));
+
+	// Indicates the input JSON is canonical (to optimize eval).
+	vmopts.json_source = !bool(bootstrap_stringify);
 
 	static const size_t batch_max {64};
 	std::vector<m::event> vec(batch_max);
