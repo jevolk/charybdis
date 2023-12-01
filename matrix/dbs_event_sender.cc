@@ -126,7 +126,7 @@ ircd::m::dbs::desc::event_sender
 	.expect_queries_hit = false,
 	.block_size = size_t(event_sender__block__size),
 	.meta_block_size = size_t(event_sender__meta_block__size),
-	.compression = string_view{event_sender__comp},
+	.compression = bool(compress_enable)? string_view{event_sender__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 

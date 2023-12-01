@@ -167,7 +167,7 @@ ircd::m::dbs::desc::room_events
 	size_t(room_events__meta_block__size),
 
 	// compression
-	string_view{room_events__comp},
+	bool(compress_enable)? string_view{room_events__comp}: string_view{},
 };
 
 //

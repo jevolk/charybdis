@@ -127,7 +127,7 @@ ircd::m::dbs::desc::room_head
 	size_t(room_head__meta_block__size),
 
 	// compression
-	string_view{room_head__comp},
+	bool(compress_enable)? string_view{room_head__comp}: string_view{},
 
 	// compactor
 	{},

@@ -100,7 +100,7 @@ ircd::m::dbs::desc::event_idx
 	.expect_queries_hit = false,
 	.block_size = size_t(event_idx__block__size),
 	.meta_block_size = size_t(event_idx__meta_block__size),
-	.compression = string_view{event_idx__comp},
+	.compression = bool(compress_enable)? string_view{event_idx__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 

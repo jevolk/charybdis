@@ -113,7 +113,7 @@ ircd::m::dbs::desc::event_horizon
 	.expect_queries_hit = false,
 	.block_size = size_t(event_horizon__block__size),
 	.meta_block_size = size_t(event_horizon__meta_block__size),
-	.compression = string_view{event_horizon__comp},
+	.compression = bool(compress_enable)? string_view{event_horizon__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 

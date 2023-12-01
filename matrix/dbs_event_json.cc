@@ -103,7 +103,7 @@ ircd::m::dbs::desc::event_json
 	.expect_queries_hit = true,
 	.block_size = size_t(event_json__block__size),
 	.meta_block_size = size_t(event_json__meta_block__size),
-	.compression = string_view{event_json__comp},
+	.compression = bool(compress_enable)? string_view{event_json__comp}: string_view{},
 	.compaction_pri = "Universal"s,
 	.target_file_size = { size_t(event_json__file__size__max), 1L, },
 	.compaction_trigger = size_t(event_json__compaction_trigger),

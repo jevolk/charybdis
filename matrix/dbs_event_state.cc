@@ -99,7 +99,7 @@ ircd::m::dbs::desc::event_state
 	.expect_queries_hit = false,
 	.block_size = size_t(event_state__block__size),
 	.meta_block_size = size_t(event_state__meta_block__size),
-	.compression = string_view{event_state__comp},
+	.compression = bool(compress_enable)? string_view{event_state__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 

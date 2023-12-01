@@ -144,7 +144,7 @@ ircd::m::dbs::desc::room_state
 	size_t(room_state__meta_block__size),
 
 	// compression
-	string_view{room_state__comp},
+	bool(compress_enable)? string_view{room_state__comp}: string_view{},
 
 	// compactor
 	{},

@@ -147,7 +147,7 @@ ircd::m::dbs::desc::event_refs
 	.expect_queries_hit = true,
 	.block_size = size_t(event_refs__block__size),
 	.meta_block_size = size_t(event_refs__meta_block__size),
-	.compression = string_view{event_refs__comp},
+	.compression = bool(compress_enable)? string_view{event_refs__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 

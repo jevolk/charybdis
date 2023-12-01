@@ -52,6 +52,15 @@ ircd::m::dbs::prefetch_enable
 	{ "default",  true                         },
 };
 
+/// Coarse toggle for database compression. Changes will affect new files as
+/// they are cycled through compaction.
+decltype(ircd::m::dbs::compress_enable)
+ircd::m::dbs::compress_enable
+{
+	{ "name",     "ircd.m.dbs.compress.enable" },
+	{ "default",  true                         },
+};
+
 /// The size of the memory buffer for new writes to the DB (backed by the WAL
 /// on disk). When this buffer is full it is flushed to sorted SST files on
 /// disk. If this is 0, a per-column value can be used; otherwise this value

@@ -113,7 +113,7 @@ ircd::m::dbs::desc::event_id
 	.expect_queries_hit = true,
 	.block_size = size_t(event_id__block__size),
 	.meta_block_size = size_t(event_id__meta_block__size),
-	.compression = string_view{event_id__comp},
+	.compression = bool(compress_enable)? string_view{event_id__comp}: string_view{},
 };
 
 //
@@ -200,7 +200,7 @@ ircd::m::dbs::desc::type
 	.expect_queries_hit = true,
 	.block_size = size_t(type__block__size),
 	.meta_block_size = size_t(type__meta_block__size),
-	.compression = string_view{type__comp},
+	.compression = bool(compress_enable)? string_view{type__comp}: string_view{},
 };
 
 //
@@ -301,7 +301,7 @@ ircd::m::dbs::desc::content
 	.expect_queries_hit = true,
 	.block_size = size_t(content__block__size),
 	.meta_block_size = size_t(content__meta_block__size),
-	.compression = string_view{content__comp},
+	.compression = bool(compress_enable)? string_view{content__comp}: string_view{},
 	.compaction_pri = "Universal"s,
 	.target_file_size = { size_t(content__file__size__max), 1L, },
 	.compaction_trigger = size_t(content__compaction_trigger),
@@ -390,7 +390,7 @@ ircd::m::dbs::desc::room_id
 	.expect_queries_hit = true,
 	.block_size = size_t(room_id__block__size),
 	.meta_block_size = size_t(room_id__meta_block__size),
-	.compression = string_view{room_id__comp},
+	.compression = bool(compress_enable)? string_view{room_id__comp}: string_view{},
 };
 
 //
@@ -476,7 +476,7 @@ ircd::m::dbs::desc::sender
 	.expect_queries_hit = true,
 	.block_size = size_t(sender__block__size),
 	.meta_block_size = size_t(sender__meta_block__size),
-	.compression = string_view{sender__comp},
+	.compression = bool(compress_enable)? string_view{sender__comp}: string_view{},
 };
 
 //
@@ -564,7 +564,7 @@ ircd::m::dbs::desc::state_key
 	.expect_queries_hit = true,
 	.block_size = size_t(state_key__block__size),
 	.meta_block_size = size_t(state_key__meta_block__size),
-	.compression = string_view{state_key__comp},
+	.compression = bool(compress_enable)? string_view{state_key__comp}: string_view{},
 };
 
 //
@@ -651,7 +651,7 @@ ircd::m::dbs::desc::origin_server_ts
 	.expect_queries_hit = true,
 	.block_size = size_t(origin_server_ts__block__size),
 	.meta_block_size = size_t(origin_server_ts__meta_block__size),
-	.compression = string_view{origin_server_ts__comp},
+	.compression = bool(compress_enable)? string_view{origin_server_ts__comp}: string_view{},
 };
 
 //
@@ -731,7 +731,7 @@ ircd::m::dbs::desc::depth
 	.expect_queries_hit = true,
 	.block_size = size_t(depth__block__size),
 	.meta_block_size = size_t(depth__meta_block__size),
-	.compression = string_view{depth__comp},
+	.compression = bool(compress_enable)? string_view{depth__comp}: string_view{},
 };
 
 void
