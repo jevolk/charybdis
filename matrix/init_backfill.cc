@@ -97,7 +97,7 @@ decltype(ircd::m::init::backfill::delay)
 ircd::m::init::backfill::delay
 {
 	{ "name",     "ircd.m.init.backfill.delay"  },
-	{ "default",  15L                           },
+	{ "default",  20L                           },
 };
 
 decltype(ircd::m::init::backfill::viewports)
@@ -135,7 +135,7 @@ ircd::m::init::backfill::handle_quit
 	}
 };
 
-void
+bool
 ircd::m::init::backfill::init()
 {
 	if(!enable)
@@ -146,7 +146,17 @@ ircd::m::init::backfill::init()
 			" been disabled by the configuration. Not fetching latest events."
 		};
 
-		return;
+		return false;
+	}
+
+	if(worker_context)
+	{
+		log::error
+		{
+			log, "Initial backfill already in progress."
+		};
+
+		return false;
 	}
 
 	ctx::context context
@@ -161,6 +171,7 @@ ircd::m::init::backfill::init()
 	// will free itself.
 	assert(!worker_context);
 	worker_context = context.detach();
+	return true;
 }
 
 void
@@ -212,9 +223,12 @@ void
 ircd::m::init::backfill::worker()
 try
 {
+	count = 0;
+	complete = 0;
 	const unwind nullify{[]
 	{
 		worker_context = nullptr;
+		count = 0;
 	}};
 
 	// Wait for runlevel RUN before proceeding...
@@ -242,7 +256,7 @@ try
 		return;
 
 	// Wait a delay before starting.
-	ctx::sleep(seconds(delay));
+	ctx::sleep_until(system_point(seconds(info::startup_time)) + seconds(delay));
 
 	log::notice
 	{

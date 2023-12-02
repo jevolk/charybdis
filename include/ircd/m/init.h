@@ -20,17 +20,19 @@ namespace ircd::m::init
 /// Internal use only; do not call
 namespace ircd::m::init::backfill
 {
-	void
-	init(),
-	term() noexcept,
-	fini() noexcept;
+	extern size_t count;
+	extern size_t complete;
+
+	bool init();
+	void term() noexcept;
+	void fini() noexcept;
 }
 
 /// Internal use only; do not call
 struct ircd::m::init::modules
 {
-	void fini_imports() noexcept;
 	void init_imports();
+	void fini_imports() noexcept;
 
 	modules();
 	~modules() noexcept;

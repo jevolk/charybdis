@@ -19736,6 +19736,30 @@ console_cmd__bootstrap(opt &out, const string_view &line)
 }
 
 //
+// backfill
+//
+
+bool
+console_cmd__backfill(opt &out, const string_view &line)
+{
+	// Already in progress; show stats
+	if(m::init::backfill::count)
+		return console_cmd__room__acquire__list(out, line);
+
+	// Manually start initial backfill.
+	m::init::backfill::init();
+	return true;
+}
+
+bool
+console_cmd__backfill__terminate(opt &out, const string_view &line)
+{
+	// Manually terminate if in progress.
+	m::init::backfill::fini();
+	return true;
+}
+
+//
 // cl
 //
 
