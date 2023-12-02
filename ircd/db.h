@@ -169,6 +169,43 @@ namespace ircd::db
 }
 #pragma GCC visibility pop
 
+struct [[gnu::visibility("hidden")]]
+ircd::db::database::column final
+:std::enable_shared_from_this<database::column>
+,rocksdb::ColumnFamilyDescriptor
+{
+	database *d;
+	db::descriptor *descriptor;
+	std::type_index key_type;
+	std::type_index mapped_type;
+	std::unique_ptr<comparator> cmp;
+	std::unique_ptr<prefix_transform> prefix;
+	std::unique_ptr<compaction_filter> cfilter;
+	rocksdb::WriteStallCondition stall;
+	std::shared_ptr<struct database::stats> stats;
+	std::shared_ptr<struct database::allocator> allocator;
+	rocksdb::BlockBasedTableOptions table_opts;
+	const bool options_preconfiguration;
+	std::vector<std::unique_ptr<conf::item<std::string>>> confs;
+	custom_ptr<rocksdb::ColumnFamilyHandle> handle;
+
+  public:
+	operator const rocksdb::ColumnFamilyOptions &() const;
+	operator const rocksdb::ColumnFamilyHandle *() const;
+	operator const database &() const;
+
+	operator rocksdb::ColumnFamilyHandle *();
+	operator database &();
+
+	explicit column(database &d, db::descriptor &);
+	column() = delete;
+	column(column &&) = delete;
+	column(const column &) = delete;
+	column &operator=(column &&) = delete;
+	column &operator=(const column &) = delete;
+	~column() noexcept;
+};
+
 #ifdef IRCD_DB_HAS_ALLOCATOR
 /// Dynamic memory
 struct [[gnu::visibility("hidden")]]
@@ -413,43 +450,6 @@ ircd::db::database::stats::passthru final
 
 	passthru(rocksdb::Statistics *const &a, rocksdb::Statistics *const &b);
 	~passthru() noexcept;
-};
-
-struct [[gnu::visibility("hidden")]]
-ircd::db::database::column final
-:std::enable_shared_from_this<database::column>
-,rocksdb::ColumnFamilyDescriptor
-{
-	database *d;
-	db::descriptor *descriptor;
-	std::type_index key_type;
-	std::type_index mapped_type;
-	comparator cmp;
-	prefix_transform prefix;
-	compaction_filter cfilter;
-	rocksdb::WriteStallCondition stall;
-	std::shared_ptr<struct database::stats> stats;
-	std::shared_ptr<struct database::allocator> allocator;
-	rocksdb::BlockBasedTableOptions table_opts;
-	const bool options_preconfiguration;
-	std::vector<std::unique_ptr<conf::item<std::string>>> confs;
-	custom_ptr<rocksdb::ColumnFamilyHandle> handle;
-
-  public:
-	operator const rocksdb::ColumnFamilyOptions &() const;
-	operator const rocksdb::ColumnFamilyHandle *() const;
-	operator const database &() const;
-
-	operator rocksdb::ColumnFamilyHandle *();
-	operator database &();
-
-	explicit column(database &d, db::descriptor &);
-	column() = delete;
-	column(column &&) = delete;
-	column(const column &) = delete;
-	column &operator=(column &&) = delete;
-	column &operator=(const column &) = delete;
-	~column() noexcept;
 };
 
 struct [[gnu::visibility("hidden")]]

@@ -1818,17 +1818,41 @@ ircd::db::describe(const database::column &c)
 ircd::db::database::column::column(database &d,
                                    db::descriptor &descriptor)
 :rocksdb::ColumnFamilyDescriptor
-(
+{
 	descriptor.name, db::options{descriptor.options}
-)
-,d{&d}
-,descriptor{&descriptor}
-,key_type{this->descriptor->type.first}
-,mapped_type{this->descriptor->type.second}
-,cmp{this->d, this->descriptor->cmp}
-,prefix{this->d, this->descriptor->prefix}
-,cfilter{this, this->descriptor->compactor}
-,stall{rocksdb::WriteStallCondition::kNormal}
+}
+,d
+{
+	&d
+}
+,descriptor
+{
+	&descriptor
+}
+,key_type
+{
+	this->descriptor->type.first
+}
+,mapped_type
+{
+	this->descriptor->type.second
+}
+,cmp
+{
+	std::make_unique<comparator>(this->d, this->descriptor->cmp)
+}
+,prefix
+{
+	std::make_unique<prefix_transform>(this->d, this->descriptor->prefix)
+}
+,cfilter
+{
+	std::make_unique<compaction_filter>(this, this->descriptor->compactor)
+}
+,stall
+{
+	rocksdb::WriteStallCondition::kNormal
+}
 ,stats
 {
 	descriptor.name != "default"s?
@@ -1852,11 +1876,11 @@ ircd::db::database::column::column(database &d,
 	if(!this->descriptor->cmp.less)
 	{
 		if(key_type == typeid(string_view))
-			this->cmp.user = cmp_string_view{};
+			this->cmp->user = cmp_string_view{};
 		else if(key_type == typeid(int64_t))
-			this->cmp.user = cmp_int64_t{};
+			this->cmp->user = cmp_int64_t{};
 		else if(key_type == typeid(uint64_t))
-			this->cmp.user = cmp_uint64_t{};
+			this->cmp->user = cmp_uint64_t{};
 		else
 			throw error
 			{
@@ -1867,13 +1891,13 @@ ircd::db::database::column::column(database &d,
 	}
 
 	// Set the key comparator
-	this->options.comparator = &this->cmp;
+	this->options.comparator = this->cmp.get();
 
 	// Set the prefix extractor
-	if(this->prefix.user.get && this->prefix.user.has)
+	if(this->prefix->user.get && this->prefix->user.has)
 		this->options.prefix_extractor = std::shared_ptr<const rocksdb::SliceTransform>
 		{
-			&this->prefix, [](const rocksdb::SliceTransform *) {}
+			this->prefix.get(), [](const rocksdb::SliceTransform *) {}
 		};
 
 	// Set the insert hint prefix extractor
@@ -1881,7 +1905,7 @@ ircd::db::database::column::column(database &d,
 		this->options.memtable_insert_with_hint_prefix_extractor = this->options.prefix_extractor;
 
 	// Set the compaction filter
-	this->options.compaction_filter = &this->cfilter;
+	this->options.compaction_filter = this->cfilter.get();
 
 	// Set filter reductions for this column. This means we expect a key to exist.
 	this->options.optimize_filters_for_hits = this->descriptor->expect_queries_hit;
@@ -2157,14 +2181,16 @@ ircd::db::database::column::column(database &d,
 	}
 }
 {
+	assert(this->cmp);
+	assert(this->prefix);
 	log::debug
 	{
 		log, "schema '%s' column [%s => %s] cmp[%s] pfx[%s] lru:%s:%s bloom:%zu compression:%d %s",
 		db::name(d),
 		demangle(key_type.name()),
 		demangle(mapped_type.name()),
-		this->cmp.Name(),
-		this->options.prefix_extractor? this->prefix.Name() : "none",
+		this->cmp->Name(),
+		this->options.prefix_extractor? this->prefix->Name() : "none",
 		table_opts.block_cache? "YES": "NO",
 		"NO", //table_opts.block_cache_compressed? "YES": "NO",
 		this->descriptor->bloom_bits,

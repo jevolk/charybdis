@@ -2563,18 +2563,6 @@ ircd::db::compact(column &column,
 			return std::move(metadata.name);
 		});
 
-		// Save and restore the existing filter callback so we can allow our
-		// caller to use theirs. Note that this manual compaction should be
-		// exclusive for this column (no background compaction should be
-		// occurring, at least one relying on this filter).
-		auto their_filter(std::move(c.cfilter.user));
-		const unwind unfilter{[&c, &their_filter]
-		{
-			c.cfilter.user = std::move(their_filter);
-		}};
-
-		c.cfilter.user = cb;
-
 		log::debug
 		{
 			log, "[%s]'%s' COMPACT L%d -> L%d files:%zu size:%zu",
@@ -2583,9 +2571,22 @@ ircd::db::compact(column &column,
 			level.level,
 			to_level,
 			level.files.size(),
-			level.size
+			level.size,
 		};
 
+		// Save and restore the existing filter callback so we can allow our
+		// caller to use theirs. Note that this manual compaction should be
+		// exclusive for this column (no background compaction should be
+		// occurring, at least one relying on this filter).
+		assert(c.cfilter);
+		auto their_filter(std::move(c.cfilter->user));
+		const unwind unfilter{[&c, &their_filter]
+		{
+			assert(c.cfilter);
+			c.cfilter->user = std::move(their_filter);
+		}};
+
+		c.cfilter->user = cb;
 		throw_on_error
 		{
 			d.d->CompactFiles(opts, c, files, to_level)
@@ -2622,18 +2623,6 @@ ircd::db::compact(column &column,
 	opts.target_level = std::max(to_level, -1);
 	opts.bottommost_level_compaction = rocksdb::BottommostLevelCompaction::kForce;
 
-	// Save and restore the existing filter callback so we can allow our
-	// caller to use theirs. Note that this manual compaction should be
-	// exclusive for this column (no background compaction should be
-	// occurring, at least one relying on this filter).
-	auto their_filter(std::move(c.cfilter.user));
-	const unwind unfilter{[&c, &their_filter]
-	{
-		c.cfilter.user = std::move(their_filter);
-	}};
-
-	c.cfilter.user = cb;
-
 	log::debug
 	{
 		log, "[%s]'%s' @%lu COMPACT [%s, %s] -> L:%d (Lmax:%d Lbase:%d)",
@@ -2647,6 +2636,19 @@ ircd::db::compact(column &column,
 		d.d->MaxMemCompactionLevel(c),
 	};
 
+	// Save and restore the existing filter callback so we can allow our
+	// caller to use theirs. Note that this manual compaction should be
+	// exclusive for this column (no background compaction should be
+	// occurring, at least one relying on this filter).
+	assert(c.cfilter);
+	auto their_filter(std::move(c.cfilter->user));
+	const unwind unfilter{[&c, &their_filter]
+	{
+		assert(c.cfilter);
+		c.cfilter->user = std::move(their_filter);
+	}};
+
+	c.cfilter->user = cb;
 	throw_on_error
 	{
 		d.d->CompactRange(opts, c, b, e)
