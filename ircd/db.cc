@@ -150,9 +150,10 @@ noexcept
 		};
 
 	request.terminate();
-	log::debug
+	log::logf
 	{
-		log, "Waiting for %zu active of %zu client request contexts; %zu pending; %zu queued",
+		log, log::level::DEBUG,
+		"Waiting for %zu active of %zu client request contexts; %zu pending; %zu queued",
 		request.active(),
 		request.size(),
 		request.pending(),
@@ -191,9 +192,10 @@ try
 			dbdir
 		};
 	else
-		log::info
+		log::logf
 		{
-			log, "Using database directory at `%s'",
+			log, log::level::DEBUG,
+			"Using database directory at `%s'",
 			dbdir
 		};
 }
@@ -218,9 +220,10 @@ try
 	};
 
 	if(fs::support::direct_io(test_file_path))
-		log::debug
+		log::logf
 		{
-			log, "Detected Direct-IO works by opening test file at `%s'",
+			log, log::level::DEBUG,
+			"Detected Direct-IO works by opening test file at `%s'",
 			test_file_path
 		};
 	else

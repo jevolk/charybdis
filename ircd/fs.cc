@@ -87,9 +87,10 @@ try
 		return;
 
 	syscall(setrlimit, RLIMIT_NOFILE, &rlim[1]);
-	log::info
+	log::logf
 	{
-		log, "Raised resource limit for number of open files from %ld to %ld",
+		log, log::level::DEBUG,
+		"Raised resource limit for number of open files from %ld to %ld",
 		rlim[0].rlim_cur,
 		rlim[1].rlim_cur,
 	};
