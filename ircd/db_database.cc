@@ -3489,7 +3489,10 @@ ircd::db::database::cache::cache(database *const &d,
                                  std::shared_ptr<struct database::allocator> allocator,
                                  std::string name,
                                  const ssize_t &initial_capacity)
-#ifdef IRCD_DB_HAS_ALLOCATOR
+#if defined(IRCD_DB_HAS_CACHE_WRAPPER)
+:rocksdb::CacheWrapper{nullptr}
+,d{d}
+#elif defined(IRCD_DB_HAS_ALLOCATOR)
 :rocksdb::Cache{allocator}
 ,d{d}
 #else
@@ -3509,6 +3512,10 @@ ircd::db::database::cache::cache(database *const &d,
 	#endif
 })}
 {
+	#ifdef IRCD_DB_HAS_CACHE_WRAPPER
+	this->CacheWrapper::target_ = this->c;
+	#endif
+
 	assert(bool(c));
 	#ifdef IRCD_DB_HAS_ALLOCATOR
 	assert(c->memory_allocator() == this->allocator.get());
