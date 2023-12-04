@@ -3772,6 +3772,11 @@ try
 		db::database::get(dbname)
 	};
 
+	static const auto key_width
+	{
+		56
+	};
+
 	// Special branch for integer properties that RocksDB aggregates.
 	if(ticker && ticker != "-a")
 	{
@@ -3798,7 +3803,7 @@ try
 			continue;
 
 		char buf[48];
-		out << std::left << std::setw(48) << std::setfill('_') << name << " ";
+		out << std::left << std::setw(key_width) << std::setfill('_') << name << " ";
 		if(has(name, ".bytes"))
 			out << pretty(buf, iec(val));
 		else
@@ -3825,17 +3830,18 @@ try
 		if(!(val.max > 0.0) && ticker != "-a")
 			continue;
 
-		out << std::left << std::setw(48) << std::setfill('_') << name
-		    << std::setfill(' ') << std::right
-		    << " " << std::setw(10) << val.hits << " hit "
-		    << " " << std::setw(13) << val.time << " tot "
-		    << " " << std::setw(12) << uint64_t(val.max) << " max "
-		    << " " << std::setw(10) << uint64_t(val.median) << " med "
-		    << " " << std::setw(9) << uint64_t(val.avg) << " avg "
-		    << " " << std::setw(10) << val.stddev << " dev "
-		    << " " << std::setw(10) << val.pct95 << " p95 "
-		    << " " << std::setw(10) << val.pct99 << " p99 "
-		    << std::endl;
+		out
+		<< std::left << std::setw(key_width) << std::setfill('_') << name
+		<< std::setfill(' ') << std::right
+		<< " " << std::setw(10) << val.hits << " hit "
+		<< " " << std::setw(13) << val.time << " tot "
+		<< " " << std::setw(12) << uint64_t(val.max) << " max "
+		<< " " << std::setw(10) << uint64_t(val.median) << " med "
+		<< " " << std::setw(9) << uint64_t(val.avg) << " avg "
+		<< " " << std::setw(10) << val.stddev << " dev "
+		<< " " << std::setw(10) << val.pct95 << " p95 "
+		<< " " << std::setw(10) << val.pct99 << " p99 "
+		<< std::endl;
 	}
 
 	return true;
@@ -4027,14 +4033,14 @@ try
 
 	struct stats
 	{
-		size_t count;
-		size_t usage;
-		size_t pinned;
-		size_t capacity;
-		size_t hits;
-		size_t misses;
-		size_t inserts;
-		size_t inserts_bytes;
+		size_t count {0};
+		size_t usage {0};
+		size_t pinned {0};
+		size_t capacity {0};
+		size_t hits {0};
+		size_t misses {0};
+		size_t inserts {0};
+		size_t inserts_bytes {0};
 
 		stats &operator+=(const stats &b)
 		{
@@ -4050,140 +4056,27 @@ try
 		}
 	};
 
-	if(!colname)
+	const auto header{[&out]
+	(const string_view &title)
 	{
-		const auto count(db::count(cache(database)));
-		const auto usage(db::usage(cache(database)));
-		const auto pinned(db::pinned(cache(database)));
-		const auto capacity(db::capacity(cache(database)));
-		const auto util_pct
-		{
-			capacity > 0.0? (double(usage) / double(capacity)) : 0.0L
-		};
-
-		const auto hits(db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.hit")));
-		const auto misses(db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.miss")));
-		const auto hit_pct
-		{
-			(misses + hits) > 0? (double(hits) / double(hits + misses)) : 0.0L
-		};
-
-		const auto inserts(db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.add")));
-		const auto inserts_bytes(db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.data.bytes.insert")));
-		const auto ins_miss_pct
-		{
-			misses > 0.0? (double(inserts) / double(misses)) : 0.0L
-		};
-
-		const auto ins_hit_rat
-		{
-			inserts > 0.0? (double(hits) / double(inserts)) : 0.0L
-		};
-
-		const auto ins_cnt_rat
-		{
-			count > 0.0? (double(inserts) / double(count)) : 0.0L
-		};
-
-		out << std::left
-		    << std::setw(24) << "ROW"
-		    << std::right
-		    << " "
-		    << std::setw(26) << "CACHED"
-		    << " "
-		    << std::setw(26) << "CAPACITY"
-		    << " "
-		    << std::setw(9) << "UTIL%"
-		    << "  "
-		    << std::setw(11) << "HITS"
-		    << " "
-		    << std::setw(10) << "MISSES"
-		    << " "
-		    << std::setw(9) << "HIT%"
-		    << "  "
-		    << std::setw(26) << "INSERT TOTAL"
-		    << " "
-		    << std::setw(10) << "INSERT"
-		    << " "
-		    << std::setw(10) << "HIT:INS"
-		    << "  "
-		    << std::setw(8) << "COUNT"
-		    << " "
-		    << std::setw(10) << "INS:CNT"
-		    << "  "
-		    << std::setw(20) << "LOCKED"
-		    << " "
-		    << std::endl;
-
-		out << std::left
-		    << std::setw(24) << "*"
-		    << std::right
-		    << " "
-		    << std::setw(26) << std::right << pretty(iec(usage))
-		    << " "
-		    << std::setw(26) << std::right << pretty(iec(capacity))
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(2) << (util_pct * 100)
-		    << "%"
-		    << "  "
-		    << std::setw(11) << hits
-		    << " "
-		    << std::setw(10) << misses
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(2) << (hit_pct * 100)
-		    << "%"
-		    << "  "
-		    << std::setw(26) << std::right << pretty(iec(inserts_bytes))
-		    << " "
-		    << std::setw(10) << inserts
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(0) << ins_hit_rat
-		    << ":1"
-		    << "  "
-		    << std::setw(8) << std::right << count
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(0) << ins_cnt_rat
-		    << ":1"
-		    << "  "
-		    << std::setw(20) << std::right << pretty(iec(pinned))
-		    << " "
-		    << std::endl
-		    << std::endl;
-
-		// Now set the colname to * so the column total branch is taken
-		// below and we output that line too.
-		colname = "*";
-	}
-
-	out << std::left
-	    << std::setw(24) << "COLUMN"
-	    << std::right
-	    << " "
-	    << std::setw(26) << "CACHED"
-	    << " "
-	    << std::setw(26) << "CAPACITY"
-	    << " "
-	    << std::setw(9) << "UTIL%"
-	    << "  "
-	    << std::setw(11) << "HITS"
-	    << " "
-	    << std::setw(10) << "MISSES"
-	    << " "
-	    << std::setw(9) << "HIT%"
-	    << "  "
-	    << std::setw(26) << "INSERT TOTAL"
-		<< " "
-	    << std::setw(10) << "INSERT"
-	    << " "
-	    << std::setw(10) << "HIT:INS"
-	    << "  "
-	    << std::setw(8) << "COUNT"
-	    << " "
-	    << std::setw(10) << "INS:CNT"
-	    << "  "
-	    << std::setw(20) << "LOCKED"
-	    << " "
-	    << std::endl;
+		out
+		<< std::left
+		<< std::setw(24) << title
+		<< std::right << " "
+		<< std::setw(26) << "CACHED" << " "
+		<< std::setw(26) << "CAPACITY" << " "
+		<< std::setw(9) << "UTIL%" << "  "
+		<< std::setw(9) << "HIT%" << "  "
+		<< std::setw(11) << "HITS" << " "
+		<< std::setw(10) << "MISSES" << " "
+		<< std::setw(10) << "INSERT" << " "
+		<< std::setw(8) << "COUNT" << " "
+		<< std::setw(10) << "HIT:INS" << "  "
+		<< std::setw(10) << "INS:CNT" << "  "
+		<< std::setw(26) << "INSERTED" << " "
+		<< std::setw(20) << "LOCKED" << " "
+		<< '\n';
+	}};
 
 	const auto output{[&out]
 	(const string_view &column_name, const stats &s)
@@ -4213,38 +4106,22 @@ try
 			s.count > 0.0? (double(s.inserts) / double(s.count)) : 0.0L
 		};
 
-		out << std::setw(24) << std::left << column_name
-		    << std::right
-		    << " "
-		    << std::setw(26) << std::right << pretty(iec(s.usage))
-		    << " "
-		    << std::setw(26) << std::right << pretty(iec(s.capacity))
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(2) << (util_pct * 100)
-		    << '%'
-		    << "  "
-		    << std::setw(11) << s.hits
-		    << " "
-		    << std::setw(10) << s.misses
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(2) << (hit_pct * 100)
-		    << '%'
-		    << "  "
-		    << std::setw(26) << pretty(iec(s.inserts_bytes))
-		    << " "
-		    << std::setw(10) << s.inserts
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(0) << ins_hit_rat
-		    << ":1"
-		    << "  "
-		    << std::setw(8) << std::right << s.count
-		    << " "
-		    << std::setw(8) << std::right << std::fixed << std::setprecision(0) << ins_cnt_rat
-		    << ":1"
-		    << "  "
-		    << std::setw(20) << std::right << pretty(iec(s.pinned))
-		    << " "
-		    << std::endl;
+		out
+		<< std::setw(24) << std::left << column_name
+		<< std::right << " "
+		<< std::setw(26) << std::right << pretty(iec(s.usage)) << " "
+		<< std::setw(26) << std::right << pretty(iec(s.capacity)) << " "
+		<< std::setw(8) << std::right << std::fixed << std::setprecision(2) << (util_pct * 100) << '%' << "  "
+		<< std::setw(8) << std::right << std::fixed << std::setprecision(2) << (hit_pct * 100) << '%' << "  "
+		<< std::setw(11) << s.hits << " "
+		<< std::setw(10) << s.misses << " "
+		<< std::setw(10) << s.inserts << " "
+		<< std::setw(8) << std::right << s.count << " "
+		<< std::setw(8) << std::right << std::fixed << std::setprecision(0) << ins_hit_rat << ":1" << "  "
+		<< std::setw(8) << std::right << std::fixed << std::setprecision(0) << ins_cnt_rat << ":1" << "  "
+		<< std::setw(26) << pretty(iec(s.inserts_bytes)) << " "
+		<< std::setw(20) << std::right << pretty(iec(s.pinned)) << " "
+		<< '\n';
 	}};
 
 	const auto totals{[&output]
@@ -4255,17 +4132,16 @@ try
 
 		if(compressed.capacity)
 		{
-			char buf[64];
-			const fmt::sprintf rename
+			const fmt::bsprintf<64> rename
 			{
-				buf, "%s (compressed)", colname
+				"%s (compressed)", colname
 			};
 
 			output(rename, compressed);
 		}
 	}};
 
-	const auto query{[&database, &totals]
+	const auto query_col{[&database]
 	(const string_view &colname, const auto &output)
 	{
 		const db::column column
@@ -4275,57 +4151,87 @@ try
 
 		const stats uncompressed
 		{
-			db::count(cache(column)),
-			db::usage(cache(column)),
-			db::pinned(cache(column)),
-			db::capacity(cache(column)),
-			db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.hit")),
-			db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.miss")),
-			db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.add")),
-			db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
+			.count = db::count(cache(column)),
+			.usage = db::usage(cache(column)),
+			.pinned = db::pinned(cache(column)),
+			.capacity = db::capacity(cache(column)),
+			.hits = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.hit")),
+			.misses = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.miss")),
+			.inserts = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.add")),
+			.inserts_bytes = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
 		};
 
 		const stats compressed
 		{
-			db::count(cache_compressed(column)),
-			db::usage(cache_compressed(column)),
-			0,
-			db::capacity(cache_compressed(column)),
-			db::ticker(cache_compressed(column), db::ticker_id("rocksdb.block.cache.hit")),
-			0,
-			db::ticker(cache_compressed(column), db::ticker_id("rocksdb.block.cache.add")),
-			0
+			.count = db::count(cache_compressed(column)),
+			.usage = db::usage(cache_compressed(column)),
+			.pinned = 0,
+			.capacity = db::capacity(cache_compressed(column)),
+			.hits = db::ticker(cache_compressed(column), db::ticker_id("rocksdb.block.cache.hit")),
+			.misses = 0,
+			.inserts = db::ticker(cache_compressed(column), db::ticker_id("rocksdb.block.cache.add")),
+			.inserts_bytes = 0,
 		};
 
 		output(colname, uncompressed, compressed);
 	}};
 
-	// Querying the totals for all caches for all columns in a loop
-	if(colname == "*")
+	const auto query_row{[&database]
+	(const auto &output)
 	{
-		stats s_total{0}, comp_total{0};
+		const stats s
+		{
+			.count = db::count(cache(database)),
+			.usage = db::usage(cache(database)),
+			.pinned = db::pinned(cache(database)),
+			.capacity = db::capacity(cache(database)),
+			.hits = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.hit")),
+			.misses = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.miss")),
+			.inserts = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.add")),
+			.inserts_bytes = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
+		};
+
+		output("row", s, stats{});
+	}};
+
+	// Querying the totals for all caches for all columns in a loop
+	if(!colname || colname == "*" || colname == "**")
+	{
+		stats s_total, comp_total;
+
+		header("CACHE");
 		for(const auto &column : database.columns)
-			query(name(*column), [&](const auto &column, const auto &s, const auto &comp)
+			query_col(name(*column), [&](const auto &colname, const auto &s, const auto &comp)
 			{
 				s_total += s;
 				comp_total += comp;
+				totals(colname, s, comp);
 			});
 
+		out << '\n';
+		header("CACHE");
+		query_row([&](const auto &column, const auto &s, const auto &comp)
+		{
+			s_total += s;
+			comp_total += comp;
+			totals("row", s, comp);
+		});
+
+		out << '\n';
+		header("TOTAL");
 		totals("*", s_total, comp_total);
 		return true;
 	}
 
-	// Query the cache for a single column
-	if(colname != "**")
+	if(colname != "row")
 	{
-		query(colname, totals);
+		header("COLUMN");
+		query_col(colname, totals);
 		return true;
 	}
 
-	// Querying the cache for all columns in a loop
-	for(const auto &column : database.columns)
-		query(name(*column), totals);
-
+	header("ROW");
+	query_row(totals);
 	return true;
 }
 catch(const std::out_of_range &e)
