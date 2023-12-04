@@ -4448,7 +4448,8 @@ noexcept
 //
 
 bool
-ircd::db::value_required(const op &op)
+ircd::db::value_required(const op op)
+noexcept
 {
 	switch(op)
 	{
@@ -5701,7 +5702,8 @@ ircd::db::val(const rocksdb::Iterator &it)
 //
 
 const std::string &
-ircd::db::reflect(const rocksdb::Tickers &type)
+ircd::db::reflect(const rocksdb::Tickers type)
+noexcept
 {
 	const auto &names(rocksdb::TickersNameMap);
 	const auto it(std::find_if(begin(names), end(names), [&type]
@@ -5715,7 +5717,8 @@ ircd::db::reflect(const rocksdb::Tickers &type)
 }
 
 const std::string &
-ircd::db::reflect(const rocksdb::Histograms &type)
+ircd::db::reflect(const rocksdb::Histograms type)
+noexcept
 {
 	const auto &names(rocksdb::HistogramsNameMap);
 	const auto it(std::find_if(begin(names), end(names), [&type]
@@ -5729,7 +5732,8 @@ ircd::db::reflect(const rocksdb::Histograms &type)
 }
 
 ircd::string_view
-ircd::db::reflect(const pos &pos)
+ircd::db::reflect(const pos pos)
+noexcept
 {
 	switch(pos)
 	{
@@ -5744,7 +5748,8 @@ ircd::db::reflect(const pos &pos)
 }
 
 ircd::string_view
-ircd::db::reflect(const op &op)
+ircd::db::reflect(const op op)
+noexcept
 {
 	switch(op)
 	{
@@ -5760,7 +5765,8 @@ ircd::db::reflect(const op &op)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::FlushReason &r)
+ircd::db::reflect(const rocksdb::FlushReason r)
+noexcept
 {
 	using Reason = rocksdb::FlushReason;
 
@@ -5790,7 +5796,8 @@ ircd::db::reflect(const rocksdb::FlushReason &r)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::CompactionReason &r)
+ircd::db::reflect(const rocksdb::CompactionReason r)
+noexcept
 {
 	using Reason = rocksdb::CompactionReason;
 
@@ -5835,7 +5842,8 @@ ircd::db::reflect(const rocksdb::CompactionReason &r)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::BackgroundErrorReason &r)
+ircd::db::reflect(const rocksdb::BackgroundErrorReason r)
+noexcept
 {
 	using Reason = rocksdb::BackgroundErrorReason;
 
@@ -5860,7 +5868,8 @@ ircd::db::reflect(const rocksdb::BackgroundErrorReason &r)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::WriteStallCondition &c)
+ircd::db::reflect(const rocksdb::WriteStallCondition c)
+noexcept
 {
 	using Condition = rocksdb::WriteStallCondition;
 
@@ -5875,7 +5884,24 @@ ircd::db::reflect(const rocksdb::WriteStallCondition &c)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::Env::Priority &p)
+ircd::db::reflect(const rocksdb::Cache::Priority p)
+noexcept
+{
+	using Priority = rocksdb::Cache::Priority;
+
+	switch(p)
+	{
+		case Priority::HIGH:    return "HIGH";
+		case Priority::LOW:     return "LOW";
+		case Priority::BOTTOM:  return "BOTTOM";
+	}
+
+	return "????";
+}
+
+ircd::string_view
+ircd::db::reflect(const rocksdb::Env::Priority p)
+noexcept
 {
 	using Priority = rocksdb::Env::Priority;
 
@@ -5895,7 +5921,8 @@ ircd::db::reflect(const rocksdb::Env::Priority &p)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::Env::IOPriority &p)
+ircd::db::reflect(const rocksdb::Env::IOPriority p)
+noexcept
 {
 	using Priority = rocksdb::Env::IOPriority;
 
@@ -5916,7 +5943,8 @@ ircd::db::reflect(const rocksdb::Env::IOPriority &p)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::Env::WriteLifeTimeHint &h)
+ircd::db::reflect(const rocksdb::Env::WriteLifeTimeHint h)
+noexcept
 {
 	using Hint = rocksdb::Env::WriteLifeTimeHint;
 
@@ -5934,7 +5962,8 @@ ircd::db::reflect(const rocksdb::Env::WriteLifeTimeHint &h)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::Status::Severity &s)
+ircd::db::reflect(const rocksdb::Status::Severity s)
+noexcept
 {
 	using Severity = rocksdb::Status::Severity;
 
@@ -5952,7 +5981,8 @@ ircd::db::reflect(const rocksdb::Status::Severity &s)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::Status::Code &s)
+ircd::db::reflect(const rocksdb::Status::Code s)
+noexcept
 {
 	using Code = rocksdb::Status::Code;
 
@@ -5983,7 +6013,8 @@ ircd::db::reflect(const rocksdb::Status::Code &s)
 }
 
 ircd::string_view
-ircd::db::reflect(const rocksdb::RandomAccessFile::AccessPattern &p)
+ircd::db::reflect(const rocksdb::RandomAccessFile::AccessPattern p)
+noexcept
 {
 	using AccessPattern = rocksdb::RandomAccessFile::AccessPattern;
 

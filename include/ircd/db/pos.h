@@ -15,7 +15,7 @@ namespace ircd::db
 {
 	enum class pos :int8_t;
 
-	string_view reflect(const pos &);
+	string_view reflect(const pos) noexcept;
 }
 
 /// Types of iterator operations

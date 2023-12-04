@@ -18,8 +18,8 @@ namespace ircd::db
 
 	// Indicates an op uses both a key and value for its operation. Some only use
 	// a key name so an empty value argument in a delta is okay when false.
-	bool value_required(const op &);
-	string_view reflect(const op &);
+	bool value_required(const op) noexcept;
+	string_view reflect(const op) noexcept;
 }
 
 /// Types of delta operations

@@ -95,18 +95,19 @@ namespace ircd::db
 	extern ctx::pool request;
 
 	// reflections
-	string_view reflect(const rocksdb::Status::Code &);
-	string_view reflect(const rocksdb::Status::Severity &);
-	string_view reflect(const rocksdb::Env::Priority &p);
-	string_view reflect(const rocksdb::Env::IOPriority &p);
-	string_view reflect(const rocksdb::Env::WriteLifeTimeHint &);
-	string_view reflect(const rocksdb::WriteStallCondition &);
-	string_view reflect(const rocksdb::BackgroundErrorReason &);
-	string_view reflect(const rocksdb::CompactionReason &);
-	string_view reflect(const rocksdb::FlushReason &);
-	string_view reflect(const rocksdb::RandomAccessFile::AccessPattern &p);
-	const std::string &reflect(const rocksdb::Tickers &);
-	const std::string &reflect(const rocksdb::Histograms &);
+	string_view reflect(const rocksdb::Status::Code) noexcept;
+	string_view reflect(const rocksdb::Status::Severity) noexcept;
+	string_view reflect(const rocksdb::Cache::Priority) noexcept;
+	string_view reflect(const rocksdb::Env::Priority) noexcept;
+	string_view reflect(const rocksdb::Env::IOPriority) noexcept;
+	string_view reflect(const rocksdb::Env::WriteLifeTimeHint) noexcept;
+	string_view reflect(const rocksdb::WriteStallCondition) noexcept;
+	string_view reflect(const rocksdb::BackgroundErrorReason) noexcept;
+	string_view reflect(const rocksdb::CompactionReason) noexcept;
+	string_view reflect(const rocksdb::FlushReason) noexcept;
+	string_view reflect(const rocksdb::RandomAccessFile::AccessPattern) noexcept;
+	const std::string &reflect(const rocksdb::Tickers) noexcept;
+	const std::string &reflect(const rocksdb::Histograms) noexcept;
 
 	// Frequently used get options and set options are separate from the string/map system
 	rocksdb::WriteOptions make_opts(const sopts &) noexcept;
