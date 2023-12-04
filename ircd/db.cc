@@ -5492,10 +5492,12 @@ noexcept
 	assume(def.readahead_size == 0);
 	assume(def.prefix_same_as_start == false);
 	assume(def.table_filter == nullptr);
+	#ifdef IRCD_DB_HAS_AUTO_READAHEAD
+	assume(def.adaptive_readahead == false);
+	#endif
 
 	rocksdb::ReadOptions ret{def};
 	ret.snapshot = opts.snapshot;
-	ret.readahead_size = opts.readahead;
 
 	// slice* for exclusive upper bound. when prefixes are used this value must
 	// have the same prefix because ordering is not guaranteed between prefixes
@@ -5505,6 +5507,14 @@ noexcept
 	ret.verify_checksums = opts.checksum <= -1?
 		bool(read_checksum):
 		opts.checksum;
+
+	if(opts.readahead > 0)
+		ret.readahead_size = opts.readahead;
+
+	#ifdef IRCD_DB_HAS_AUTO_READAHEAD
+	if(opts.readahead < 0)
+		ret.adaptive_readahead = true;
+	#endif
 
 	if(opts.tailing)
 		ret.tailing = true;

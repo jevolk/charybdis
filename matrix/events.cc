@@ -318,7 +318,7 @@ ircd::m::events::source::for_each(const range &range,
 	{
 		.cache = false,
 		.checksum = false,
-		.readahead = size_t(readahead) & boolmask<size_t>(ascending),
+		.readahead = int32_t(readahead) & boolmask<int32_t>(ascending),
 	};
 
 	auto it
@@ -379,7 +379,7 @@ ircd::m::events::content::for_each(const closure &closure)
 	{
 		.cache = false,
 		.checksum = false,
-		.readahead = size_t(readahead),
+		.readahead = int32_t(readahead),
 	};
 
 	db::column &column
@@ -498,7 +498,7 @@ ircd::m::events::refs::for_each(const range &range,
 	{
 		.cache = false,
 		.checksum = false,
-		.readahead = size_t(readahead),
+		.readahead = int32_t(readahead),
 	};
 
 	const auto start

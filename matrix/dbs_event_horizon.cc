@@ -115,6 +115,7 @@ ircd::m::dbs::desc::event_horizon
 	.meta_block_size = size_t(event_horizon__meta_block__size),
 	.compression = bool(compress_enable)? string_view{event_horizon__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.readahead_blocks = 0,
 };
 
 //

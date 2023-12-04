@@ -2127,6 +2127,12 @@ ircd::db::database::column::column(database &d,
 		rocksdb::BlockBasedTableOptions::PrepopulateBlockCache::kDisable;
 	#endif
 
+	#ifdef IRCD_DB_HAS_AUTO_READAHEAD
+	table_opts.max_auto_readahead_size = this->descriptor->readahead_blocks * this->descriptor->block_size;
+	table_opts.initial_auto_readahead_size = this->descriptor->block_size * 32; //TODO: XXX
+	table_opts.num_file_reads_for_auto_readahead = 1;
+	#endif
+
 	// Tickers::READ_AMP_TOTAL_READ_BYTES / Tickers::READ_AMP_ESTIMATE_USEFUL_BYTES
 	//table_opts.read_amp_bytes_per_bit = 8;
 

@@ -102,6 +102,7 @@ ircd::m::dbs::desc::event_idx
 	.meta_block_size = size_t(event_idx__meta_block__size),
 	.compression = bool(compress_enable)? string_view{event_idx__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.readahead_blocks = 0,
 };
 
 //

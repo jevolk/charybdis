@@ -127,18 +127,19 @@ struct ircd::db::descriptor
 	};
 
 	/// The size of a write buffer is `block_size * write_buffer_blocks`
-	size_t write_buffer_blocks
-	{
-		8192
-	};
+	size_t write_buffer_blocks {8192};
+
+	/// The number of blocks to prefetch on iteration. This should be zero
+	/// when the column is only used for point queries. Override on a per-
+	/// iteration basis with db::gopts::readahead. Unlike the former, this
+	/// value is only a maximum; actual prefetch is decided internally based
+	/// on query pattern.
+	size_t readahead_blocks {4096};
 
 	/// The number of level0 files allowed to buffer before compacting. Too
 	/// much data at level0 will slow down queries, but too much compaction
 	/// will increase IOPS for the server with constant reorganization.
-	size_t compaction_trigger
-	{
-		2
-	};
+	size_t compaction_trigger {2};
 
 	/// Circuit-breaker to disable automatic compaction specifically for this
 	/// column from this descriptor.

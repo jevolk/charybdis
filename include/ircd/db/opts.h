@@ -69,8 +69,8 @@ struct ircd::db::gopts
 	/// 0 = Checksums will not be checked (overrides conf).
 	int8_t checksum {-1};
 
-	/// Readahead bytes.
-	size_t readahead {0};
+	/// Readahead bytes; -1 = automatic
+	int32_t readahead {0};
 
 	/// Bounding keys
 	const rocksdb::Slice
