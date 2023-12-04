@@ -1026,6 +1026,13 @@ try
 		fs::support::rlimit_nofile():
 		-1;
 
+	// Detect if O_DIRECT is possible if db::init left a file in the
+	// database directory claiming such. User can force no direct io
+	// with program option at startup (i.e -nodirect).
+	opts->use_direct_reads = bool(fs::fd::opts::direct_io_enable)?
+		fs::exists(init::direct_io_test_file_path):
+		false;
+
 	// MUST be 0 or std::threads are spawned in rocksdb.
 	opts->max_file_opening_threads = 0;
 
@@ -1068,13 +1075,6 @@ try
 	// all filesystems so disabled for now.
 	// TODO: use fs::support::test_fallocate() test similar to direct_io_test_file.
 	opts->allow_fallocate = false;
-
-	// Detect if O_DIRECT is possible if db::init left a file in the
-	// database directory claiming such. User can force no direct io
-	// with program option at startup (i.e -nodirect).
-	opts->use_direct_reads = bool(fs::fd::opts::direct_io_enable)?
-		fs::exists(init::direct_io_test_file_path):
-		false;
 
 	// Use the determined direct io value for writes as well.
 	//opts->use_direct_io_for_flush_and_compaction = opts->use_direct_reads;
