@@ -70,14 +70,14 @@ decltype(ircd::server::wait_all_timeout)
 ircd::server::wait_all_timeout
 {
 	{ "name",     "ircd.server.wait_all.timeout" },
-	{ "default",  4L                             },
+	{ "default",  3L                             },
 };
 
 decltype(ircd::server::wait_all_max)
 ircd::server::wait_all_max
 {
 	{ "name",     "ircd.server.wait_all.max" },
-	{ "default",  5L                         },
+	{ "default",  4L                         },
 };
 
 decltype(ircd::server::peers_alloc)
@@ -151,11 +151,13 @@ ircd::server::wait()
 
 		log::warning
 		{
-			log, "Waiting for %zu tags on %zu links on %zu of %zu peers to close...",
+			log, "Waiting for %zu tags on %zu links on %zu of %zu peers to close (%zu/%zu)...",
 			tag_count(),
 			link_count(),
 			peer_unfinished(),
-			peer_count()
+			peer_count(),
+			i,
+			max,
 		};
 	}
 }
