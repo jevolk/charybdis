@@ -1071,6 +1071,10 @@ try
 	opts->write_thread_max_yield_usec = 0;
 	opts->write_thread_slow_yield_usec = 0;
 
+	#ifdef IRCD_DB_HAS_AVOID_BLOCKING_IO
+	opts->avoid_unnecessary_blocking_io = true;
+	#endif
+
 	// Doesn't appear to be in effect when direct io is used. Not supported by
 	// all filesystems so disabled for now.
 	// TODO: use fs::support::test_fallocate() test similar to direct_io_test_file.
