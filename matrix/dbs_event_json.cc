@@ -47,20 +47,6 @@ ircd::m::dbs::desc::event_json__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::event_json__cache_comp__size)
-ircd::m::dbs::desc::event_json__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._event_json.cache_comp.size" },
-		{ "default",  long(0_MiB)                              },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{event_json__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::event_json), value);
-	}
-};
-
 decltype(ircd::m::dbs::desc::event_json__bloom__bits)
 ircd::m::dbs::desc::event_json__bloom__bits
 {
@@ -98,7 +84,6 @@ ircd::m::dbs::desc::event_json
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(event_json__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(event_json__block__size),

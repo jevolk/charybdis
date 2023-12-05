@@ -45,7 +45,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> event_sender__block__size;
 	extern conf::item<size_t> event_sender__meta_block__size;
 	extern conf::item<size_t> event_sender__cache__size;
-	extern conf::item<size_t> event_sender__cache_comp__size;
 	extern const db::prefix_transform event_sender__pfx;
 	extern const db::descriptor event_sender;
 }

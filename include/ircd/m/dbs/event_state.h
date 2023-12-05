@@ -43,7 +43,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> event_state__block__size;
 	extern conf::item<size_t> event_state__meta_block__size;
 	extern conf::item<size_t> event_state__cache__size;
-	extern conf::item<size_t> event_state__cache_comp__size;
 	extern const db::comparator event_state__cmp;
 	extern const db::descriptor event_state;
 }

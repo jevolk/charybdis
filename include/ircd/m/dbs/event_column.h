@@ -42,7 +42,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> content__block__size;
 	extern conf::item<size_t> content__meta_block__size;
 	extern conf::item<size_t> content__cache__size;
-	extern conf::item<size_t> content__cache_comp__size;
 	extern conf::item<size_t> content__file__size__max;
 	extern conf::item<size_t> content__compaction_trigger;
 	extern const db::descriptor content;
@@ -51,48 +50,41 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> depth__block__size;
 	extern conf::item<size_t> depth__meta_block__size;
 	extern conf::item<size_t> depth__cache__size;
-	extern conf::item<size_t> depth__cache_comp__size;
 	extern const db::descriptor depth;
 
 	extern conf::item<std::string> event_id__comp;
 	extern conf::item<size_t> event_id__block__size;
 	extern conf::item<size_t> event_id__meta_block__size;
 	extern conf::item<size_t> event_id__cache__size;
-	extern conf::item<size_t> event_id__cache_comp__size;
 	extern const db::descriptor event_id;
 
 	extern conf::item<std::string> origin_server_ts__comp;
 	extern conf::item<size_t> origin_server_ts__block__size;
 	extern conf::item<size_t> origin_server_ts__meta_block__size;
 	extern conf::item<size_t> origin_server_ts__cache__size;
-	extern conf::item<size_t> origin_server_ts__cache_comp__size;
 	extern const db::descriptor origin_server_ts;
 
 	extern conf::item<std::string> room_id__comp;
 	extern conf::item<size_t> room_id__block__size;
 	extern conf::item<size_t> room_id__meta_block__size;
 	extern conf::item<size_t> room_id__cache__size;
-	extern conf::item<size_t> room_id__cache_comp__size;
 	extern const db::descriptor room_id;
 
 	extern conf::item<std::string> sender__comp;
 	extern conf::item<size_t> sender__block__size;
 	extern conf::item<size_t> sender__meta_block__size;
 	extern conf::item<size_t> sender__cache__size;
-	extern conf::item<size_t> sender__cache_comp__size;
 	extern const db::descriptor sender;
 
 	extern conf::item<std::string> state_key__comp;
 	extern conf::item<size_t> state_key__block__size;
 	extern conf::item<size_t> state_key__meta_block__size;
 	extern conf::item<size_t> state_key__cache__size;
-	extern conf::item<size_t> state_key__cache_comp__size;
 	extern const db::descriptor state_key;
 
 	extern conf::item<std::string> type__comp;
 	extern conf::item<size_t> type__block__size;
 	extern conf::item<size_t> type__meta_block__size;
 	extern conf::item<size_t> type__cache__size;
-	extern conf::item<size_t> type__cache_comp__size;
 	extern const db::descriptor type;
 }

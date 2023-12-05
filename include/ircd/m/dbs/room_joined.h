@@ -36,7 +36,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> room_joined__block__size;
 	extern conf::item<size_t> room_joined__meta_block__size;
 	extern conf::item<size_t> room_joined__cache__size;
-	extern conf::item<size_t> room_joined__cache_comp__size;
 	extern conf::item<size_t> room_joined__bloom__bits;
 	extern const db::prefix_transform room_joined__pfx;
 	extern const db::descriptor room_joined;

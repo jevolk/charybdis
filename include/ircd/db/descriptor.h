@@ -54,9 +54,6 @@ struct ircd::db::descriptor
 	/// Size of the LRU cache for uncompressed blocks
 	ssize_t cache_size { -1 };
 
-	/// Size of the LRU cache for compressed blocks
-	ssize_t cache_size_comp { -1 };
-
 	/// Bloom filter bits. Filter is still useful even if queries are expected
 	/// to always hit on this column; see `expect_queries_hit` option.
 	size_t bloom_bits { 10 };

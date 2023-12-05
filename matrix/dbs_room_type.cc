@@ -52,20 +52,6 @@ ircd::m::dbs::desc::room_type__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::room_type__cache_comp__size)
-ircd::m::dbs::desc::room_type__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._room_type.cache_comp.size" },
-		{ "default",  long(8_MiB)                             },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{room_type__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::room_type), value);
-	}
-};
-
 /// Prefix transform for the room_type. The prefix here is a room_id
 /// and the suffix is the type+depth+event_id concatenation.
 /// for efficient sequences
@@ -135,9 +121,6 @@ ircd::m::dbs::desc::room_type
 
 	// cache size
 	bool(cache_enable)? -1 : 0,
-
-	// cache size for compressed assets
-	bool(cache_comp_enable)? -1 : 0,
 
 	// bloom filter bits
 	0, // no bloom filter because of possible comparator issues

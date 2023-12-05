@@ -37,7 +37,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> room_events__block__size;
 	extern conf::item<size_t> room_events__meta_block__size;
 	extern conf::item<size_t> room_events__cache__size;
-	extern conf::item<size_t> room_events__cache_comp__size;
 	extern const db::prefix_transform room_events__pfx;
 	extern const db::comparator room_events__cmp;
 	extern const db::descriptor room_events;

@@ -38,7 +38,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> event_horizon__block__size;
 	extern conf::item<size_t> event_horizon__meta_block__size;
 	extern conf::item<size_t> event_horizon__cache__size;
-	extern conf::item<size_t> event_horizon__cache_comp__size;
 	extern const db::prefix_transform event_horizon__pfx;
 	extern const db::descriptor event_horizon;
 }

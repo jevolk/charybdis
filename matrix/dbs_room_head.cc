@@ -111,9 +111,6 @@ ircd::m::dbs::desc::room_head
 	// cache size
 	bool(cache_enable)? -1 : 0,
 
-	// cache size for compressed assets
-	0, //no compresed cache
-
 	// bloom filter bits
 	0, //table too ephemeral for bloom generation/usefulness
 

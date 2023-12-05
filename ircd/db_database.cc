@@ -2111,11 +2111,6 @@ ircd::db::database::column::column(database &d,
 		table_opts.cache_index_and_filter_blocks = false; // MBZ or error w/o block_cache
 	}
 
-	// Setup the cache for compressed assets.
-	const auto &cache_size_comp(this->descriptor->cache_size_comp);
-	if(cache_size_comp != 0)
-		; //table_opts.block_cache_compressed = std::make_shared<database::cache>(this->d, this->stats, this->allocator, this->name, cache_size_comp);
-
 	// Setup the bloom filter.
 	const auto &bloom_bits(this->descriptor->bloom_bits);
 	if(bloom_bits)

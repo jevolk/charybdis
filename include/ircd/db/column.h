@@ -38,9 +38,7 @@ namespace ircd::db
 	template<> prop_map property(const column &, const string_view &name);
 
 	// Access to the column's caches (see cache.h interface)
-	[[gnu::deprecated]] const rocksdb::Cache *cache_compressed(const column &);
 	const rocksdb::Cache *cache(const column &);
-	[[gnu::deprecated]] rocksdb::Cache *cache_compressed(column &);
 	rocksdb::Cache *cache(column &);
 
 	// [GET] Tests if key exists

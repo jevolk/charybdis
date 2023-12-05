@@ -22,16 +22,6 @@ ircd::m::dbs::cache_enable
 	{ "default",  true                      },
 };
 
-/// Coarse variable for enabling the compressed cache on the events database;
-/// note this conf item is only effective by setting an environmental variable
-/// before daemon startup. It has no effect in any other regard.
-decltype(ircd::m::dbs::cache_comp_enable)
-ircd::m::dbs::cache_comp_enable
-{
-	{ "name",     "ircd.m.dbs.cache.comp.enable" },
-	{ "default",  false                          },
-};
-
 /// Scales the default cache sizes. Each increment will double the size of all
 /// caches from their configured value; each decrement will halve the size.
 decltype(ircd::m::dbs::cache_scale)

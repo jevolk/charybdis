@@ -48,7 +48,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> room_type__block__size;
 	extern conf::item<size_t> room_type__meta_block__size;
 	extern conf::item<size_t> room_type__cache__size;
-	extern conf::item<size_t> room_type__cache_comp__size;
 	extern const db::prefix_transform room_type__pfx;
 	extern const db::comparator room_type__cmp;
 	extern const db::descriptor room_type;

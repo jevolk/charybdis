@@ -3131,26 +3131,12 @@ ircd::db::cache(column &column)
 	return c.table_opts.block_cache.get();
 }
 
-rocksdb::Cache *
-ircd::db::cache_compressed(column &column)
-{
-	database::column &c(column);
-	return nullptr; // c.table_opts.block_cache_compressed.get();
-}
-
 [[gnu::hot]]
 const rocksdb::Cache *
 ircd::db::cache(const column &column)
 {
 	const database::column &c(column);
 	return c.table_opts.block_cache.get();
-}
-
-const rocksdb::Cache *
-ircd::db::cache_compressed(const column &column)
-{
-	const database::column &c(column);
-	return nullptr; // c.table_opts.block_cache_compressed.get();
 }
 
 template<>

@@ -36,7 +36,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> room_state__block__size;
 	extern conf::item<size_t> room_state__meta_block__size;
 	extern conf::item<size_t> room_state__cache__size;
-	extern conf::item<size_t> room_state__cache_comp__size;
 	extern conf::item<size_t> room_state__bloom__bits;
 	extern const db::prefix_transform room_state__pfx;
 	extern const db::descriptor room_state;

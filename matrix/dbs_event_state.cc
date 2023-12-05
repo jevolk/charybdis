@@ -52,20 +52,6 @@ ircd::m::dbs::desc::event_state__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::event_state__cache_comp__size)
-ircd::m::dbs::desc::event_state__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._event_state.cache_comp.size" },
-		{ "default",  long(0_MiB)                               },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{event_state__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::event_state), value);
-	}
-};
-
 const ircd::db::comparator
 ircd::m::dbs::desc::event_state__cmp
 {
@@ -94,7 +80,6 @@ ircd::m::dbs::desc::event_state
 
 	.cmp = event_state__cmp,
 	.cache_size = bool(cache_enable)? -1 : 0, //uses conf item
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = 0,
 	.expect_queries_hit = false,
 	.block_size = size_t(event_state__block__size),

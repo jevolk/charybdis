@@ -47,20 +47,6 @@ ircd::m::dbs::desc::room_joined__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::room_joined__cache_comp__size)
-ircd::m::dbs::desc::room_joined__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._room_joined.cache_comp.size" },
-		{ "default",  long(8_MiB)                               },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{room_joined__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::room_joined), value);
-	}
-};
-
 decltype(ircd::m::dbs::desc::room_joined__bloom__bits)
 ircd::m::dbs::desc::room_joined__bloom__bits
 {
@@ -118,9 +104,6 @@ ircd::m::dbs::desc::room_joined
 
 	// cache size
 	bool(cache_enable)? -1 : 0,
-
-	// cache size for compressed assets
-	bool(cache_comp_enable)? -1 : 0,
 
 	// bloom filter bits
 	size_t(room_joined__bloom__bits),

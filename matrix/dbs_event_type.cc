@@ -47,20 +47,6 @@ ircd::m::dbs::desc::event_type__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::event_type__cache_comp__size)
-ircd::m::dbs::desc::event_type__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._event_type.cache_comp.size" },
-		{ "default",  long(0_MiB)                              },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{event_type__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::event_type), value);
-	}
-};
-
 const ircd::db::prefix_transform
 ircd::m::dbs::desc::event_type__pfx
 {
@@ -97,7 +83,6 @@ ircd::m::dbs::desc::event_type
 
 	.prefix = event_type__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0, //uses conf item
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = 0,
 	.expect_queries_hit = false,
 	.block_size = size_t(event_type__block__size),

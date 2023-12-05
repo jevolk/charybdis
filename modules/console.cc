@@ -4124,23 +4124,6 @@ try
 		<< '\n';
 	}};
 
-	const auto totals{[&output]
-	(const string_view &colname, const stats &uncompressed, const stats &compressed)
-	{
-		if(uncompressed.capacity)
-			output(colname, uncompressed);
-
-		if(compressed.capacity)
-		{
-			const fmt::bsprintf<64> rename
-			{
-				"%s (compressed)", colname
-			};
-
-			output(rename, compressed);
-		}
-	}};
-
 	const auto query_col{[&database]
 	(const string_view &colname, const auto &output)
 	{
@@ -4161,19 +4144,7 @@ try
 			.inserts_bytes = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
 		};
 
-		const stats compressed
-		{
-			.count = db::count(cache_compressed(column)),
-			.usage = db::usage(cache_compressed(column)),
-			.pinned = 0,
-			.capacity = db::capacity(cache_compressed(column)),
-			.hits = db::ticker(cache_compressed(column), db::ticker_id("rocksdb.block.cache.hit")),
-			.misses = 0,
-			.inserts = db::ticker(cache_compressed(column), db::ticker_id("rocksdb.block.cache.add")),
-			.inserts_bytes = 0,
-		};
-
-		output(colname, uncompressed, compressed);
+		output(colname, uncompressed);
 	}};
 
 	const auto query_row{[&database]
@@ -4191,47 +4162,45 @@ try
 			.inserts_bytes = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
 		};
 
-		output("row", s, stats{});
+		output("row", s);
 	}};
 
 	// Querying the totals for all caches for all columns in a loop
 	if(!colname || colname == "*" || colname == "**")
 	{
-		stats s_total, comp_total;
+		stats s_total;
 
 		header("CACHE");
 		for(const auto &column : database.columns)
-			query_col(name(*column), [&](const auto &colname, const auto &s, const auto &comp)
+			query_col(name(*column), [&](const auto &colname, const auto &s)
 			{
 				s_total += s;
-				comp_total += comp;
-				totals(colname, s, comp);
+				output(colname, s);
 			});
 
 		out << '\n';
 		header("CACHE");
-		query_row([&](const auto &column, const auto &s, const auto &comp)
+		query_row([&](const auto &column, const auto &s)
 		{
 			s_total += s;
-			comp_total += comp;
-			totals("row", s, comp);
+			output("row", s);
 		});
 
 		out << '\n';
 		header("TOTAL");
-		totals("*", s_total, comp_total);
+		output("*", s_total);
 		return true;
 	}
 
 	if(colname != "row")
 	{
 		header("COLUMN");
-		query_col(colname, totals);
+		query_col(colname, output);
 		return true;
 	}
 
 	header("ROW");
-	query_row(totals);
+	query_row(output);
 	return true;
 }
 catch(const std::out_of_range &e)
@@ -4278,7 +4247,6 @@ try
 		};
 
 		db::clear(cache(column));
-		db::clear(cache_compressed(column));
 		out << "Cleared caches for '" << name(database) << "' '" << colname << "'"
 		    << std::endl;
 	}};
@@ -4294,15 +4262,11 @@ try
 		const bool removed[]
 		{
 			db::remove(cache(column), key),
-			db::remove(cache_compressed(column), key)
 		};
 
 		out << "Removed key from";
 		if(removed[0])
 			out << " [uncompressed cache]";
-
-		if(removed[1])
-			out << " [compressed cache]";
 
 		out << std::endl;
 	}};

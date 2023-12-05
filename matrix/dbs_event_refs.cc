@@ -68,20 +68,6 @@ ircd::m::dbs::desc::event_refs__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::event_refs__cache_comp__size)
-ircd::m::dbs::desc::event_refs__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._event_refs.cache_comp.size" },
-		{ "default",  long(0_MiB)                              },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{event_refs__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::event_refs), value);
-	}
-};
-
 const ircd::db::prefix_transform
 ircd::m::dbs::desc::event_refs__pfx
 {
@@ -142,7 +128,6 @@ ircd::m::dbs::desc::event_refs
 	.cmp = event_refs__cmp,
 	.prefix = event_refs__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0, //uses conf item
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = 0,
 	.expect_queries_hit = true,
 	.block_size = size_t(event_refs__block__size),

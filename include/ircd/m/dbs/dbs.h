@@ -20,7 +20,6 @@ namespace ircd::m::dbs
 
 	// General confs
 	extern conf::item<bool> cache_enable;
-	extern conf::item<bool> cache_comp_enable;
 	extern conf::item<long> cache_scale;
 	extern conf::item<bool> prefetch_enable;
 	extern conf::item<bool> compress_enable;

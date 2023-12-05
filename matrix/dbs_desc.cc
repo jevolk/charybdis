@@ -438,9 +438,6 @@ ircd::m::dbs::desc::events__default
 	// cache size
 	0_MiB,
 
-	// cache size for compressed assets
-	0_MiB,
-
 	// bloom filter bits
 	0,
 

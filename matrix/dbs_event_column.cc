@@ -70,21 +70,6 @@ ircd::m::dbs::desc::event_id__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::event_id__cache_comp__size)
-ircd::m::dbs::desc::event_id__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.event_id.cache_comp.size"  },
-		{ "default",  long(16_MiB)                           },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "event_id"_>()));
-		const size_t &value{event_id__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::event_id
 {
@@ -108,7 +93,6 @@ ircd::m::dbs::desc::event_id
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(event_id__block__size),
@@ -157,21 +141,6 @@ ircd::m::dbs::desc::type__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::type__cache_comp__size)
-ircd::m::dbs::desc::type__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.type.cache_comp.size"  },
-		{ "default",  long(16_MiB)                       },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "type"_>()));
-		const size_t &value{type__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::type
 {
@@ -195,7 +164,6 @@ ircd::m::dbs::desc::type
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(type__block__size),
@@ -244,21 +212,6 @@ ircd::m::dbs::desc::content__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::content__cache_comp__size)
-ircd::m::dbs::desc::content__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.content.cache_comp.size"  },
-		{ "default",  long(16_MiB)                          },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "content"_>()));
-		const size_t &value{content__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 decltype(ircd::m::dbs::desc::content__file__size__max)
 ircd::m::dbs::desc::content__file__size__max
 {
@@ -296,7 +249,6 @@ ircd::m::dbs::desc::content
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(content__block__size),
@@ -348,21 +300,6 @@ ircd::m::dbs::desc::room_id__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::room_id__cache_comp__size)
-ircd::m::dbs::desc::room_id__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.room_id.cache_comp.size"  },
-		{ "default",  long(16_MiB)                          },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "room_id"_>()));
-		const size_t &value{room_id__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::room_id
 {
@@ -385,7 +322,6 @@ ircd::m::dbs::desc::room_id
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(room_id__block__size),
@@ -434,21 +370,6 @@ ircd::m::dbs::desc::sender__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::sender__cache_comp__size)
-ircd::m::dbs::desc::sender__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.sender.cache_comp.size"  },
-		{ "default",  long(16_MiB)                         },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "sender"_>()));
-		const size_t &value{sender__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::sender
 {
@@ -471,7 +392,6 @@ ircd::m::dbs::desc::sender
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(sender__block__size),
@@ -520,21 +440,6 @@ ircd::m::dbs::desc::state_key__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::state_key__cache_comp__size)
-ircd::m::dbs::desc::state_key__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.state_key.cache_comp.size"  },
-		{ "default",  long(16_MiB)                            },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "state_key"_>()));
-		const size_t &value{state_key__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::state_key
 {
@@ -559,7 +464,6 @@ ircd::m::dbs::desc::state_key
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(state_key__block__size),
@@ -608,21 +512,6 @@ ircd::m::dbs::desc::origin_server_ts__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::origin_server_ts__cache_comp__size)
-ircd::m::dbs::desc::origin_server_ts__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.origin_server_ts.cache_comp.size"  },
-		{ "default",  long(16_MiB)                                   },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "origin_server_ts"_>()));
-		const size_t &value{origin_server_ts__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::origin_server_ts
 {
@@ -646,7 +535,6 @@ ircd::m::dbs::desc::origin_server_ts
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(origin_server_ts__block__size),
@@ -695,21 +583,6 @@ ircd::m::dbs::desc::depth__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::depth__cache_comp__size)
-ircd::m::dbs::desc::depth__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs.depth.cache_comp.size"  },
-		{ "default",  long(16_MiB)                        },
-	},
-	[](conf::item<void> &)
-	{
-		auto &column(event_column.at(json::indexof<event, "depth"_>()));
-		const size_t &value{depth__cache_comp__size};
-		db::capacity(db::cache_compressed(column), value);
-	}
-};
-
 const ircd::db::descriptor
 ircd::m::dbs::desc::depth
 {
@@ -726,7 +599,6 @@ ircd::m::dbs::desc::depth
 	},
 
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.cache_size_comp = bool(cache_comp_enable)? -1 : 0,
 	.bloom_bits = size_t(_event__bloom__bits),
 	.expect_queries_hit = true,
 	.block_size = size_t(depth__block__size),

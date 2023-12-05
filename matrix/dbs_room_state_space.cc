@@ -52,20 +52,6 @@ ircd::m::dbs::desc::room_state_space__cache__size
 	}
 };
 
-decltype(ircd::m::dbs::desc::room_state_space__cache_comp__size)
-ircd::m::dbs::desc::room_state_space__cache_comp__size
-{
-	{
-		{ "name",     "ircd.m.dbs._room_state_space.cache_comp.size"  },
-		{ "default",  long(8_MiB)                                     },
-	},
-	[](conf::item<void> &)
-	{
-		const size_t &value{room_state_space__cache_comp__size};
-		db::capacity(db::cache_compressed(dbs::room_state_space), value);
-	}
-};
-
 decltype(ircd::m::dbs::desc::room_state_space__bloom__bits)
 ircd::m::dbs::desc::room_state_space__bloom__bits
 {
@@ -127,9 +113,6 @@ ircd::m::dbs::desc::room_state_space
 
 	// cache size
 	bool(cache_enable)? -1 : 0,
-
-	// cache size for compressed assets
-	bool(cache_comp_enable)? -1 : 0,
 
 	// bloom filter bits
 	size_t(room_state_space__bloom__bits),
