@@ -1002,7 +1002,11 @@ try
 {
 	std::make_shared<database::cache>
 	(
-		this, this->stats, this->allocator, this->name, 16_MiB
+		this,
+		this->stats,
+		this->allocator,
+		this->name,
+		32_MiB //TODO: conf
 	)
 }
 ,descriptors
@@ -1013,7 +1017,10 @@ try
 {
 	auto opts
 	{
-		std::make_unique<rocksdb::DBOptions>(make_dbopts(this->optstr, &this->optstr, &read_only, &fsck))
+		std::make_unique<rocksdb::DBOptions>
+		(
+			make_dbopts(this->optstr, &this->optstr, &read_only, &fsck)
+		)
 	};
 
 	// Setup sundry
@@ -1036,9 +1043,9 @@ try
 	// MUST be 0 or std::threads are spawned in rocksdb.
 	opts->max_file_opening_threads = 0;
 
-	opts->max_background_jobs = 16;
-	opts->max_background_flushes = 8;
-	opts->max_background_compactions = 4;
+	opts->max_background_jobs = 64;
+	opts->max_background_flushes = 32;
+	opts->max_background_compactions = 32;
 	opts->max_subcompactions = 1;
 
 	// For the write-side of a compaction process: writes will be of approx
@@ -3749,7 +3756,7 @@ noexcept
 decltype(ircd::db::database::cache::DEFAULT_SHARD_BITS)
 ircd::db::database::cache::DEFAULT_SHARD_BITS
 (
-	std::log2(std::min(size_t(db::request_pool_size), 16UL))
+	std::log2(std::clamp(size_t(db::request_pool_size), 16UL, 64UL))
 );
 
 decltype(ircd::db::database::cache::DEFAULT_STRICT)

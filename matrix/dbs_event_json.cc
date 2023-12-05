@@ -57,8 +57,8 @@ ircd::m::dbs::desc::event_json__bloom__bits
 decltype(ircd::m::dbs::desc::event_json__file__size__max)
 ircd::m::dbs::desc::event_json__file__size__max
 {
-	{ "name",     "ircd.m.dbs._event_json.file.size.target" },
-	{ "default",  long(512_MiB)                             },
+	{ "name",     "ircd.m.dbs._event_json.file.size.max" },
+	{ "default",  long(1024_MiB - 32_MiB)                },
 };
 
 decltype(ircd::m::dbs::desc::event_json__compaction_trigger)

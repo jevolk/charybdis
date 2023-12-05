@@ -216,7 +216,7 @@ decltype(ircd::m::dbs::desc::content__file__size__max)
 ircd::m::dbs::desc::content__file__size__max
 {
 	{ "name",     "ircd.m.dbs.content.file.size.max"  },
-	{ "default",  long(256_MiB)                       },
+	{ "default",  long(512_MiB - 16_MiB)              },
 };
 
 decltype(ircd::m::dbs::desc::content__compaction_trigger)

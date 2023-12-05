@@ -56,7 +56,7 @@ struct ircd::db::descriptor
 
 	/// Bloom filter bits. Filter is still useful even if queries are expected
 	/// to always hit on this column; see `expect_queries_hit` option.
-	size_t bloom_bits { 10 };
+	size_t bloom_bits { 0 };
 
 	/// Set this option to true if queries to this column are expected to
 	/// find keys that exist. This is useful for columns with keys that
@@ -82,7 +82,7 @@ struct ircd::db::descriptor
 	/// Compression algorithm for this column. Empty string is equal to
 	/// kNoCompression. List is semicolon separated to allow fallbacks in
 	/// case the first algorithms are not supported. "default" will be
-	// replaced by the string in the ircd.db.compression.default conf item.
+	/// replaced by the string in the ircd.db.compression.default conf item.
 	std::string compression {"default"};
 
 	/// User given compaction callback surface.
@@ -94,7 +94,7 @@ struct ircd::db::descriptor
 	/// Compaction related parameters. see: rocksdb/advanced_options.h
 	struct
 	{
-		size_t base {64_MiB};
+		size_t base {8_MiB - 256_KiB};
 		size_t multiplier {2};
 	}
 	target_file_size;

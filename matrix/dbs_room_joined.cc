@@ -90,6 +90,7 @@ ircd::m::dbs::desc::room_joined
 	.meta_block_size = size_t(room_joined__meta_block__size),
 	.compression = bool(compress_enable)? string_view{room_joined__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.cache_writes = true,
 };
 
 //

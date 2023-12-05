@@ -47,6 +47,20 @@ ircd::m::dbs::desc::event_horizon__cache__size
 	}
 };
 
+decltype(ircd::m::dbs::desc::event_horizon__bloom__bits)
+ircd::m::dbs::desc::event_horizon__bloom__bits
+{
+	{ "name",     "ircd.m.dbs._event_horizon.bloom.bits" },
+	{ "default",  7L                                     },
+};
+
+decltype(ircd::m::dbs::desc::event_horizon__file__size__max)
+ircd::m::dbs::desc::event_horizon__file__size__max
+{
+	{ "name",     "ircd.m.dbs._event_horizon.file.size.max" },
+	{ "default",  long(256_MiB - 64_MiB)                    },
+};
+
 const ircd::db::prefix_transform
 ircd::m::dbs::desc::event_horizon__pfx
 {
@@ -94,12 +108,13 @@ ircd::m::dbs::desc::event_horizon
 
 	.prefix = event_horizon__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0, //uses conf item
-	.bloom_bits = 0,
+	.bloom_bits = size_t(event_horizon__bloom__bits),
 	.expect_queries_hit = false,
 	.block_size = size_t(event_horizon__block__size),
 	.meta_block_size = size_t(event_horizon__meta_block__size),
 	.compression = bool(compress_enable)? string_view{event_horizon__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.target_file_size = { size_t(event_horizon__file__size__max), 1UL },
 	.readahead_blocks = 0,
 };
 

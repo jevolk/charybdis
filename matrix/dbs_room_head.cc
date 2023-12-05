@@ -91,13 +91,14 @@ ircd::m::dbs::desc::room_head
 	.type = { typeid(string_view), typeid(uint64_t) },
 	.prefix = room_head__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.bloom_bits = 0, //table too ephemeral for bloom generation/usefulness
 	.expect_queries_hit = false,
 	.block_size = size_t(room_head__block__size),
 	.meta_block_size = size_t(room_head__meta_block__size),
 	.compression = bool(compress_enable)? string_view{room_head__comp}: string_view{},
 	.compaction_pri = "kByCompensatedSize"s,
 	.compaction_period = 60s * 60 * 24 * 1, // compact the room head every day.
+	.readahead_blocks = 0,
+	.cache_writes = true,
 };
 
 //

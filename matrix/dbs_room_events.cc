@@ -121,7 +121,6 @@ ircd::m::dbs::desc::room_events
 	.cmp = room_events__cmp,
 	.prefix = room_events__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0,
-	.bloom_bits = 0, // no bloom filter because of possible comparator issues
 	.expect_queries_hit = true,
 	.block_size = size_t(room_events__block__size),
 	.meta_block_size = size_t(room_events__meta_block__size),

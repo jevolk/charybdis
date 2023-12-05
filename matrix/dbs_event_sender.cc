@@ -107,7 +107,6 @@ ircd::m::dbs::desc::event_sender
 
 	.prefix = event_sender__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0, //uses conf item
-	.bloom_bits = 0,
 	.expect_queries_hit = false,
 	.block_size = size_t(event_sender__block__size),
 	.meta_block_size = size_t(event_sender__meta_block__size),

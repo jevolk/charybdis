@@ -15,7 +15,7 @@ decltype(ircd::m::dbs::desc::event_idx__comp)
 ircd::m::dbs::desc::event_idx__comp
 {
 	{ "name",     "ircd.m.dbs._event_idx.comp" },
-	{ "default",  "default"                    },
+	{ "default",  ""                           },
 };
 
 decltype(ircd::m::dbs::desc::event_idx__block__size)
@@ -51,7 +51,14 @@ decltype(ircd::m::dbs::desc::event_idx__bloom__bits)
 ircd::m::dbs::desc::event_idx__bloom__bits
 {
 	{ "name",     "ircd.m.dbs._event_idx.bloom.bits" },
-	{ "default",  0L                                 },
+	{ "default",  9L                                 },
+};
+
+decltype(ircd::m::dbs::desc::event_idx__file__size__max)
+ircd::m::dbs::desc::event_idx__file__size__max
+{
+	{ "name",     "ircd.m.dbs._event_idx.file.size.max" },
+	{ "default",  long(256_MiB - 64_MiB)                },
 };
 
 decltype(ircd::m::dbs::desc::event_idx)
@@ -87,6 +94,7 @@ ircd::m::dbs::desc::event_idx
 	.meta_block_size = size_t(event_idx__meta_block__size),
 	.compression = bool(compress_enable)? string_view{event_idx__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.target_file_size = { size_t(event_idx__file__size__max), 1UL },
 	.readahead_blocks = 0,
 };
 

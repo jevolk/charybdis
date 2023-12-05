@@ -97,6 +97,7 @@ ircd::m::dbs::desc::room_state_space
 	.meta_block_size = size_t(room_state_space__meta_block__size),
 	.compression = bool(compress_enable)? string_view{room_state_space__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.cache_writes = true,
 };
 
 //

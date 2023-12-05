@@ -128,7 +128,6 @@ ircd::m::dbs::desc::event_refs
 	.cmp = event_refs__cmp,
 	.prefix = event_refs__pfx,
 	.cache_size = bool(cache_enable)? -1 : 0, //uses conf item
-	.bloom_bits = 0,
 	.expect_queries_hit = true,
 	.block_size = size_t(event_refs__block__size),
 	.meta_block_size = size_t(event_refs__meta_block__size),

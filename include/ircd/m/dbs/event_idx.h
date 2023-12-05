@@ -25,5 +25,6 @@ namespace ircd::m::dbs::desc
 	extern conf::item<size_t> event_idx__meta_block__size;
 	extern conf::item<size_t> event_idx__cache__size;
 	extern conf::item<size_t> event_idx__bloom__bits;
+	extern conf::item<size_t> event_idx__file__size__max;
 	extern const db::descriptor event_idx;
 }

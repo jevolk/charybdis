@@ -99,6 +99,7 @@ ircd::m::dbs::desc::room_state
 	.meta_block_size = size_t(room_state__meta_block__size),
 	.compression = bool(compress_enable)? string_view{room_state__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
+	.cache_writes = true,
 };
 
 //
