@@ -70,11 +70,8 @@ ircd::m::dbs::desc::room_head__pfx
 const ircd::db::descriptor
 ircd::m::dbs::desc::room_head
 {
-	// name
-	"_room_head",
-
-	// explanation
-	R"(Unreferenced events in a room.
+	.name = "_room_head",
+	.explain = R"(Unreferenced events in a room.
 
 	[room_id | event_id => event_idx]
 
@@ -91,55 +88,16 @@ ircd::m::dbs::desc::room_head
 
 	)",
 
-	// typing (key, value)
-	{
-		typeid(string_view), typeid(uint64_t)
-	},
-
-	// options
-	{},
-
-	// comparator
-	{},
-
-	// prefix transform
-	room_head__pfx,
-
-	// drop column
-	false,
-
-	// cache size
-	bool(cache_enable)? -1 : 0,
-
-	// bloom filter bits
-	0, //table too ephemeral for bloom generation/usefulness
-
-	// expect queries hit
-	false,
-
-	// block size
-	size_t(room_head__block__size),
-
-	// meta_block size
-	size_t(room_head__meta_block__size),
-
-	// compression
-	bool(compress_enable)? string_view{room_head__comp}: string_view{},
-
-	// compactor
-	{},
-
-	// compaction priority algorithm
-	"kByCompensatedSize"s,
-
-	// target file size
-	{},
-
-	// max bytes for each level
-	{},
-
-	// compaction_period
-	60s * 60 * 24 * 1     // compact the room head every day.
+	.type = { typeid(string_view), typeid(uint64_t) },
+	.prefix = room_head__pfx,
+	.cache_size = bool(cache_enable)? -1 : 0,
+	.bloom_bits = 0, //table too ephemeral for bloom generation/usefulness
+	.expect_queries_hit = false,
+	.block_size = size_t(room_head__block__size),
+	.meta_block_size = size_t(room_head__meta_block__size),
+	.compression = bool(compress_enable)? string_view{room_head__comp}: string_view{},
+	.compaction_pri = "kByCompensatedSize"s,
+	.compaction_period = 60s * 60 * 24 * 1, // compact the room head every day.
 };
 
 //

@@ -79,11 +79,8 @@ ircd::m::dbs::desc::room_state__pfx
 const ircd::db::descriptor
 ircd::m::dbs::desc::room_state
 {
-	// name
-	"_room_state",
-
-	// explanation
-	R"(The present state of the room.
+	.name = "_room_state",
+	.explain = R"(The present state of the room.
 
 	[room_id | type + state_key] => event_idx
 
@@ -93,50 +90,15 @@ ircd::m::dbs::desc::room_state
 	well as iteration. The value is the index of the apropos state event.
 
 	)",
-
-	// typing (key, value)
-	{
-		typeid(string_view), typeid(uint64_t)
-	},
-
-	// options
-	{},
-
-	// comparator
-	{},
-
-	// prefix transform
-	room_state__pfx,
-
-	// drop column
-	false,
-
-	// cache size
-	bool(cache_enable)? -1 : 0,
-
-	// cache size for compressed assets
-	bool(cache_comp_enable)? -1 : 0,
-
-	// bloom filter bits
-	size_t(room_state__bloom__bits),
-
-	// expect queries hit
-	false,
-
-	// block size
-	size_t(room_state__block__size),
-
-	// meta_block size
-	size_t(room_state__meta_block__size),
-
-	// compression
-	bool(compress_enable)? string_view{room_state__comp}: string_view{},
-
-	// compactor
-	{},
-
-	// compaction priority algorithm
-	"kOldestSmallestSeqFirst"s,
+	.type = { typeid(string_view), typeid(uint64_t) },
+	.prefix = room_state__pfx,
+	.cache_size = bool(cache_enable)? -1 : 0,
+	.bloom_bits = size_t(room_state__bloom__bits),
+	.expect_queries_hit = false,
+	.block_size = size_t(room_state__block__size),
+	.meta_block_size = size_t(room_state__meta_block__size),
+	.compression = bool(compress_enable)? string_view{room_state__comp}: string_view{},
+	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 
 //

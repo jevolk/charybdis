@@ -86,54 +86,17 @@ ircd::m::dbs::desc::room_state_space__pfx
 const ircd::db::descriptor
 ircd::m::dbs::desc::room_state_space
 {
-	// name
-	"_room_state_space",
-
-	// explanation
-	R"(All states of the room.
-
-	)",
-
-	// typing (key, value)
-	{
-		typeid(string_view), typeid(uint64_t)
-	},
-
-	// options
-	{},
-
-	// comparator
-	room_state_space__cmp,
-
-	// prefix transform
-	room_state_space__pfx,
-
-	// drop column
-	false,
-
-	// cache size
-	bool(cache_enable)? -1 : 0,
-
-	// bloom filter bits
-	size_t(room_state_space__bloom__bits),
-
-	// expect queries hit
-	false,
-
-	// block size
-	size_t(room_state_space__block__size),
-
-	// meta_block size
-	size_t(room_state_space__meta_block__size),
-
-	// compression
-	bool(compress_enable)? string_view{room_state_space__comp}: string_view{},
-
-	// compactor
-	{},
-
-	// compaction priority algorithm
-	"kOldestSmallestSeqFirst"s,
+	.name = "_room_state_space",
+	.explain = R"(All states of the room.)",
+	.type = { typeid(string_view), typeid(uint64_t) },
+	.cmp = room_state_space__cmp,
+	.prefix = room_state_space__pfx,
+	.cache_size = bool(cache_enable)? -1 : 0,
+	.bloom_bits = size_t(room_state_space__bloom__bits),
+	.block_size = size_t(room_state_space__block__size),
+	.meta_block_size = size_t(room_state_space__meta_block__size),
+	.compression = bool(compress_enable)? string_view{room_state_space__comp}: string_view{},
+	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 
 //

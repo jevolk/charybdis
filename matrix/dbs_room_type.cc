@@ -92,56 +92,22 @@ ircd::m::dbs::desc::room_type__cmp
 const ircd::db::descriptor
 ircd::m::dbs::desc::room_type
 {
-	// name
-	"_room_type",
-
-	// explanation
-	R"(Indexes events per type in timeline sequence for a room
+	.name = "_room_type",
+	.explain = R"(Indexes events per type in timeline sequence for a room
 
 	[room_id | type, depth, event_idx]
 
 	)",
-
-	// typing (key, value)
-	{
-		typeid(string_view), typeid(string_view)
-	},
-
-	// options
-	{},
-
-	// comparator
-	room_type__cmp,
-
-	// prefix transform
-	room_type__pfx,
-
-	// drop column
-	false,
-
-	// cache size
-	bool(cache_enable)? -1 : 0,
-
-	// bloom filter bits
-	0, // no bloom filter because of possible comparator issues
-
-	// expect queries hit
-	true,
-
-	// block size
-	size_t(room_type__block__size),
-
-	// meta_block size
-	size_t(room_type__meta_block__size),
-
-	// compression
-	bool(compress_enable)? string_view{room_type__comp}: string_view{},
-
-	// compactor
-	{},
-
-	// compaction priority algorithm
-	"kOldestSmallestSeqFirst"s,
+	.type = { typeid(string_view), typeid(string_view) },
+	.cmp = room_type__cmp,
+	.prefix = room_type__pfx,
+	.cache_size = bool(cache_enable)? -1 : 0,
+	.bloom_bits = 0, // no bloom filter because of possible comparator issues
+	.expect_queries_hit = true,
+	.block_size = size_t(room_type__block__size),
+	.meta_block_size = size_t(room_type__meta_block__size),
+	.compression = bool(compress_enable)? string_view{room_type__comp}: string_view{},
+	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 
 //

@@ -75,56 +75,21 @@ ircd::m::dbs::desc::room_joined__pfx
 const ircd::db::descriptor
 ircd::m::dbs::desc::room_joined
 {
-	// name
-	"_room_joined",
-
-	// explanation
-	R"(Specifically indexes joined members of a room for fast iteration.
+	.name = "_room_joined",
+	.explain = R"(Specifically indexes joined members of a room for fast iteration.
 
 	[room_id | origin + mxid] => event_idx
 
 	)",
-
-	// typing (key, value)
-	{
-		typeid(string_view), typeid(uint64_t)
-	},
-
-	// options
-	{},
-
-	// comparator
-	{},
-
-	// prefix transform
-	room_joined__pfx,
-
-	// drop column
-	false,
-
-	// cache size
-	bool(cache_enable)? -1 : 0,
-
-	// bloom filter bits
-	size_t(room_joined__bloom__bits),
-
-	// expect queries hit
-	false,
-
-	// block size
-	size_t(room_joined__block__size),
-
-	// meta_block size
-	size_t(room_joined__meta_block__size),
-
-	// compression
-	bool(compress_enable)? string_view{room_joined__comp}: string_view{},
-
-	// compactor
-	{},
-
-	// compaction priority algorithm
-	"kOldestSmallestSeqFirst"s,
+	.type = { typeid(string_view), typeid(uint64_t) },
+	.prefix = room_joined__pfx,
+	.cache_size = bool(cache_enable)? -1 : 0,
+	.bloom_bits = size_t(room_joined__bloom__bits),
+	.expect_queries_hit = false,
+	.block_size = size_t(room_joined__block__size),
+	.meta_block_size = size_t(room_joined__meta_block__size),
+	.compression = bool(compress_enable)? string_view{room_joined__comp}: string_view{},
+	.compaction_pri = "kOldestSmallestSeqFirst"s,
 };
 
 //
