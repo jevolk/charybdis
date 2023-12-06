@@ -84,8 +84,6 @@ struct ircd::db::prefetcher::ticker
 	item<uint64_t> request;    ///< Prefetcher requests added to the queue
 	item<uint64_t> directs;    ///< Direct dispatches to db::request pool
 	item<uint64_t> handles;    ///< Incremented before dispatch to db::request
-	item<uint64_t> handled;    ///< Incremented after dispatch to db::request
-	item<uint64_t> fetches;    ///< Incremented before actual database operation
 	item<uint64_t> fetched;    ///< Incremented after actual database operation
 	item<uint64_t> cancels;    ///< Count of canceled operations
 

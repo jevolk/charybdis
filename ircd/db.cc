@@ -767,7 +767,6 @@ ircd::db::prefetcher::handle()
 
 	ticker->handles++;
 	db::request(std::move(handler));
-	ticker->handled++;
 }
 
 void
@@ -816,7 +815,6 @@ ircd::db::prefetcher::request_worker()
 	ticker->last_snd_req = duration_cast<microseconds>(request->req - request->snd);
 	static_cast<microseconds &>(ticker->accum_snd_req) += ticker->last_snd_req;
 
-	ticker->fetches++;
 	request_handle(*request);
 	assert(request->fin != steady_point::min());
 	ticker->fetched++;
@@ -828,7 +826,7 @@ ircd::db::prefetcher::request_worker()
 			size_t(ticker->rejects),
 			size_t(ticker->request),
 			size_t(ticker->handles),
-			size_t(ticker->fetches),
+			size_t(ticker->fetched),
 			size_t(ticker->directs),
 			size_t(ticker->cancels),
 			queue.size(),
@@ -995,14 +993,6 @@ ircd::db::prefetcher::ticker::ticker()
 ,handles
 {
 	{ "name", "ircd.db.prefetch.handles" },
-}
-,handled
-{
-	{ "name", "ircd.db.prefetch.handled" },
-}
-,fetches
-{
-	{ "name", "ircd.db.prefetch.fetches" },
 }
 ,fetched
 {
