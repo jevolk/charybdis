@@ -552,6 +552,25 @@ ircd::db::prefetcher;
 //
 // db::prefetcher
 //
+
+decltype(ircd::db::prefetcher::enable)
+ircd::db::prefetcher::enable
+{
+	{ "name",     "ircd.db.prefetch.enable" },
+	{ "default",  true                      },
+};
+
+decltype(ircd::db::prefetcher::worker_stack_size)
+ircd::db::prefetcher::worker_stack_size
+{
+	{ "name",     "ircd.db.prefetch.worker.stack_size" },
+	{ "default",  long(256_KiB)                        },
+};
+
+//
+// db::prefetcher::prefetcher
+//
+
 ircd::db::prefetcher::prefetcher()
 :ticker
 {
@@ -560,7 +579,7 @@ ircd::db::prefetcher::prefetcher()
 ,context
 {
 	"db.prefetcher",
-	256_KiB,
+	size_t(worker_stack_size),
 	context::POST,
 	std::bind(&prefetcher::worker, this)
 }
@@ -3074,10 +3093,17 @@ ircd::db::prefetch(column &column,
                    const string_view &key,
                    const gopts &gopts)
 {
-	static construction instance
+	static construction instance{[]
 	{
-		[] { prefetcher = new struct prefetcher(); }
-	};
+		if(bool(prefetcher::enable))
+			prefetcher = new struct prefetcher();
+	}};
+
+	// Return true when prefetcher disabled because callers assume the value
+	// is cached when a prefetch isn't launched and may try to query for it,
+	// blocking their prefetch loop.
+	if(!prefetcher)
+		return true;
 
 	assert(prefetcher);
 	return (*prefetcher)(column, key, gopts);

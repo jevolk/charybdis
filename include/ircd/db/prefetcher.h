@@ -22,6 +22,9 @@ struct ircd::db::prefetcher
 	struct request;
 	using closure = std::function<bool (request &)>;
 
+	static conf::item<bool> enable;
+	static conf::item<size_t> worker_stack_size;
+
 	std::deque<request> queue;
 	std::unique_ptr<ticker> ticker;
 	ctx::dock work, fini;
