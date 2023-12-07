@@ -2094,9 +2094,16 @@ ircd::db::database::column::column(database &d,
 	// better to use pre-read except in the case of a massive database.
 	table_opts.cache_index_and_filter_blocks = true;
 	table_opts.cache_index_and_filter_blocks_with_high_priority = true;
+	table_opts.partition_filters = true;
+
+	#ifdef IRCD_DB_HAS_CACHE_META_OPTS
+	table_opts.metadata_cache_options.top_level_index_pinning = rocksdb::PinningTier::kNone;
+	table_opts.metadata_cache_options.unpartitioned_pinning = rocksdb::PinningTier::kNone;
+	table_opts.metadata_cache_options.partition_pinning = rocksdb::PinningTier::kNone;
+	#else
 	table_opts.pin_top_level_index_and_filter = false;
 	table_opts.pin_l0_filter_and_index_blocks_in_cache = false;
-	table_opts.partition_filters = true;
+	#endif
 
 	// Setup the cache for assets.
 	const auto &cache_size(this->descriptor->cache_size);
