@@ -567,6 +567,7 @@ applyargs()
 		ircd::maintenance.set("true");
 		nobackfill = true;
 		cmdline |= !debugmode;
+		cmdline &= !smoketest[0];
 	}
 
 	if(bootstrap)
