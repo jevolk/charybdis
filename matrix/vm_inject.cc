@@ -221,10 +221,10 @@ ircd::m::vm::inject(eval &eval,
 	{
 		prev_buf, head,
 		{
-			16,                    // .limit = 16,
-			true, // !eval.room_internal,   // .need_top_head = true for non-internal rooms
-			!eval.room_internal,   // .need_my_head = true for non-internal rooms
-			eval.room_version      // .version = eval.room_version,
+			.limit = size_t(prev_limit),
+			.need_top_head = true, // !eval.room_internal,
+			.need_my_head = !eval.room_internal,
+			.version = eval.room_version
 		}
 	};
 
