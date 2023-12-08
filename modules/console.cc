@@ -3828,13 +3828,6 @@ try
 		56
 	};
 
-	// Special branch for integer properties that RocksDB aggregates.
-	if(ticker && ticker != "-a")
-	{
-		out << ticker << ": " << db::ticker(database, ticker) << std::endl;
-		return true;
-	}
-
 	for(uint32_t i(0); i < db::ticker_max; ++i)
 	{
 		const string_view &name
@@ -3843,6 +3836,9 @@ try
 		};
 
 		if(!name)
+			continue;
+
+		if(ticker && !startswith(name, ticker))
 			continue;
 
 		const auto &val
@@ -3871,6 +3867,9 @@ try
 		};
 
 		if(!name)
+			continue;
+
+		if(ticker && !startswith(name, ticker))
 			continue;
 
 		const auto &val
@@ -4194,7 +4193,7 @@ try
 			.hits = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.hit")),
 			.misses = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.miss")),
 			.inserts = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.add")),
-			.inserts_bytes = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
+			.inserts_bytes = db::ticker(cache(column), db::ticker_id("rocksdb.block.cache.bytes.write")),
 		};
 
 		output(colname, uncompressed);
@@ -4214,7 +4213,7 @@ try
 			.hits = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.hit")),
 			.misses = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.miss")),
 			.inserts = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.add")),
-			.inserts_bytes = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.data.bytes.insert")),
+			.inserts_bytes = db::ticker(cache(database), db::ticker_id("rocksdb.block.cache.bytes.write")),
 		};
 
 		output("row", s);
@@ -4256,6 +4255,71 @@ try
 
 	header("ROW");
 	query_row(output);
+	return true;
+}
+catch(const std::out_of_range &e)
+{
+	out << "No open database by that name" << std::endl;
+	return true;
+}
+
+bool
+console_cmd__db__cache__stats(opt &out, const string_view &line)
+try
+{
+	const params param{line, " ",
+	{
+		"dbname", "column",
+	}};
+
+	const auto dbname
+	{
+		param.at(0)
+	};
+
+	auto colname
+	{
+		param[1]
+	};
+
+	auto &database
+	{
+		db::database::get(dbname)
+	};
+
+	const db::column column
+	{
+		database, colname
+	};
+
+	for(uint32_t i(0); i < db::ticker_max; ++i)
+	{
+		const string_view &name
+		{
+			db::ticker_id(i)
+		};
+
+		if(!name)
+			continue;
+
+		const auto &val
+		{
+			db::ticker(db::cache(column), i)
+		};
+
+		if(val == 0)
+			continue;
+
+		char buf[48];
+		out << std::left << std::setw(56) << std::setfill('_') << name << " ";
+		if(has(name, ".bytes"))
+			out << pretty(buf, iec(val));
+		else
+			out << val;
+
+		out << std::endl;
+	}
+
 	return true;
 }
 catch(const std::out_of_range &e)

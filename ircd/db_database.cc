@@ -4030,7 +4030,18 @@ noexcept
 
 	stats->recordTick(Tickers::BLOCK_CACHE_ADD, added);
 	stats->recordTick(Tickers::BLOCK_CACHE_ADD_FAILURES, !added);
-	stats->recordTick(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT, added? charge: 0);
+	stats->recordTick(Tickers::BLOCK_CACHE_BYTES_WRITE, added? charge: 0);
+
+	#if defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
+	using Role = rocksdb::CacheEntryRole;
+	const auto &role(helper? helper->role: Role::kMisc);
+	stats->recordTick(Tickers::BLOCK_CACHE_INDEX_ADD, added && role == Role::kIndexBlock);
+	stats->recordTick(Tickers::BLOCK_CACHE_INDEX_BYTES_INSERT, added && role == Role::kIndexBlock? charge: 0);
+	stats->recordTick(Tickers::BLOCK_CACHE_FILTER_ADD, added && role == Role::kFilterBlock);
+	stats->recordTick(Tickers::BLOCK_CACHE_FILTER_BYTES_INSERT, added && role == Role::kFilterBlock? charge: 0);
+	stats->recordTick(Tickers::BLOCK_CACHE_DATA_ADD, added && role == Role::kDataBlock);
+	stats->recordTick(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT, added && role == Role::kDataBlock? charge: 0);
+	#endif
 
 	if constexpr(RB_DEBUG_DB_CACHE & 0x1)
 	{
@@ -4043,20 +4054,21 @@ noexcept
 			#endif
 		};
 
-		char pbuf[2][48];
+		char pbuf[4][48];
 		log::debug
 		{
-			log, "[%s]'%s' CACHE:L1 %-4s +%zu-%zu %s %s len:%zu :%s%s",
+			log, "[%s]'%s' CACHE:L1 %-4s %s %s +%zu-%zu ins:%s use:%s :%s%s",
 			db::name(*d),
 			this->name,
 			added? "ADD"s: ret.ToString(),
+			role,
+			pretty(pbuf[0], iec(charge)),
 			stats->getTickerCount(Tickers::BLOCK_CACHE_ADD),
 			stats->getTickerCount(Tickers::BLOCK_CACHE_ADD_FAILURES),
-			pretty(pbuf[0], iec(stats->getTickerCount(Tickers::BLOCK_CACHE_DATA_BYTES_INSERT))),
+			pretty(pbuf[1], iec(stats->getTickerCount(Tickers::BLOCK_CACHE_BYTES_WRITE))),
+			pretty(pbuf[2], iec(c->GetUsage())),
 			reflect(pri),
-			role,
-			charge,
-			u2a(pbuf[1], trunc(slice(key), 16)),
+			u2a(pbuf[3], trunc(slice(key), 16)),
 			size(slice(key)) > 16? "..."_sv: string_view{},
 		};
 	}
@@ -4067,22 +4079,22 @@ noexcept
 #if defined(IRCD_DB_HAS_CACHE_ASYNC)
 rocksdb::Cache::Handle *
 ircd::db::database::cache::Lookup(const Slice &key,
-                                  const CacheItemHelper *const helper,
+                                  const CacheItemHelper *const helper_,
                                   CreateContext *const cc,
                                   Priority pri,
-                                  Statistics *const statistics)
+                                  Statistics *const stats_)
 #elif defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
 rocksdb::Cache::Handle *
 ircd::db::database::cache::Lookup(const Slice &key,
-                                  const CacheItemHelper *const helper,
+                                  const CacheItemHelper *const helper_,
                                   CreateContext *const cc,
                                   Priority pri,
                                   bool wait,
-                                  Statistics *const statistics)
+                                  Statistics *const stats_)
 #else
 rocksdb::Cache::Handle *
 ircd::db::database::cache::Lookup(const Slice &key,
-                                  Statistics *const statistics)
+                                  Statistics *const stats_)
 #endif
 noexcept
 {
@@ -4093,12 +4105,12 @@ noexcept
 
 	database::stats::passthru passthru
 	{
-		this->stats.get(), statistics
+		this->stats.get(), stats_
 	};
 
-	rocksdb::Statistics *const s
+	rocksdb::Statistics *const stats
 	{
-		statistics?
+		stats_?
 			dynamic_cast<rocksdb::Statistics *>(&passthru):
 			dynamic_cast<rocksdb::Statistics *>(this->stats.get())
 	};
@@ -4106,20 +4118,34 @@ noexcept
 	auto *const &ret
 	{
 		#if defined(IRCD_DB_HAS_CACHE_ASYNC)
-		c->Lookup(key, helper, cc, pri, statistics)
+		c->Lookup(key, helper_, cc, pri, stats_)
 		#elif defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
-		c->Lookup(key, helper, cc, pri, wait, statistics)
+		c->Lookup(key, helper_, cc, pri, wait, stats_)
 		#else
-		c->Lookup(key, s)
+		c->Lookup(key, stats)
 		#endif
 	};
 
 	// Rocksdb's LRUCache stats are broke. The statistics ptr is null and
 	// passing it to Lookup() does nothing internally. We have to do this
 	// here ourselves :/
-
 	this->stats->recordTick(Tickers::BLOCK_CACHE_HIT, bool(ret));
 	this->stats->recordTick(Tickers::BLOCK_CACHE_MISS, !bool(ret));
+
+	if constexpr(RB_DEBUG_DB_CACHE & 0x1)
+		this->stats->recordTick(Tickers::BLOCK_CACHE_BYTES_READ, ret? c->GetUsage(ret): 0);
+
+	#if defined(IRCD_DB_HAS_CACHE_ITEMHELPER)
+	using Role = rocksdb::CacheEntryRole;
+	const auto &helper(helper_?: ret? GetCacheItemHelper(ret): nullptr);
+	const auto &role(helper? helper->role: Role::kMisc);
+	this->stats->recordTick(Tickers::BLOCK_CACHE_INDEX_HIT, ret && role == Role::kIndexBlock);
+	this->stats->recordTick(Tickers::BLOCK_CACHE_INDEX_MISS, !ret && role == Role::kIndexBlock);
+	this->stats->recordTick(Tickers::BLOCK_CACHE_FILTER_HIT, ret && role == Role::kFilterBlock);
+	this->stats->recordTick(Tickers::BLOCK_CACHE_FILTER_MISS, !ret && role == Role::kFilterBlock);
+	this->stats->recordTick(Tickers::BLOCK_CACHE_DATA_HIT, ret && role == Role::kDataBlock);
+	this->stats->recordTick(Tickers::BLOCK_CACHE_DATA_MISS, !ret && role == Role::kDataBlock);
+	#endif
 
 	if constexpr(RB_DEBUG_DB_CACHE & 0x1)
 		if(likely(RB_DEBUG_DB_CACHE_HIT || !ret))
@@ -4145,10 +4171,10 @@ noexcept
 			{
 				log, "[%s]'%s' CACHE:L1 %-4s +%zu-%zu %s %s :%s%s",
 				db::name(*d),
-				this->name,
+				name,
 				ret? "HIT": "MISS",
-				stats->getTickerCount(Tickers::BLOCK_CACHE_HIT),
-				stats->getTickerCount(Tickers::BLOCK_CACHE_MISS),
+				this->stats->getTickerCount(Tickers::BLOCK_CACHE_HIT),
+				this->stats->getTickerCount(Tickers::BLOCK_CACHE_MISS),
 				prio,
 				role,
 				u2a(pbuf[0], trunc(slice(key), 16)),
