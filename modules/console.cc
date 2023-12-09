@@ -4537,27 +4537,28 @@ catch(const std::out_of_range &e)
 static void
 _print_sst_info_header(opt &out)
 {
-	out << std::left << std::setfill(' ')
-	    << std::setw(3) << "cp"
-	    << "  " << std::setw(12) << "name"
-	    << "  " << std::setw(32) << "creation"
-	    << "  " << std::setw(3) << "flt"
-	    << std::right
-	    << "  " << std::setw(7) << "pressed"
-	    << std::left
-	    << "  " << std::setw(5) << "press"
-	    << "  " << std::setw(24) << "file size"
-	    << "  " << std::setw(23) << "sequence number"
-	    << "  " << std::setw(23) << "key range"
-	    << std::right
-	    << "  " << std::setw(10) << "reads"
-	    << "  " << std::setw(10) << "entries"
-	    << "  " << std::setw(10) << "blocks"
-	    << "  " << std::setw(7) << "idxs"
-	    << "  " << std::setw(3) << "lev"
-	    << std::left
-	    << "  " << std::setw(20) << "column"
-	    << std::endl;
+	out
+	<< std::left << std::setfill(' ')
+	<< std::setw(3) << "cp"
+	<< "  " << std::setw(12) << "name"
+	<< "  " << std::setw(32) << "creation"
+	<< "  " << std::setw(3) << "flt"
+	<< std::right
+	<< "  " << std::setw(7) << "pressed"
+	<< std::left
+	<< "  " << std::setw(5) << "press"
+	<< "  " << std::setw(24) << "file size"
+	<< "  " << std::setw(23) << "sequence number"
+	<< "  " << std::setw(23) << "key range"
+	<< std::right
+	<< "  " << std::setw(10) << "reads"
+	<< "  " << std::setw(10) << "entries"
+	<< "  " << std::setw(10) << "blocks"
+	<< "  " << std::setw(7) << "idxs"
+	<< "  " << std::setw(3) << "lev"
+	<< std::left
+	<< "  " << std::setw(20) << "column"
+	<< std::endl;
 }
 
 static void
@@ -4579,18 +4580,18 @@ _print_sst_info(opt &out,
 	};
 
 	char tmbuf[64], pbuf[48];
-	out << std::left << std::setfill(' ')
-	    << std::setw(3) << std::left << rsplit(f.path, '/').second
-	    << "  "
-	    << std::setw(12) << std::left << f.name
-	    << "  " << std::setw(32) << std::left << (f.created? timef(tmbuf, f.created, ircd::localtime) : string_view{})
-	    << "  " << std::setw(1) << std::left << (!f.filter.empty()? 'F' : '-')
-	    <<         std::setw(1) << std::left << (f.delta_encoding? 'D' : '-')
-	    <<         std::setw(1) << std::left << ((true)? '-' : '-')
-	    << "  " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << f.compression_pct << '%'
-	    << "  " << std::setw(5) << std::left << trunc(f.compression, 5)
-	    << "  " << std::setw(24) << std::left << pretty(pbuf, iec(f.size))
-	    ;
+	out
+	<< std::left << std::setfill(' ')
+	<< std::setw(3) << std::left << rsplit(f.path, '/').second
+	<< "  "
+	<< std::setw(12) << std::left << f.name
+	<< "  " << std::setw(32) << std::left << (f.created? timef(tmbuf, f.created, ircd::localtime) : string_view{})
+	<< "  " << std::setw(1) << std::left << (!f.filter.empty()? 'F' : '-')
+	<<         std::setw(1) << std::left << (f.delta_encoding? 'D' : '-')
+	<<         std::setw(1) << std::left << ((true)? '-' : '-')
+	<< "  " << std::setw(6) << std::right << std::fixed << std::setprecision(2) << f.compression_pct << '%'
+	<< "  " << std::setw(5) << std::left << trunc(f.compression, 5)
+	<< "  " << std::setw(24) << std::left << pretty(pbuf, iec(f.size));
 
 	if(f.min_seq)
 		out << "  " << std::setw(10) << std::right << f.min_seq << " : " << std::setw(10) << std::left << f.max_seq;
@@ -4602,13 +4603,14 @@ _print_sst_info(opt &out,
 	else
 		out << "  " << std::setw(10) << std::right << ' ' << "   " << std::setw(10) << std::left << "<string>";
 
-	out << "  " << std::setw(10) << std::right << f.num_reads
-	    << "  " << std::setw(10) << std::right << f.entries
-	    << "  " << std::setw(10) << std::right << f.data_blocks
-	    << "  " << std::setw(7) << std::right << f.index_parts
-	    << "  " << std::setw(3) << std::right << f.level
-	    << "  " << std::setw(20) << std::left << f.column
-	    << std::endl;
+	out
+	<< "  " << std::setw(10) << std::right << f.num_reads
+	<< "  " << std::setw(10) << std::right << f.entries
+	<< "  " << std::setw(10) << std::right << f.data_blocks
+	<< "  " << std::setw(7) << std::right << f.index_parts
+	<< "  " << std::setw(3) << std::right << f.level
+	<< "  " << std::setw(20) << std::left << f.column
+	<< std::endl;
 }
 
 static void
@@ -4967,11 +4969,15 @@ try
 		total.entries += info.entries;
 		total.range_deletes += info.range_deletes;
 		total.num_reads += info.num_reads;
+		total.compression_pct += info.compression_pct;
 		totals++;
 	}};
 
 	const auto _print_totals{[&out, &total, &totals]
 	{
+		if(totals)
+			total.compression_pct /= totals;
+
 		_print_sst_info_header(out);
 		_print_sst_info(out, total);
 		out << "--- " << totals << " files." << std::endl;
