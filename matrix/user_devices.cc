@@ -122,7 +122,7 @@ ircd::m::user::devices::update(const device_list_update &update)
 	// check if this is just spam; updates for unknowns are just dropped here.
 	if(!exists(user))
 	{
-		log::derror
+		log::dwarning
 		{
 			log, "Refusing device update for unknown user %s",
 			string_view{user.user_id},
@@ -353,7 +353,7 @@ const
 		get(std::nothrow, id, prop, c)
 	};
 
-	if(!ret)
+	if(unlikely(!ret))
 		throw m::NOT_FOUND
 		{
 			"Property '%s' for device '%s' for user %s not found",

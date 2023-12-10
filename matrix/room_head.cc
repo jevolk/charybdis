@@ -176,7 +176,7 @@ try
 }
 catch(const std::exception &e)
 {
-	log::error
+	log::critical
 	{
 		log, "%s prev_events generator :%s",
 		string_view{head.room},

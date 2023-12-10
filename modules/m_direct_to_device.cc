@@ -71,13 +71,26 @@ try
 			user_messages.first
 		};
 
-		if(!my_host(user_id.host()))
-			continue;
-
-		const json::object &device_messages
+		const json::object device_messages
 		{
 			user_messages.second
 		};
+
+		if(!my_host(user_id.host()))
+			continue;
+
+		if(!exists(user_id))
+		{
+			log::dwarning
+			{
+				m::log, "Ignoring %zu m.direct_to_device for unknown %s from %s",
+				device_messages.count(),
+				string_view{user_id},
+				string_view{sender},
+			};
+
+			continue;
+		}
 
 		for(const auto &[device_id, message_body] : device_messages)
 			handle_m_direct_to_device(eval, edu, user_id, device_id, message_body);
