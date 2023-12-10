@@ -37,7 +37,7 @@ ircd::m::dbs::desc::event_json__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs._event_json.cache.size" },
-		{ "default",  long(128_MiB)                       },
+		{ "default",  long(64_MiB)                        },
 	},
 	[](conf::item<void> &)
 	{

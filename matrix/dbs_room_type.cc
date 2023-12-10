@@ -42,7 +42,7 @@ ircd::m::dbs::desc::room_type__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs._room_type.cache.size" },
-		{ "default",  long(16_MiB)                       },
+		{ "default",  long(8_MiB)                        },
 	},
 	[](conf::item<void> &)
 	{

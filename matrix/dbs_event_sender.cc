@@ -37,7 +37,7 @@ ircd::m::dbs::desc::event_sender__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs._event_sender.cache.size" },
-		{ "default",  long(16_MiB)                          },
+		{ "default",  long(8_MiB)                           },
 	},
 	[](conf::item<void> &)
 	{

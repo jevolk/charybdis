@@ -59,7 +59,7 @@ ircd::m::dbs::desc::event_id__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.event_id.cache.size"  },
-		{ "default",  long(48_MiB)                      },
+		{ "default",  long(16_MiB)                      },
 	},
 	[](conf::item<void> &)
 	{
@@ -130,7 +130,7 @@ ircd::m::dbs::desc::type__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.type.cache.size"  },
-		{ "default",  long(64_MiB)                  },
+		{ "default",  long(16_MiB)                  },
 	},
 	[](conf::item<void> &)
 	{
@@ -201,7 +201,7 @@ ircd::m::dbs::desc::content__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.content.cache.size"  },
-		{ "default",  long(64_MiB)                     },
+		{ "default",  long(32_MiB)                     },
 	},
 	[](conf::item<void> &)
 	{
@@ -289,7 +289,7 @@ ircd::m::dbs::desc::room_id__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.room_id.cache.size"  },
-		{ "default",  long(32_MiB)                     },
+		{ "default",  long(16_MiB)                     },
 	},
 	[](conf::item<void> &)
 	{
@@ -359,7 +359,7 @@ ircd::m::dbs::desc::sender__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.sender.cache.size"  },
-		{ "default",  long(32_MiB)                    },
+		{ "default",  long(16_MiB)                    },
 	},
 	[](conf::item<void> &)
 	{
@@ -429,7 +429,7 @@ ircd::m::dbs::desc::state_key__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.state_key.cache.size"  },
-		{ "default",  long(32_MiB)                       },
+		{ "default",  long(16_MiB)                       },
 	},
 	[](conf::item<void> &)
 	{
@@ -501,7 +501,7 @@ ircd::m::dbs::desc::origin_server_ts__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.origin_server_ts.cache.size"  },
-		{ "default",  long(32_MiB)                              },
+		{ "default",  long(16_MiB)                              },
 	},
 	[](conf::item<void> &)
 	{
@@ -572,7 +572,7 @@ ircd::m::dbs::desc::depth__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs.depth.cache.size"  },
-		{ "default",  long(16_MiB)                   },
+		{ "default",  long(8_MiB)                    },
 	},
 	[](conf::item<void> &)
 	{

@@ -42,7 +42,7 @@ ircd::m::dbs::desc::event_state__cache__size
 {
 	{
 		{ "name",     "ircd.m.dbs._event_state.cache.size" },
-		{ "default",  long(32_MiB)                         },
+		{ "default",  long(16_MiB)                         },
 	},
 	[](conf::item<void> &)
 	{
