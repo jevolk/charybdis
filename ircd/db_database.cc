@@ -3415,6 +3415,67 @@ noexcept
 	d->errors.emplace_back(str);
 }
 
+#ifdef IRCD_DB_HAS_LISTENER_RECOVERY
+[[gnu::cold]]
+void
+ircd::db::database::events::OnErrorRecoveryBegin(rocksdb::BackgroundErrorReason reason,
+                                                 rocksdb::Status status,
+                                                 bool *const auto_recovery)
+noexcept
+{
+	const bool recover
+	{
+		true
+	};
+
+	*auto_recovery = recover;
+
+	log::logf
+	{
+		log, recover? log::level::INFO: log::level::WARNING,
+		"[%s] %s %s %s :%s",
+		d->name,
+		reflect(status.severity()),
+		recover?
+			"automatically recovering from"_sv:
+			"manual intervention required to recover from"_sv,
+		reflect(reason),
+		status.ToString(),
+	};
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_RECOVERY
+[[gnu::cold]]
+void
+ircd::db::database::events::OnErrorRecoveryEnd(const rocksdb::BackgroundErrorRecoveryInfo &info)
+noexcept
+{
+	if(!info.new_bg_error.ok())
+	{
+		log::critical
+		{
+			log, "[%s] %s recovering from %s '%s' :%s",
+			d->name,
+			reflect(info.new_bg_error.severity()),
+			reflect(info.old_bg_error.severity()),
+			info.old_bg_error.ToString(),
+			info.new_bg_error.ToString(),
+		};
+
+		return;
+	}
+
+	log::info
+	{
+		log, "[%s] recovered from %s '%s'",
+		d->name,
+		reflect(info.old_bg_error.severity()),
+		info.old_bg_error.ToString(),
+	};
+}
+#endif
+
 void
 ircd::db::database::events::OnStallConditionsChanged(const rocksdb::WriteStallInfo &info)
 noexcept
@@ -3468,6 +3529,217 @@ noexcept
 	assert(column.stall == info.condition.cur);
 	//assert(column.stall != WriteStallCondition::kStopped);
 }
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnFileReadFinish(const rocksdb::FileOperationInfo &info)
+noexcept
+{
+	if constexpr(RB_DEBUG_DB_FIO)
+	{
+		const auto lev
+		{
+			info.status.ok()?
+				log::level::DEBUG:
+				log::level::ERROR
+		};
+
+		char pbuf[2][32];
+		log::logf
+		{
+			log, lev,
+			"[%s] `%s' read %s in %s @%lu :%s",
+			d->name,
+			info.path,
+			pretty(pbuf[0], iec(info.length)),
+			pretty(pbuf[1], info.duration, 1),
+			info.offset,
+			info.status.getState()?: "OK",
+		};
+	}
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnFileWriteFinish(const rocksdb::FileOperationInfo &info)
+noexcept
+{
+	if constexpr(RB_DEBUG_DB_FIO)
+	{
+		const auto lev
+		{
+			info.status.ok()?
+				log::level::DEBUG:
+				log::level::ERROR
+		};
+
+		char pbuf[2][32];
+		log::logf
+		{
+			log, lev,
+			"[%s] `%s' wrote %s in %s @%lu :%s",
+			d->name,
+			info.path,
+			pretty(pbuf[0], iec(info.length)),
+			pretty(pbuf[1], info.duration, 1),
+			info.offset,
+			info.status.getState()?: "OK",
+		};
+	}
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnFileFlushFinish(const rocksdb::FileOperationInfo &info)
+noexcept
+{
+	if constexpr(RB_DEBUG_DB_FIO)
+	{
+		const auto lev
+		{
+			info.status.ok()?
+				log::level::DEBUG:
+				log::level::ERROR
+		};
+
+		char pbuf[1][32];
+		log::logf
+		{
+			log, lev,
+			"[%s] `%s' flushed in %s :%s",
+			d->name,
+			info.path,
+			pretty(pbuf[0], info.duration, 1),
+			info.status.getState()?: "OK",
+		};
+	}
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnFileSyncFinish(const rocksdb::FileOperationInfo &info)
+noexcept
+{
+	if constexpr(RB_DEBUG_DB_FIO)
+	{
+		const auto lev
+		{
+			info.status.ok()?
+				log::level::DEBUG:
+				log::level::ERROR
+		};
+
+		char pbuf[1][32];
+		log::logf
+		{
+			log, lev,
+			"[%s] `%s' synced in %s :%s",
+			d->name,
+			info.path,
+			pretty(pbuf[0], info.duration, 1),
+			info.status.getState()?: "OK",
+		};
+	}
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnFileRangeSyncFinish(const rocksdb::FileOperationInfo &info)
+noexcept
+{
+	if constexpr(RB_DEBUG_DB_FIO)
+	{
+		const auto lev
+		{
+			info.status.ok()?
+				log::level::DEBUG:
+				log::level::ERROR
+		};
+
+		char pbuf[2][32];
+		log::logf
+		{
+			log, lev,
+			"[%s] `%s' rangesynced %s in %s @%lu :%s",
+			d->name,
+			info.path,
+			pretty(pbuf[0], iec(info.length)),
+			pretty(pbuf[1], info.duration, 1),
+			info.offset,
+			info.status.getState()?: "OK",
+		};
+	}
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnFileCloseFinish(const rocksdb::FileOperationInfo &info)
+noexcept
+{
+	if constexpr(RB_DEBUG_DB_FIO)
+	{
+		const auto lev
+		{
+			info.status.ok()?
+				log::level::DEBUG:
+				log::level::ERROR
+		};
+
+		char pbuf[32];
+		log::logf
+		{
+			log, lev,
+			"[%s] `%s' closed in %s :%s",
+			d->name,
+			info.path,
+			pretty(pbuf, info.duration, 1),
+			info.status.getState()?: "OK",
+		};
+	}
+}
+#endif
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+void
+ircd::db::database::events::OnIOError(const rocksdb::IOErrorInfo &info)
+noexcept
+{
+	log::error
+	{
+		log, "[%s] I/O Error %s scope:%u retry:%b loss:%b `%s' len:%zu off:%lu :%s",
+		reflect(info.io_status.severity()),
+		uint(info.io_status.GetScope()),
+		info.io_status.GetRetryable(),
+		info.io_status.GetDataLoss(),
+		info.file_path,
+		info.length,
+		info.offset,
+		info.io_status.ToString(),
+	};
+}
+#endif
+
+decltype(ircd::db::debug_fio)
+ircd::db::debug_fio
+{
+	{ "name",     "ircd.db.debug.fio" },
+	{ "default",  false               },
+	{ "persist",  false               },
+};
+
+#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+bool
+ircd::db::database::events::ShouldBeNotifiedOnFileIO()
+noexcept
+{
+	return bool(debug_fio) || (RB_DEBUG_DB_FIO & 0x2);
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 //

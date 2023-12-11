@@ -27,6 +27,7 @@
 #define RB_DEBUG_DB_CACHE 0
 #define RB_DEBUG_DB_CACHE_HIT 0
 #define RB_DEBUG_DB_ALLOCATOR 0
+#define RB_DEBUG_DB_FIO 1
 
 /// Set this #define to 1 or 2 to enable extensive log messages for the
 /// experimental db environment-port implementation. This is only useful
@@ -87,6 +88,7 @@ namespace ircd::db
 
 	// state
 	extern log::log rog;
+	extern conf::item<bool> debug_fio;
 	extern conf::item<bool> enable_wal;
 	extern conf::item<bool> read_checksum;
 	extern conf::item<size_t> request_pool_size;
@@ -539,6 +541,21 @@ ircd::db::database::events final
 	void OnExternalFileIngested(rocksdb::DB *, const rocksdb::ExternalFileIngestionInfo &) noexcept override;
 	void OnBackgroundError(rocksdb::BackgroundErrorReason, rocksdb::Status *) noexcept override;
 	void OnStallConditionsChanged(const rocksdb::WriteStallInfo &) noexcept override;
+	#ifdef IRCD_DB_HAS_LISTENER_RECOVERY
+	void OnErrorRecoveryBegin(rocksdb::BackgroundErrorReason, rocksdb::Status, bool *) noexcept override;
+	void OnErrorRecoveryEnd(const rocksdb::BackgroundErrorRecoveryInfo &) noexcept override;
+	#endif
+	#ifdef IRCD_DB_HAS_LISTENER_FILEIO
+	void OnFileReadFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnFileWriteFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnFileFlushFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnFileSyncFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnFileRangeSyncFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnFileTruncateFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnFileCloseFinish(const rocksdb::FileOperationInfo &) noexcept override;
+	void OnIOError(const rocksdb::IOErrorInfo &) noexcept override;
+	bool ShouldBeNotifiedOnFileIO() noexcept override;
+	#endif
 
 	events(database *const &d)
 	noexcept
