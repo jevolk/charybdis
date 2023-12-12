@@ -2992,9 +2992,15 @@ console_cmd__ctx__prof(opt &out, const string_view &line)
 		for_each<ctx::prof::event>([&out, &t]
 		(const auto &event)
 		{
-			out << std::left << std::setw(15) << std::setfill('_') << reflect(event)
-			    << " " << t.event.at(uint8_t(event))
-			    << std::endl;
+			const fmt::bsprintf<64> key
+			{
+				"%s ", reflect(event)
+			};
+
+			out
+			<< std::left << std::setw(15) << std::setfill('_') << key
+			<< " " << t.event.at(uint8_t(event))
+			<< std::endl;
 		});
 	}};
 
@@ -3838,7 +3844,7 @@ try
 		if(!name)
 			continue;
 
-		if(ticker && !startswith(name, ticker))
+		if(ticker && !startswith(name, ticker) && ticker != "-a")
 			continue;
 
 		const auto &val
@@ -3849,8 +3855,10 @@ try
 		if(val == 0 && ticker != "-a")
 			continue;
 
+		const fmt::bsprintf<64> key {"%s ", name};
+		out << std::left << std::setw(key_width) << std::setfill('_') << key << " ";
+
 		char buf[48];
-		out << std::left << std::setw(key_width) << std::setfill('_') << name << " ";
 		if(has(name, ".bytes"))
 			out << pretty(buf, iec(val));
 		else
@@ -3869,7 +3877,7 @@ try
 		if(!name)
 			continue;
 
-		if(ticker && !startswith(name, ticker))
+		if(ticker && !startswith(name, ticker) && ticker != "-a")
 			continue;
 
 		const auto &val
@@ -3880,8 +3888,13 @@ try
 		if(!(val.max > 0.0) && ticker != "-a")
 			continue;
 
+		const fmt::bsprintf<64> key
+		{
+			"%s ", name
+		};
+
 		out
-		<< std::left << std::setw(key_width) << std::setfill('_') << name
+		<< std::left << std::setw(key_width) << std::setfill('_') << key
 		<< std::setfill(' ') << std::right
 		<< " " << std::setw(10) << val.hits << " hit "
 		<< " " << std::setw(13) << val.time << " tot "
@@ -4310,8 +4323,10 @@ try
 		if(val == 0)
 			continue;
 
+		const fmt::bsprintf<64> key {"%s ", name};
+		out << std::left << std::setw(56) << std::setfill('_') << key << " ";
+
 		char buf[48];
-		out << std::left << std::setw(56) << std::setfill('_') << name << " ";
 		if(has(name, ".bytes"))
 			out << pretty(buf, iec(val));
 		else
@@ -4753,7 +4768,8 @@ _print_sst_info_full(opt &out,
 	const auto closeout{[&out]
 	(const string_view &name, const auto &closure)
 	{
-		out << std::left << std::setw(40) << std::setfill('_') << name << " ";
+		const fmt::bsprintf<64> key {"%s ", name};
+		out << std::left << std::setw(40) << std::setfill('_') << key << " ";
 		closure(out);
 		out << std::endl;
 	}};
@@ -5736,10 +5752,18 @@ try
 	};
 
 	for(const auto &p : opts)
-		out << std::left
-		    << std::setw(45) << std::setfill('_') << p.first
-		    << " " << p.second
-		    << std::endl;
+	{
+		const fmt::bsprintf<64> key
+		{
+			"%s ", p.first
+		};
+
+		out
+		<< std::left
+		<< std::setw(45) << std::setfill('_') << key
+		<< " " << p.second
+		<< std::endl;
+	}
 
 	return true;
 }
@@ -5804,7 +5828,8 @@ try
 	const auto closeout{[&out]
 	(const string_view &name, const auto &closure)
 	{
-		out << std::left << std::setw(40) << std::setfill('_') << name << " ";
+		const fmt::bsprintf<64> key {"%s ", name};
+		out << std::left << std::setw(40) << std::setfill('_') << key << " ";
 		closure();
 		out << std::endl;
 	}};
