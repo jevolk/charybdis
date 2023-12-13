@@ -381,6 +381,7 @@ ircd::m::init::backfill::handle_room(const room::id &room_id)
 		.attempt_max = size_t(attempt_max),
 		.vmopts = vm::opts
 		{
+			.errorlog = 0,
 			.warnlog = 0,
 			.infolog_accept = true,
 		},

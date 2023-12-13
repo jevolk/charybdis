@@ -253,8 +253,7 @@ ircd::m::acquire::fetch_history(event::idx &ref_min)
 			log::logf
 			{
 				log, log::level::DEBUG,
-				"fetch %s %s in %s @%lu miss prev %s @%lu sound:%lu twain:%ld hint:%s",
-				loghead(),
+				"fetch %s in %s @%lu miss prev %s @%lu sound:%lu twain:%ld hint:%s",
 				string_view{event_id},
 				string_view{ref_room.room_id},
 				std::get<int64_t>(top),
@@ -530,8 +529,7 @@ ircd::m::acquire::fetch_state(const m::event::id &event_id,
 		log::logf
 		{
 			log, log::level::DEBUG,
-			"fetch %s %s in %s state fetching:%zu hint:%s",
-			loghead(),
+			"fetch %s in %s state fetching:%zu hint:%s",
 			string_view{event_id},
 			string_view{opts.room.room_id},
 			fetching.size(),
@@ -669,8 +667,7 @@ catch(const std::exception &e)
 {
 	log::error
 	{
-		log, "fetch %s %s in %s from '%s' :%s",
-		loghead(),
+		log, "fetch %s in %s from '%s' :%s",
 		string_view{event_id},
 		string_view{opts.room.room_id},
 		hint?: "<any>"_sv,
@@ -749,8 +746,7 @@ try
 
 	log::debug
 	{
-		log, "evals %s from '%s' pdus:%zu for %s in %s",
-		loghead(),
+		log, "evals from '%s' pdus:%zu for %s in %s",
 		string_view{response.origin},
 		pdus.size(),
 		string_view{result.event_id},
@@ -768,6 +764,7 @@ try
 
 	auto vmopts(*result.vmopts);
 	vmopts.node_id = response.origin;
+	vmopts.nothrows = -1;
 
 	evals++;
 	m::vm::eval
@@ -786,30 +783,13 @@ catch(const std::exception &e)
 {
 	log::error
 	{
-		log, "evals %s %s in %s :%s",
-		loghead(),
+		log, "evals %s in %s :%s",
 		string_view{result.event_id},
 		string_view{opts.room.room_id},
 		e.what(),
 	};
 
 	return true;
-}
-
-[[using gnu: pure, visibility("internal")]]
-ircd::string_view
-ircd::m::acquire::loghead()
-const
-{
-	thread_local char buf[64];
-	return fmt::sprintf
-	{
-		buf, "%lu %05u:%05u:%05u",
-		id,
-		fetches,
-		evals,
-		acquires,
-	};
 }
 
 bool

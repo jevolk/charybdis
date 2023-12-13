@@ -40,7 +40,6 @@ struct ircd::m::acquire
 
   private:
 	bool full() const noexcept;
-	string_view loghead() const;
 
 	bool handle(result &);
 	bool handle();
