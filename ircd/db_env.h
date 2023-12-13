@@ -127,6 +127,12 @@ ircd::db::database::env::random_access_file final
 	using Slice = rocksdb::Slice;
 
 	static const fs::fd::opts default_opts;
+	static ircd::stats::item<uint64_t> read_count;
+	static ircd::stats::item<uint64_t> read_bytes;
+	static ircd::stats::item<uint64_t> read_dedup_count;
+	static ircd::stats::item<uint64_t> read_dedup_bytes;
+	static ircd::stats::item<uint64_t> read_multi_count;
+	static ircd::stats::item<uint64_t> read_multi_bytes;
 
 	database &d;
 	string_view name;
@@ -136,6 +142,21 @@ ircd::db::database::env::random_access_file final
 	int8_t ionice {0};
 	bool aio;
 	char _namebuf[48];
+
+	struct pending
+	{
+		const mutable_buffer *buf {nullptr};
+		const fs::read_opts *opts {nullptr};
+	}
+	mutable pending[32];
+
+	struct waiting
+	:pending
+	{
+		ctx::latch *latch {nullptr};
+		size_t read {0};
+	}
+	mutable waiting[32];
 
 	bool use_direct_io() const noexcept override;
 	size_t GetRequiredBufferAlignment() const noexcept override;

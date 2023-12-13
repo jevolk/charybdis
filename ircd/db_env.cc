@@ -3218,6 +3218,42 @@ ircd::db::database::env::random_access_file::default_opts
 	.random = true,
 };
 
+decltype(ircd::db::database::env::random_access_file::read_count)
+ircd::db::database::env::random_access_file::read_count
+{
+	{ "name", "ircd.db.read.count" },
+};
+
+decltype(ircd::db::database::env::random_access_file::read_bytes)
+ircd::db::database::env::random_access_file::read_bytes
+{
+	{ "name", "ircd.db.read.bytes" },
+};
+
+decltype(ircd::db::database::env::random_access_file::read_dedup_count)
+ircd::db::database::env::random_access_file::read_dedup_count
+{
+	{ "name", "ircd.db.read.dedup.count" },
+};
+
+decltype(ircd::db::database::env::random_access_file::read_dedup_bytes)
+ircd::db::database::env::random_access_file::read_dedup_bytes
+{
+	{ "name", "ircd.db.read.dedup.bytes" },
+};
+
+decltype(ircd::db::database::env::random_access_file::read_multi_count)
+ircd::db::database::env::random_access_file::read_multi_count
+{
+	{ "name", "ircd.db.read.multi.count" },
+};
+
+decltype(ircd::db::database::env::random_access_file::read_multi_bytes)
+ircd::db::database::env::random_access_file::read_multi_bytes
+{
+	{ "name", "ircd.db.read.multi.bytes" },
+};
+
 ircd::db::database::env::random_access_file::random_access_file(database *const &d,
                                                                 const std::string &path,
                                                                 const EnvOptions &env_opts)
@@ -3402,9 +3438,12 @@ noexcept try
 			buf[i], op[i].ret
 		};
 
-		req[i].result = slice(read);
 		req[i].status = Status::OK();
+		req[i].result = slice(read);
 		assert(req[i].result.size() == req[i].len);
+
+		read_bytes += size(read);
+		read_count += 1;
 	}
 	catch(const std::exception &e)
 	{
@@ -3423,6 +3462,8 @@ noexcept try
 		req[i].status = error_to_status{e};
 	}
 
+	read_multi_bytes += bytes;
+	read_multi_count += 1;
 	return Status::OK();
 }
 catch(const std::system_error &e)
@@ -3490,14 +3531,90 @@ const noexcept try
 		scratch, length
 	};
 
+	bool is_pending {false};
+	for(const auto &p : pending)
+	{
+		assert(!p.buf || p.opts);
+		if(!p.buf || buffer::size(*p.buf) != buffer::size(buf))
+			continue;
+
+		if(p.opts->offset != opts.offset)
+			continue;
+
+		is_pending = true;
+		break;
+	}
+
+	struct waiting *waiter {nullptr};
+	struct pending *pender {nullptr};
+	const unwind uw{[&]
+	{
+		if(waiter)
+			*waiter = {};
+
+		if(pender)
+			*pender = {};
+	}};
+
+	ctx::latch latch {1};
+	if(is_pending)
+		for(auto &w : waiting)
+			if(!w.buf)
+			{
+				w.buf = &buf;
+				w.opts = &opts;
+				w.latch = &latch;
+				waiter = &w;
+				break;
+			}
+
+	if(!is_pending && !waiter)
+		for(auto &p : pending)
+			if(!p.buf)
+			{
+				p.buf = &buf;
+				p.opts = &opts;
+				pender = &p;
+				break;
+			}
+
+	if(waiter)
+	{
+		latch.wait();
+		if(waiter->read)
+		{
+			assert(!opts.all || waiter->read == length);
+			*result = slice(mutable_buffer(buf, waiter->read));
+			return Status::OK();
+		}
+	}
+
 	assert(!this->opts.direct || buffer::aligned(buf, _buffer_align));
 	const auto read
 	{
 		fs::read(fd, buf, opts)
 	};
 
+	if(pender)
+		for(auto &w : waiting)
+		{
+			assert(w.buf || (!w.opts && !w.latch));
+			if(!w.buf || buffer::size(*w.buf) != buffer::size(buf))
+				continue;
+
+			if(w.opts->offset != opts.offset)
+				continue;
+
+			w.read = copy(*w.buf, read);
+			read_dedup_bytes += w.read;
+			read_dedup_count += 1;
+			w.latch->count_down();
+		}
+
 	assert(!opts.all || size(read) == length);
 	*result = slice(read);
+	read_bytes += size(read);
+	read_count += 1;
 	return Status::OK();
 }
 catch(const std::system_error &e)
