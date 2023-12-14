@@ -13,11 +13,12 @@ namespace ircd::m::vm
 	template<class... args> static bool output(const vm::opts &, const vm::fault &, const string_view &event_id, const string_view &fmt, args&&...);
 	template<class... args> static fault handle_fault(const opts &, const fault &, const string_view &event_id, const string_view &fmt, args&&...);
 	template<class T> static void call_hook(hook::site<T> &, eval &, const event &, T&& data);
-	static void retire(eval &, const event &);
+	static void accept_log(eval &, const event &);
 	static void emption_check(eval &, const event &);
 	static size_t calc_txn_reserve(const opts &, const event &);
 	static void write_commit(eval &);
 	static void write_append(eval &, const event &, const bool &);
+	static void retire(eval &, const event &);
 	static fault execute_edu(eval &, const event &);
 	static fault execute_pdu(eval &, const event &);
 	static fault execute_du(eval &, const event &);
@@ -37,9 +38,9 @@ namespace ircd::m::vm
 	extern hook::site<eval &> notify_hook;       ///< Called to broadcast successful eval
 	extern hook::site<eval &> effect_hook;       ///< Called to apply effects post-notify
 
-	extern conf::item<bool> log_commit_debug;
 	extern conf::item<bool> log_accept_debug;
 	extern conf::item<bool> log_accept_info;
+	extern log::log log_accept;
 
 	extern stats::item<uint64_t> write_append_count;
 	extern stats::item<uint64_t> write_append_cycles;
@@ -48,11 +49,10 @@ namespace ircd::m::vm
 	#pragma GCC visibility pop
 }
 
-decltype(ircd::m::vm::log_commit_debug)
-ircd::m::vm::log_commit_debug
+decltype(ircd::m::vm::log_accept)
+ircd::m::vm::log_accept
 {
-	{ "name",     "ircd.m.vm.log.commit.debug" },
-	{ "default",  true                         },
+	"m.vm.accept"
 };
 
 decltype(ircd::m::vm::log_accept_debug)
@@ -676,12 +676,6 @@ try
 	if(ret != fault::ACCEPT)
 		return ret;
 
-	if(opts.debuglog_accept || bool(log_accept_debug))
-		log::debug
-		{
-			log, "%s", pretty_oneline(event)
-		};
-
 	// The event was executed; now we broadcast the good news. This will
 	// include notifying client `/sync` and the federation sender.
 	if(likely(opts.phase[phase::NOTIFY]))
@@ -708,12 +702,7 @@ try
 		call_hook(effect_hook, eval, event, eval);
 	}
 
-	if(opts.infolog_accept || bool(log_accept_info))
-		log::info
-		{
-			log, "%s", pretty_oneline(event)
-		};
-
+	accept_log(eval, event);
 	return ret;
 }
 catch(const vm::error &e) // VM FAULT CODE
@@ -1466,6 +1455,34 @@ ircd::m::vm::emption_check(eval &eval,
 				string_view{},
 			json::get<"state_key"_>(event),
 			json::get<"room_id"_>(event),
+		};
+}
+
+void
+ircd::m::vm::accept_log(eval &eval,
+                        const m::event &event)
+{
+	assert(eval.opts);
+	const auto &opts
+	{
+		*eval.opts
+	};
+
+	const log::level level
+	{
+		opts.infolog_accept || bool(log_accept_info)?
+			log::level::INFO:
+		opts.debuglog_accept || bool(log_accept_debug)?
+			log::level::DEBUG:
+			log::level(0)
+	};
+
+	if(level)
+		log::logf
+		{
+			log_accept, level,
+			"%s",
+			pretty_oneline(event)
 		};
 }
 

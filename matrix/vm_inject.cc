@@ -12,7 +12,25 @@ namespace ircd::m::vm
 {
 	static fault inject3(eval &, json::iov &, const json::iov &, const string_view &);
 	static fault inject1(eval &, json::iov &, const json::iov &, const string_view &);
+
+	#pragma GCC visibility push(internal)
+	extern conf::item<bool> log_inject_debug;
+	extern log::log log_inject;
+	#pragma GCC visibility pop
 }
+
+decltype(ircd::m::vm::log_inject)
+ircd::m::vm::log_inject
+{
+	"m.vm.inject"
+};
+
+decltype(ircd::m::vm::log_inject_debug)
+ircd::m::vm::log_inject_debug
+{
+	{ "name",     "ircd.m.vm.log.inject.debug" },
+	{ "default",  true                         },
+};
 
 ///
 /// Figure 1:
@@ -444,7 +462,8 @@ ircd::m::vm::inject1(eval &eval,
 	if(opts.debuglog_precommit)
 		log::debug
 		{
-			log, "Issuing :%s", pretty_oneline(event_tuple)
+			log_inject, "Issuing :%s",
+			pretty_oneline(event_tuple)
 		};
 
 	const vector_view events
@@ -534,7 +553,8 @@ ircd::m::vm::inject3(eval &eval,
 	if(opts.debuglog_precommit)
 		log::debug
 		{
-			log, "Issuing :%s", pretty_oneline(event_tuple)
+			log_inject, "Issuing :%s",
+			pretty_oneline(event_tuple)
 		};
 
 	const vector_view events
