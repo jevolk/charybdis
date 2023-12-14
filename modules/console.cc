@@ -4951,11 +4951,8 @@ try
 		db::database::get(dbname)
 	};
 
-	size_t totals(0);
-	db::database::sst::info total;
-	total.name = "total"s;
-	const auto _add_totals{[&total, &totals]
-	(const auto &info)
+	const auto _add_totals{[]
+	(auto &total, auto &totals, const auto &info)
 	{
 		total.size += info.size;
 		total.data_size += info.data_size;
@@ -4973,16 +4970,23 @@ try
 		totals++;
 	}};
 
-	const auto _print_totals{[&out, &total, &totals]
+	const auto _print_totals{[&out]
+	(auto &total, auto &totals, const auto &lev)
 	{
 		if(totals)
 			total.compression_pct /= totals;
 
-		_print_sst_info_header(out);
+		total.level = lev;
+		total.name = lev >= 0? "level"s: "total"s;
 		_print_sst_info(out, total);
-		out << "--- " << totals << " files." << std::endl;
 	}};
 
+	// total for each level; last is total for all levels.
+	const auto num_levels {7};
+	std::array<size_t, num_levels + 1> totals {0};
+	std::array<db::database::sst::info, num_levels + 1> total;
+
+	// branch for all columns
 	if(colname == "*")
 	{
 		db::database::sst::info::vector vector
@@ -5003,19 +5007,32 @@ try
 				continue;
 
 			_print_sst_info(out, fileinfo);
-			_add_totals(fileinfo);
+			_add_totals(total.at(num_levels), totals.at(num_levels), fileinfo);
+			_add_totals(total.at(fileinfo.level), totals.at(fileinfo.level), fileinfo);
 		}
 
 		out << std::endl;
-		_print_totals();
+		_print_sst_info_header(out);
+		for(int i(num_levels - 1); i >= 0; --i)
+			if(totals[i])
+				_print_totals(total.at(i), totals.at(i), i);
+
+		out << std::endl;
+		_print_sst_info_header(out);
+		_print_totals(total.at(num_levels), totals.at(num_levels), -1);
+		out << "\n--- " << totals.at(num_levels) << " files." << std::endl;
 		return true;
 	}
 
+	// branch for single file
 	if(startswith(colname, "/"))
 	{
-		const db::database::sst::info info{database, colname};
+		const db::database::sst::info info
+		{
+			database, colname
+		};
+
 		_print_sst_info_full(out, info);
-		_add_totals(info);
 		return true;
 	}
 
@@ -5042,11 +5059,13 @@ try
 			continue;
 
 		_print_sst_info(out, info);
-		_add_totals(info);
+		_add_totals(total.at(num_levels), totals.at(num_levels), info);
 	}
 
 	out << std::endl;
-	_print_totals();
+	_print_sst_info_header(out);
+	_print_totals(total.at(num_levels), totals.at(num_levels), -1);
+	out << "\n--- " << totals.at(num_levels) << " files." << std::endl;
 	return true;
 }
 catch(const std::out_of_range &e)
