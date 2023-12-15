@@ -188,8 +188,8 @@ noexcept try
 		construct_server_name?
 			ircd::string_view{construct_server_name}:
 
-		// invalid argument
-			nullptr
+		// default
+			"localhost"
 	};
 
 	// The server_name is the unique name for this specific server. This is
@@ -215,8 +215,8 @@ noexcept try
 		construct_origin?
 			ircd::string_view{construct_server_name}:
 
-		// invalid argument
-			nullptr
+		// default
+			origin
 	};
 
 	// at least one server_name argument is required for now.
