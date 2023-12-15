@@ -2930,13 +2930,13 @@ RB_HELP_STRING([--with-included-boost[[[=built]]]], [Use the boost sources from 
 	boost_version="$withval"
 	if test x"$boost_version" == x"yes"; then
 		boost_version="${BOOST_VERSION_MIN}.${BOOST_VERSION_MIN_PATCH}"
+		with_included_boost="$boost_version"
 	fi
 
 	boost_linkage="shared"
-	boost_version="boost-${boost_version}"
 	boost_cxxflags="-std=gnu++20"
 
-	if [[ $boost_version != "boost-built" ]]; then
+	if [[ $boost_version != "built" ]]; then
 		bash tools/boostrap.sh $BTOOLSET $BOOST_BUILT_LIBS $boost_variant $boost_linkage multi $boost_version $boost_cxxflags
 		AS_IF([ test $? != 0 ],
 		[
@@ -2952,7 +2952,7 @@ RB_HELP_STRING([--with-included-boost[[[=built]]]], [Use the boost sources from 
 	[
 		with_included_boost="no"
 	], [
-		with_included_boost="yes"
+		with_included_boost="no"
 		AC_MSG_ERROR([Failed to find boost_system library. (try --with-included-boost)])
 	])
 
@@ -3038,7 +3038,6 @@ AC_ARG_WITH(included-rocksdb,
 RB_HELP_STRING([--with-included-rocksdb[[[=version]]]], [Use the RocksDB sources from included submodule]),
 [
 	AC_MSG_RESULT([yes])
-	with_included_rocksdb="yes"
 
 	AC_MSG_NOTICE([Shared RocksDB linkage requires running charybdis with an intact build directory])
 	ROCKSDB_CPPFLAGS="-isystem$PWD/deps/rocksdb/include"
@@ -3050,6 +3049,7 @@ RB_HELP_STRING([--with-included-rocksdb[[[=version]]]], [Use the RocksDB sources
 	rocksdb_version="$withval"
 	if test x"$rocksdb_version" == x"yes"; then
 		rocksdb_version="$ROCKSDB_VERSION_DEFAULT"
+		with_included_rocksdb="$rocksdb_version"
 	fi
 
 	if [[ $rocksdb_version != "built" ]]; then
