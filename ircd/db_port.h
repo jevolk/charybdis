@@ -50,7 +50,7 @@ class rocksdb::port::Mutex
   public:
 	void Lock() noexcept;
 	void Unlock() noexcept;
-	void AssertHeld() noexcept;
+	void AssertHeld() const noexcept;
 
 	Mutex() noexcept;
 	Mutex(bool adaptive) noexcept;

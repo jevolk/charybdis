@@ -112,7 +112,7 @@ noexcept
 
 void
 rocksdb::port::Mutex::AssertHeld()
-noexcept
+const noexcept
 {
 	assert(!ctx::current || mu.locked());
 }
