@@ -1296,7 +1296,7 @@ noexcept
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s]'%s' closed fd:%d",
+			log, "[%s]'%s' fd:%d closed",
 			d.name,
 			name,
 			int(fd)
@@ -1376,10 +1376,13 @@ noexcept try
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s]'%s' fd:%d flush",
+			log, "[%s]'%s' fd:%d flush%s",
 			d.name,
 			name,
 			int(fd),
+			!db::paranoid_sync?
+				" (noop)"_sv:
+				string_view{},
 		};
 
 	if(db::paranoid_sync)
@@ -3284,7 +3287,7 @@ noexcept
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s]'%s' close fd:%d",
+			log, "[%s]'%s' fd:%d close",
 			d.name,
 			name,
 			int(fd)
@@ -3706,7 +3709,7 @@ noexcept
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s]'%s' close fd:%d '%s'",
+			log, "[%s]'%s' fd:%d closed '%s'",
 			d.name,
 			name,
 			int(fd)
@@ -3722,7 +3725,7 @@ noexcept try
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s]'%s' close fd:%d '%s'",
+			log, "[%s]'%s' fd:%d close",
 			d.name,
 			name,
 			int(fd)
@@ -3768,7 +3771,6 @@ noexcept try
 			log, "[%s]'%s' fd:%d fsync",
 			d.name,
 			int(fd),
-			this
 		};
 
 	fs::sync_opts opts;
@@ -3863,10 +3865,12 @@ noexcept try
 	if constexpr(RB_DEBUG_DB_ENV)
 		log::debug
 		{
-			log, "[%s]'%s' fd:%d flush",
+			log, "[%s]'%s' fd:%d flush%s",
 			d.name,
 			int(fd),
-			this
+			!db::paranoid_sync?
+				" (noop)"_sv:
+				string_view{},
 		};
 
 	if(db::paranoid_sync)
