@@ -287,7 +287,7 @@ inline bool
 ircd::startswith(const string_view &str,
                  const string_view &val)
 {
-	return !str.empty() && str.substr(0, val.size()) == val;
+	return !str.empty() && !val.empty() && str.substr(0, val.size()) == val;
 }
 
 /// Count occurrences of val at end of string
@@ -328,7 +328,7 @@ ircd::endswith(const string_view &str,
                const string_view &val)
 {
 	const ssize_t off(str.size() - val.size());
-	return !str.empty() && off >= 0 && str.substr(off) == val;
+	return !str.empty() && !val.empty() && off >= 0 && str.substr(off) == val;
 }
 
 /// View a string between the first match of a and the first match of b
