@@ -282,19 +282,20 @@ noexcept try
 	// to that io_context. Execution of IRCd will then occur during ios::run()
 	ircd::init(ios.get_executor(), matrix? homeserver: nullptr);
 
+	// If the user wants to immediately process console commands
+	// non-interactively from a program argument input, that is enqueued here.
+	for(auto &&cmd : execute)
+		if(!cmd.empty())
+			construct::console::queue.emplace_back(std::move(cmd));
+
 	// If the user wants to immediately drop to an interactive command line
 	// without having to send a ctrl-c for it, that is provided here. This does
 	// not actually take effect until it's processed in the ios.run() below.
-	if(cmdline || !execute.empty())
+	if(cmdline || !construct::console::queue.empty())
 	{
 		construct::console::interactive_when_done = cmdline;
 		construct::console::spawn();
 	}
-
-	// If the user wants to immediately process console commands
-	// non-interactively from a program argument input, that is enqueued here.
-	for(auto &&cmd : execute)
-		construct::console::queue.emplace_back(std::move(cmd));
 
 	// For developer debugging and testing this branch from a "-norun" argument
 	// will exit before committing to the ios.run().
