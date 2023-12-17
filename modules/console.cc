@@ -645,6 +645,28 @@ console_cmd__die__hard(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__sleep(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"duration"
+	}};
+
+	const auto duration_string
+	{
+		param.at("duration", "0"_sv)
+	};
+
+	const auto duration
+	{
+		pretty(duration_string)
+	};
+
+	ctx::sleep(duration);
+	return true;
+}
+
+bool
 console_cmd__sync(opt &out, const string_view &line)
 {
 	for(const auto &db : db::database::list)
