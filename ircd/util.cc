@@ -155,6 +155,43 @@ ircd::util::pretty_time_unit
 	{ { "months",          "M"  },       12.0L  },
 }};
 
+ircd::nanoseconds
+ircd::util::pretty(const string_view &in)
+{
+	static const auto &unit
+	{
+		pretty_time_unit
+	};
+
+	int pos(-1);
+	string_view ustr_;
+	for(uint i(0); i < unit.size() && pos < 0; ++i)
+	{
+		const auto &strs(std::get<0>(unit.at(i)));
+		for(uint j(0); j < strs.size() && pos < 0; ++j)
+		{
+			const auto &ustr(strs.at(j));
+			if(endswith(in, ustr))
+			{
+				pos = i;
+				ustr_ = ustr;
+			}
+		}
+	}
+
+	string_view ts(in);
+	ts = rstrip(ts, ustr_);
+	ts = rstrip(ts, ' ');
+	auto val(lex_cast<long double>(ts));
+	for(--pos; pos >= 0; --pos)
+		val *= std::get<1>(unit.at(pos));
+
+	return nanoseconds
+	{
+		static_cast<long long>(val)
+	};
+}
+
 template<size_t i,
          class T>
 inline ircd::string_view

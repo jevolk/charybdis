@@ -38,6 +38,9 @@ inline namespace util
 	string_view pretty(const mutable_buffer &out, const milliseconds &, const uint fmt = 0);
 	string_view pretty(const mutable_buffer &out, const seconds &, const uint fmt = 0);
 	template<class r, class p> std::string pretty(const duration<r, p> &, const uint &fmt = 0);
+
+	// Human writable time suite (parser side)
+	nanoseconds pretty(const string_view &in);
 }}
 
 template<class rep,
