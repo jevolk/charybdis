@@ -21,7 +21,12 @@ namespace ircd::db
 /// Options for setting (writes)
 struct ircd::db::sopts
 {
+	/// Write to WAL in memory only; system call to update file not made here.
+	/// When true, if the software crashes this operation may be lost.
+	bool cork {false};
+
 	/// Uses kernel filesystem synchronization after this write (slow).
+	/// When false, if the hardware crashes this operation may be lost.
 	bool fsync {false};
 
 	/// Write Ahead Log (WAL) for some crash recovery.

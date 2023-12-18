@@ -179,14 +179,16 @@ ircd::db::paranoid_sync
 void
 ircd::db::sync(database &d)
 {
-	log::debug
-	{
-		log, "[%s] @%lu SYNC WAL",
-		name(d),
-		sequence(d)
-	};
-
 	const ctx::uninterruptible::nothrow ui;
+	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
+		log::logf
+		{
+			log, log::level::DEBUG,
+			"[%s] @%lu SYNC WAL",
+			name(d),
+			sequence(d),
+		};
+
 	throw_on_error
 	{
 		d.d->SyncWAL()
@@ -199,14 +201,16 @@ void
 ircd::db::flush(database &d,
                 const bool &sync)
 {
-	log::debug
-	{
-		log, "[%s] @%lu FLUSH WAL",
-		name(d),
-		sequence(d)
-	};
-
 	const ctx::uninterruptible::nothrow ui;
+	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
+		log::logf
+		{
+			log, log::level::DEBUG,
+			"[%s] @%lu FLUSH WAL",
+			name(d),
+			sequence(d),
+		};
+
 	throw_on_error
 	{
 		d.d->FlushWAL(sync)
@@ -1151,6 +1155,11 @@ try
 	opts->enable_pipelined_write = false;
 	opts->write_thread_max_yield_usec = 0;
 	opts->write_thread_slow_yield_usec = 0;
+
+	// Setting to true gives us manual control over write(2) system calls which
+	// append the WAL file. We use this to implement our cork feature which can
+	// aggregate transactions under high and bulk loads and reduce write calls.
+	opts->manual_wal_flush = true;
 
 	#ifdef IRCD_DB_HAS_AVOID_BLOCKING_IO
 	opts->avoid_unnecessary_blocking_io = true;

@@ -155,7 +155,7 @@ namespace ircd::db
 	// [SET] writebatch suite
 	string_view debug(const mutable_buffer &, const rocksdb::WriteBatch &);
 	bool has(const rocksdb::WriteBatch &, const op &);
-	void commit(database &, rocksdb::WriteBatch &, const rocksdb::WriteOptions &);
+	void commit(database &, rocksdb::WriteBatch &, const rocksdb::WriteOptions &, const bool cork = false);
 	void commit(database &, rocksdb::WriteBatch &, const sopts &);
 	void append(rocksdb::WriteBatch &, column &, const column::delta &delta);
 	void append(rocksdb::WriteBatch &, const cell::delta &delta);

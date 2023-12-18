@@ -4634,17 +4634,18 @@ ircd::db::commit(database &d,
                  const sopts &sopts)
 {
 	const auto opts(make_opts(sopts));
-	commit(d, batch, opts);
+	commit(d, batch, opts, sopts.cork);
 }
 
 void
 ircd::db::commit(database &d,
                  rocksdb::WriteBatch &batch,
-                 const rocksdb::WriteOptions &opts)
+                 const rocksdb::WriteOptions &opts,
+                 const bool cork)
 {
 	ircd::timer timer
 	{
-		RB_DEBUG_LEVEL
+		RB_LOG_LEVEL >= log::level::DEBUG
 	};
 
 	const std::lock_guard lock{d.write_mutex};
@@ -4655,7 +4656,10 @@ ircd::db::commit(database &d,
 		d.d->Write(opts, &batch)
 	};
 
-	if constexpr(RB_DEBUG_LEVEL)
+	if(likely(!cork && !opts.disableWAL))
+		db::flush(d, opts.sync);
+
+	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
 	{
 		const auto took
 		{
@@ -4665,10 +4669,11 @@ ircd::db::commit(database &d,
 		char dbuf[192], pbuf[48];
 		log::debug
 		{
-			log, "[%s] %lu COMMIT %s in %s",
+			log, "[%s] %lu COMMIT %s to %s in %s",
 			d.name,
 			sequence(d),
 			debug(dbuf, batch),
+			cork? "memory"_sv: "system"_sv,
 			pretty(pbuf, took, 1),
 		};
 	}
