@@ -433,39 +433,41 @@ ircd::db::cpwait(database &d)
 }
 #endif
 
-void
-ircd::db::bgpause(database &d)
+bool
+ircd::db::bgwait(database &d)
 {
-	assert(d.d);
+	if(!d.bgwork)
+		return false;
 
-	const ctx::uninterruptible::nothrow ui;
-	throw_on_error
-	{
-		d.d->PauseBackgroundWork()
-	};
-
-	log::debug
-	{
-		log, "[%s] Paused all background work",
-		name(d)
-	};
+	bgwork(d, false);
+	bgwork(d, true);
+	return true;
 }
 
 void
-ircd::db::bgcontinue(database &d)
+ircd::db::bgwork(database &d,
+                 const bool enable)
 {
 	assert(d.d);
 
+	const ctx::uninterruptible::nothrow ui;
+	if(enable)
+		throw_on_error
+		{
+			d.d->ContinueBackgroundWork()
+		};
+	else
+		throw_on_error
+		{
+			d.d->PauseBackgroundWork()
+		};
+
+	d.bgwork = enable;
 	log::debug
 	{
-		log, "[%s] Continuing background work",
-		name(d)
-	};
-
-	const ctx::uninterruptible::nothrow ui;
-	throw_on_error
-	{
-		d.d->ContinueBackgroundWork()
+		log, "[%s] %s all background work",
+		name(d),
+		enable? "Enabling"_sv: "Paused"_sv,
 	};
 }
 
@@ -983,6 +985,10 @@ try
 ,opened
 {
 	false
+}
+,bgwork
+{
+	true
 }
 ,env
 {

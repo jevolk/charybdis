@@ -60,8 +60,8 @@ namespace ircd::db
 	void fdeletions(database &, const bool &enable, const bool &force = false);
 	uint64_t checkpoint(database &);
 	void bgcancel(database &, const bool &blocking = true);
-	void bgcontinue(database &);
-	void bgpause(database &);
+	void bgwork(database &, const bool enable);
+	bool bgwait(database &);
 	bool cpwait(database &);
 	void refresh(database &);
 	void resume(database &);
@@ -117,7 +117,8 @@ struct ircd::db::database
 	uint64_t checkpoint;
 	std::string path;
 	std::string optstr;
-	bool fsck, slave, read_only, opened;
+	bool fsck, slave, read_only;
+	bool opened, bgwork;
 	std::shared_ptr<struct env> env;
 	std::shared_ptr<struct stats> stats;
 	std::shared_ptr<struct logger> logger;

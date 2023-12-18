@@ -3233,7 +3233,7 @@ console_cmd__db__compressions(opt &out, const string_view &line)
 }
 
 bool
-console_cmd__db__pause(opt &out, const string_view &line)
+console_cmd__db__bgpause(opt &out, const string_view &line)
 try
 {
 	const params param{line, " ",
@@ -3251,7 +3251,7 @@ try
 		db::database::get(dbname)
 	};
 
-	bgpause(database);
+	bgwork(database, false);
 	out << "Paused background jobs for '" << dbname << "'" << std::endl;
 	return true;
 }
@@ -3262,7 +3262,7 @@ catch(const std::out_of_range &e)
 }
 
 bool
-console_cmd__db__continue(opt &out, const string_view &line)
+console_cmd__db__bgcont(opt &out, const string_view &line)
 try
 {
 	const params param{line, " ",
@@ -3280,7 +3280,7 @@ try
 		db::database::get(dbname)
 	};
 
-	bgcontinue(database);
+	bgwork(database, true);
 	out << "Resumed background jobs for '" << dbname << "'" << std::endl;
 	return true;
 }
@@ -3291,7 +3291,7 @@ catch(const std::out_of_range &e)
 }
 
 bool
-console_cmd__db__cancel(opt &out, const string_view &line)
+console_cmd__db__bgcancel(opt &out, const string_view &line)
 try
 {
 	const params param{line, " ",
