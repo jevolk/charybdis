@@ -402,6 +402,37 @@ ircd::db::refresh(database &d)
 	};
 }
 
+bool
+ircd::db::cpwait(database &d)
+#if defined(IRCD_DB_HAS_WAIT_FOR_COMPACT)
+{
+	assert(d.d);
+
+	log::debug
+	{
+		log, "[%s] Waiting for compactions to finish...",
+		name(d),
+	};
+
+	const ctx::uninterruptible::nothrow ui;
+	throw_on_error
+	{
+		d.d->WaitForCompact(
+		{
+			.abort_on_pause = true,
+			.flush = false,
+			.close_db = false,
+		})
+	};
+
+	return true;
+}
+#else
+{
+	return false;
+}
+#endif
+
 void
 ircd::db::bgpause(database &d)
 {

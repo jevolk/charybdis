@@ -62,6 +62,7 @@ namespace ircd::db
 	void bgcancel(database &, const bool &blocking = true);
 	void bgcontinue(database &);
 	void bgpause(database &);
+	bool cpwait(database &);
 	void refresh(database &);
 	void resume(database &);
 	void check(database &, const string_view &file);
