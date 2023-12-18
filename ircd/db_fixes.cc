@@ -209,7 +209,7 @@ rocksdb::ThreadLocalPtr::~ThreadLocalPtr()
 	};
 
 	for(; it != end(map) && it->first < key[1]; it = map.erase(it))
-		if(dtor)
+		if(dtor && it->second)
 			dtor(it->second);
 }
 
@@ -317,6 +317,48 @@ rocksdb::ThreadLocalPtr::Fold(FoldFunc func,
 {
 	ircd::always_assert(false);
 }
+
+#if __has_include("util/autovector.h")
+void
+rocksdb::ThreadLocalPtr::Scrape(autovector<void *> *const ptrs,
+                                void *const replacement)
+{
+	using namespace ircd::db::fixes::tls;
+
+	assert(!ptrs || !ptrs->size());
+	const uint64_t key[2]
+	{
+		make_key({id_, 0}),        // lower bound
+		make_key({id_ + 1, 0})     // upper bound
+	};
+
+	auto it
+	{
+		map.lower_bound(key[0])
+	};
+
+	if(ptrs)
+	{
+		size_t num(0);
+		for(auto _it(it); _it != end(map) && _it->first < key[1]; ++_it)
+			if(it->second != nullptr)
+				++num;
+
+		ptrs->reserve(num);
+	}
+
+	for(; it != end(map) && it->first < key[1]; ++it)
+	{
+		const auto old
+		{
+			std::exchange(it->second, replacement)
+		};
+
+		if(ptrs && old != nullptr)
+			ptrs->emplace_back(old);
+	}
+}
+#endif
 
 #endif
 
