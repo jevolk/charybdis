@@ -62,6 +62,8 @@ namespace ircd::db
 	void bgcancel(database &, const bool &blocking = true);
 	void bgwork(database &, const bool enable);
 	bool bgwait(database &);
+	bool mcpwork(database &, const bool enable);
+	bool mcpwait(database &);
 	bool cpwait(database &);
 	void refresh(database &);
 	void resume(database &);
@@ -118,7 +120,7 @@ struct ircd::db::database
 	std::string path;
 	std::string optstr;
 	bool fsck, slave, read_only;
-	bool opened, bgwork;
+	bool opened, bgwork, mcpwork;
 	std::shared_ptr<struct env> env;
 	std::shared_ptr<struct stats> stats;
 	std::shared_ptr<struct logger> logger;

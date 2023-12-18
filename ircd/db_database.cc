@@ -434,6 +434,39 @@ ircd::db::cpwait(database &d)
 #endif
 
 bool
+ircd::db::mcpwait(database &d)
+{
+	if(!d.mcpwork)
+		return false;
+
+	mcpwork(d, false);
+	mcpwork(d, true);
+	return true;
+}
+
+bool
+ircd::db::mcpwork(database &d,
+                  const bool enable)
+#if defined(IRCD_DB_HAS_DISABLE_MANUAL_COMPACT)
+{
+	assert(d.d);
+
+	const ctx::uninterruptible::nothrow ui;
+	if(enable)
+		d.d->EnableManualCompaction();
+	else
+		d.d->DisableManualCompaction();
+
+	d.mcpwork = enable;
+	return true;
+}
+#else
+{
+	return false;
+}
+#endif
+
+bool
 ircd::db::bgwait(database &d)
 {
 	if(!d.bgwork)
@@ -987,6 +1020,10 @@ try
 	false
 }
 ,bgwork
+{
+	true
+}
+,mcpwork
 {
 	true
 }
