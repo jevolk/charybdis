@@ -432,13 +432,29 @@ try
 	if(loaded_listener(name))
 		throw error
 		{
-			"A listener with the name '%s' is already loaded", name
+			"A listener with the name '%s' is already loaded",
+			name
 		};
 
-	listeners.emplace_back(name, opts, client::create, _listener_proffer);
+	auto &listener
+	{
+		listeners.emplace_back(name, opts, client::create, _listener_proffer)
+	};
+
+	const auto cname
+	{
+		net::cname(listener)
+	};
+
+	if(cname && !m::self::host(cname))
+		log::warning
+		{
+			"TLS certificate common_name '%s' may not match SNI of incoming connections. ",
+			cname,
+		};
 
 	if(ircd::run::level == ircd::run::level::RUN)
-		start(listeners.back());
+		start(listener);
 
 	return true;
 }
