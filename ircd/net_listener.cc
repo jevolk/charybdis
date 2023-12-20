@@ -72,12 +72,14 @@ ircd::net::loghead(const mutable_buffer &out,
 
 size_t
 ircd::net::accepting_count(const acceptor &a)
+noexcept
 {
 	return a.accepting;
 }
 
 size_t
 ircd::net::handshaking_count(const acceptor &a)
+noexcept
 {
 	return a.handshaking.size();
 }
@@ -85,6 +87,7 @@ ircd::net::handshaking_count(const acceptor &a)
 size_t
 ircd::net::handshaking_count(const acceptor &a,
                              const ipaddr &ipaddr)
+noexcept
 {
 	return std::count_if(begin(a.handshaking), end(a.handshaking), [&ipaddr]
 	(const auto &socket_p)
@@ -106,13 +109,22 @@ ircd::net::binder(const acceptor &a)
 }
 
 ircd::string_view
+ircd::net::cname(const acceptor &a)
+noexcept
+{
+	return a.cname;
+}
+
+ircd::string_view
 ircd::net::name(const acceptor &a)
+noexcept
 {
 	return a.name;
 }
 
 ircd::json::object
 ircd::net::config(const acceptor &a)
+noexcept
 {
 	return a.opts;
 }

@@ -19,14 +19,15 @@ namespace ircd::net
 	extern conf::item<bool> listen;
 
 	std::string cipher_list(const acceptor &);
-	json::object config(const acceptor &);
-	string_view name(const acceptor &);
+	json::object config(const acceptor &) noexcept;
+	string_view name(const acceptor &) noexcept;
+	string_view cname(const acceptor &) noexcept;
 	ipport binder(const acceptor &);
 	ipport local(const acceptor &);
 
-	size_t handshaking_count(const acceptor &, const ipaddr &);
-	size_t handshaking_count(const acceptor &);
-	size_t accepting_count(const acceptor &);
+	size_t handshaking_count(const acceptor &, const ipaddr &) noexcept;
+	size_t handshaking_count(const acceptor &) noexcept;
+	size_t accepting_count(const acceptor &) noexcept;
 
 	bool allow(acceptor &);
 	bool start(acceptor &);
