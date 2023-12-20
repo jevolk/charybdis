@@ -23,14 +23,14 @@
 struct ircd::m::user::registar
 :json::tuple
 <
-	json::property<name::username, json::string>,
-	json::property<name::type, json::string>,
-	json::property<name::bind_email, bool>,
-	json::property<name::password, json::string>,
 	json::property<name::auth, json::object>,
+	json::property<name::bind_email, bool>,
 	json::property<name::device_id, json::string>,
 	json::property<name::inhibit_login, bool>,
-	json::property<name::initial_device_display_name, json::string>
+	json::property<name::initial_device_display_name, json::string>,
+	json::property<name::password, json::string>,
+	json::property<name::type, json::string>,
+	json::property<name::username, json::string>
 >
 {
 	static void validate_user_id(const m::user::id &);
