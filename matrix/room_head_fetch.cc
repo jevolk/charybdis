@@ -168,17 +168,56 @@ ircd::m::room::head::fetch::fetch(const opts &opts,
 	if(!top_ots)
 		m::get(std::nothrow, top_idx, "origin_server_ts", top_ots);
 
+	const bool fallback
+	{
+		true
+		&& !top_event_id
+		&& opts.hint
+		&& !my_host(opts.hint)
+		&& !remote_joined(room)
+	};
+
 	char tmbuf[48];
 	log::debug
 	{
 		log, "Resynchronizing %s from %s [relative idx:%lu depth:%ld %s] from %zu joined servers...",
 		string_view{room.room_id},
-		string_view{top_event_id},
+		!fallback?
+			string_view{top_event_id}:
+			opts.hint,
 		top_idx,
 		top_depth,
 		microdate(tmbuf),
 		room::origins(room).count(),
 	};
+
+	if(fallback)
+	{
+		const unique_mutable_buffer buf
+		{
+			16_KiB
+		};
+
+		m::event result
+		{
+			one(buf, room.room_id, opts.hint, opts.user_id)
+		};
+
+		if(!json::get<"room_id"_>(result))
+			json::get<"room_id"_>(result) = opts.room_id;
+
+		if(!json::get<"origin"_>(result))
+			json::get<"origin"_>(result) = opts.hint;
+
+		m::for_each(event::prev{result}, [&closure, &result]
+		(const event::id &event_id)
+		{
+			result.event_id = event_id;
+			return likely(closure)? closure(result): true;
+		});
+
+		return;
+	}
 
 	m::event result;
 	if(likely(closure))

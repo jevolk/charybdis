@@ -59,6 +59,9 @@ struct ircd::m::room::head::fetch::opts
 	/// automatically.
 	m::id::user user_id;
 
+	/// For unknown rooms the hint provides a fallback providing one result.
+	string_view hint;
+
 	/// Local reference frame; determined internally if not provided.
 	std::tuple<m::id::event, int64_t, event::idx> top
 	{
