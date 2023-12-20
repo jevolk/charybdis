@@ -215,6 +215,39 @@ ircd::m::events::dump__file(const string_view &filename)
 	};
 }
 
+void
+ircd::m::events::tail(const closure &closure)
+{
+	ctx::latch latch{1};
+	uint64_t prev{m::vm::sequence::retired}, cur{prev};
+	m::hookfn<m::vm::eval &> hook
+	{
+		json::members
+		{
+			{ "_site", "vm.notify" },
+		},
+		[&cur, &prev, &latch]
+		(const m::event &, m::vm::eval &eval)
+		{
+			cur = std::max(cur, eval.sequence);
+			if(cur > prev)
+				latch.count_down();
+		}
+	};
+
+	bool cont;
+	for(cont = true; cont; latch = ctx::latch{1})
+	{
+		latch.wait();
+		const m::events::range range
+		{
+			std::exchange(prev, cur), cur
+		};
+
+		cont = m::events::for_each(range, closure);
+	}
+}
+
 bool
 ircd::m::events::for_each(const range &range,
                           const event_filter &filter,

@@ -24,6 +24,7 @@ namespace ircd::m::events
 	bool for_each(const range &, const event_filter &, const event::closure_idx_bool &);
 
 	// util
+	void tail(const closure &);
 	void dump__file(const string_view &filename);
 	void rebuild();
 }

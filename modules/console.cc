@@ -8156,6 +8156,23 @@ console_cmd__events(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__events__tail(opt &out, const string_view &line)
+{
+	m::events::tail([&out]
+	(const m::event::idx &seq, const m::event &event)
+	{
+		out
+		<< seq
+		<< " "
+		<< pretty_oneline(event)
+		<< std::endl;
+		return true;
+	});
+
+	return true;
+}
+
+bool
 console_cmd__events__filter(opt &out, const string_view &line)
 {
 	const params param{line, " ",
