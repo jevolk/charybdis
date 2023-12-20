@@ -9,6 +9,17 @@
 // full license for this software is available in the LICENSE file.
 
 bool
+ircd::m::user::mitsein::has_common_local(const string_view &membership)
+const
+{
+	return my(user) || !for_each(membership, []
+	(const m::user &user)
+	{
+		return !my(user);
+	});
+}
+
+bool
 ircd::m::user::mitsein::has(const m::user &other,
                             const string_view &membership)
 const
