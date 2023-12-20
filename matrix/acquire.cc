@@ -139,7 +139,7 @@ ircd::m::acquire::fetch_history(event::idx &ref_min)
 {
 	const auto top
 	{
-		m::top(opts.room.room_id)
+		m::top(std::nothrow, opts.room.room_id)
 	};
 
 	const auto &[top_id, top_depth, top_idx]
@@ -485,7 +485,7 @@ ircd::m::acquire::acquire_state()
 		event_id = m::event_id(std::nothrow, m::sounding(opts.room).second);
 
 	if(!event_id && opts.head)
-		event_id = m::head(opts.room);
+		event_id = m::head(std::nothrow, opts.room);
 
 	if(!event_id)
 		return;
@@ -544,7 +544,7 @@ ircd::m::acquire::acquire_head()
 {
 	const auto top
 	{
-		m::top(opts.room.room_id)
+		m::top(std::nothrow, opts.room.room_id)
 	};
 
 	m::room::head::fetch::opts hfopts;

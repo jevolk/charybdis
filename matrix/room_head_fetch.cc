@@ -57,8 +57,8 @@ ircd::m::room::head::fetch::one(const mutable_buffer &out,
 	m::user::id::buf user_id
 	{
 		!user_id_?
-			any_user(room, my_host(), "join"):
-			user_id_
+			m::any_user(room, my_host(), "join"):
+			m::user::id::buf{user_id_}
 	};
 
 	// Make another attempt to find an invited user because that carries some
@@ -138,7 +138,7 @@ ircd::m::room::head::fetch::fetch(const opts &opts,
 	{
 		!opts.user_id?
 			m::any_user(room, origin(my()), "join"):
-			opts.user_id
+			m::user::id::buf{opts.user_id}
 	};
 
 	std::tuple<id::event::buf, int64_t, event::idx> top;
