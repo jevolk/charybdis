@@ -118,10 +118,21 @@ try
 	{
 		log::dwarning
 		{
-			presence_log, "Ignoring %s from %s for user %s",
+			presence_log, "Ignoring %s from %s for alien %s",
 			at<"type"_>(event),
 			at<"origin"_>(event),
 			string_view{user_id}
+		};
+
+		return;
+	}
+
+	if(!m::exists(user_id) && !m::user::mitsein{user_id}.has_common_local("join"))
+	{
+		log::dwarning
+		{
+			presence_log, "Ignoring m.presence from %s :no common rooms",
+			string_view{user_id},
 		};
 
 		return;
