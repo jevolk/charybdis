@@ -12023,7 +12023,7 @@ console_cmd__room__acquire(opt &out, const string_view &line)
 {
 	const params param{line, " ",
 	{
-		"room_id", "depth_start", "depth_stop", "viewport_size", "gap_min", "rounds"
+		"room_id", "depth_start", "depth_stop", "viewport_size", "gap_min", "rounds", "remote"
 	}};
 
 	if(!param["room_id"])
@@ -12056,7 +12056,12 @@ console_cmd__room__acquire(opt &out, const string_view &line)
 
 	const auto rounds
 	{
-		param.at("rounds", -1UL)
+		param.at("rounds", 0UL)
+	};
+
+	const auto remote
+	{
+		param["remote"]
 	};
 
 	const m::room room
@@ -12067,13 +12072,15 @@ console_cmd__room__acquire(opt &out, const string_view &line)
 	struct m::acquire::opts opts;
 	opts.vmopts.infolog_accept = true;
 	opts.room = room_id;
+	opts.hint = remote;
 	opts.depth.first = depth_start;
 	opts.depth.second = depth_stop;
 	opts.viewport_size = viewport_size;
-	opts.rounds = rounds;
+	opts.rounds = rounds?: -1UL;
 	opts.head = depth_stop == 0;
 	opts.gap.first = gap_min;
 	opts.vmopts.phase.set(m::vm::phase::EFFECTS, false);
+	opts.vmopts.phase.set(m::vm::phase::EMPTION, false);
 	m::acquire
 	{
 		opts
