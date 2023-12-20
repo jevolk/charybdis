@@ -14,6 +14,7 @@ namespace ircd::m::vm
 	static fault inject1(eval &, json::iov &, const json::iov &, const string_view &);
 
 	#pragma GCC visibility push(internal)
+	extern conf::item<size_t> prev_limit;
 	extern conf::item<bool> log_inject_debug;
 	extern log::log log_inject;
 	#pragma GCC visibility pop
@@ -30,6 +31,18 @@ ircd::m::vm::log_inject_debug
 {
 	{ "name",     "ircd.m.vm.log.inject.debug" },
 	{ "default",  true                         },
+};
+
+decltype(ircd::m::vm::prev_limit)
+ircd::m::vm::prev_limit
+{
+	{ "name",         "ircd.m.vm.inject.prev.limit" },
+	{ "default",      16L                           },
+	{
+		"description",
+		"Events created by this server will only "
+		"reference a maximum of this many prev_events."
+	},
 };
 
 ///
@@ -172,18 +185,6 @@ ircd::m::vm::inject(eval &eval,
 				return eval.room_id;
 			}
 		}
-	};
-
-	// XXX: should move outside if lazy static initialization is problem.
-	static conf::item<size_t> prev_limit
-	{
-		{ "name",         "ircd.m.vm.inject.prev.limit" },
-		{ "default",      16L                           },
-		{
-			"description",
-			"Events created by this server will only"
-			" reference a maximum of this many prev_events."
-		},
 	};
 
 	// Ad hoc number of bytes we'll need for each prev_events reference in
