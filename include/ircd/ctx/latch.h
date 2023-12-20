@@ -31,6 +31,7 @@ class ircd::ctx::latch
 	latch() = default;
 	latch(latch &&);
 	latch(const latch &) = delete;
+	latch &operator=(latch &&) = default;
 	~latch() noexcept;
 };
 
