@@ -17652,14 +17652,19 @@ console_cmd__fed__query_auth(opt &out, const string_view &line)
 bool
 console_cmd__fed__query__profile(opt &out, const string_view &line)
 {
+	const params param{line, " ",
+	{
+		"user_id", "remote"
+	}};
+
 	const m::user::id &user_id
 	{
-		token(line, ' ', 0)
+		param.at("user_id")
 	};
 
 	const string_view remote
 	{
-		token_count(line, ' ') > 1? token(line, ' ', 1) : user_id.host()
+		param["remote"]?: user_id.host()
 	};
 
 	m::fed::query::opts opts;
@@ -17693,14 +17698,19 @@ console_cmd__fed__query__profile(opt &out, const string_view &line)
 bool
 console_cmd__fed__query__directory(opt &out, const string_view &line)
 {
+	const params param{line, " ",
+	{
+		"alias", "remote"
+	}};
+
 	const m::id::room_alias &room_alias
 	{
-		token(line, ' ', 0)
+		param.at("alias")
 	};
 
 	const string_view remote
 	{
-		token_count(line, ' ') > 1? token(line, ' ', 1) : room_alias.host()
+		param["remote"]?: room_alias.host()
 	};
 
 	m::fed::query::opts opts;
