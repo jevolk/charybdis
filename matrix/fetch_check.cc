@@ -243,7 +243,7 @@ ircd::m::fetch::check_event_conforms(const request &request,
 			{
 				log, "%s claims %s redacted by %s",
 				request.origin,
-				string_view{request.opts.event_id},
+				string_view{event.event_id},
 				redacted_by,
 			};
 
