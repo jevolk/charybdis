@@ -275,6 +275,9 @@ try
 	if(!my(user_id))
 		return;
 
+	if(!exists(user_id))
+		return;
+
 	const m::room::id &room_id
 	{
 		at<"room_id"_>(event)
