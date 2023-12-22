@@ -1759,9 +1759,10 @@ ircd::db::seek(row &r,
 	if constexpr(RB_DEBUG_DB_SEEK_ROW)
 		if(likely(!r.empty()))
 		{
+			thread_local char tmbuf[32];
+			const auto elapsed(timer.at<microseconds>());
 			const column &c(r[0]);
 			const database &d(c);
-			thread_local char tmbuf[32];
 			log::debug
 			{
 				log, "'%s' SEEK ROW seq:%lu:%-10lu cnt:%-2zu req:%-2zu ret:%-2zu in %s %s",
@@ -1771,7 +1772,7 @@ ircd::db::seek(row &r,
 				r.size(),
 				submits,
 				ret,
-				pretty(tmbuf, timer.at<microseconds>(), true),
+				pretty(tmbuf, elapsed, true),
 				what(eptr)
 			};
 		}
