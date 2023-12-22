@@ -1065,6 +1065,10 @@ try
 	std::make_shared<struct allocator>(this, nullptr, database::allocator::cache_arena)
 	#endif
 }
+,memtable_factory
+{
+	std::make_unique<struct memtable_factory>(this)
+}
 ,ssts{rocksdb::NewSstFileManager
 (
 	env.get(),   // env
@@ -2033,6 +2037,9 @@ ircd::db::database::column::column(database &d,
 		ulong(512_KiB),
 		ulong(4_MiB)
 	);
+
+	// Memtables
+	this->options.memtable_factory = this->d->memtable_factory;
 
 	// Conf item can be set to disable automatic compactions. For developers
 	// and debugging; good for valgrind.
@@ -4550,6 +4557,55 @@ ircd::db::database::rate_limiter::IsRateLimited(OpType op)
 noexcept
 {
 	return false;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// database::memtable_factory
+//
+
+ircd::db::database::memtable_factory::memtable_factory(database *const &d,
+                                                       const size_t lookahead)
+:rocksdb::SkipListFactory{lookahead}
+,d{d}
+{
+}
+
+ircd::db::database::memtable_factory::~memtable_factory()
+noexcept
+{
+}
+
+rocksdb::MemTableRep *
+ircd::db::database::memtable_factory::CreateMemTableRep(const MemTableRep::KeyComparator &key_comp,
+                                                        Allocator *const allocator,
+                                                        const SliceTransform *const slice_transform,
+                                                        Logger *const logger,
+                                                        uint32_t cfid)
+noexcept
+{
+	assert(d);
+	database &d(*this->d);
+	const column *const col
+	{
+		d.opened? &d[cfid]: nullptr
+	};
+
+	if constexpr(RB_DEBUG_DB_ENV)
+		log::debug
+		{
+			log, "[%s]'%s' Create memory table.",
+			db::name(d),
+			col? string_view{col->name}: lex_cast(cfid),
+		};
+
+	assert(logger == d.logger.get());
+	auto *const ret
+	{
+		SkipListFactory::CreateMemTableRep(key_comp, allocator, slice_transform, logger, cfid)
+	};
+
+	return ret;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

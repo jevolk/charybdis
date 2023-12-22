@@ -114,6 +114,7 @@ struct ircd::db::database
 	struct wal_filter;
 	struct allocator;
 	struct rate_limiter;
+	struct memtable_factory;
 
 	std::string name;
 	uint64_t checkpoint;
@@ -129,6 +130,7 @@ struct ircd::db::database
 	std::unique_ptr<struct wal_filter> wal_filter;
 	std::shared_ptr<struct rate_limiter> rate_limiter;
 	std::shared_ptr<struct allocator> allocator;
+	std::shared_ptr<struct memtable_factory> memtable_factory;
 	std::shared_ptr<rocksdb::SstFileManager> ssts;
 	std::shared_ptr<rocksdb::Cache> row_cache;
 	std::vector<descriptor> descriptors;

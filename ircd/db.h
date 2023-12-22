@@ -187,6 +187,7 @@ ircd::db::database::column final
 	rocksdb::WriteStallCondition stall;
 	std::shared_ptr<struct database::stats> stats;
 	std::shared_ptr<struct database::allocator> allocator;
+	std::shared_ptr<struct database::memtable_factory> memtable_factory;
 	rocksdb::BlockBasedTableOptions table_opts;
 	const bool options_preconfiguration;
 	std::vector<std::unique_ptr<conf::item<std::string>>> confs;
@@ -606,6 +607,25 @@ ircd::db::database::rate_limiter
 
 	rate_limiter(database *const &);
 	~rate_limiter() noexcept;
+};
+
+struct [[gnu::visibility("hidden")]]
+ircd::db::database::memtable_factory
+:std::enable_shared_from_this<struct database::memtable_factory>
+,rocksdb::SkipListFactory
+{
+	using MemTableRep = rocksdb::MemTableRep;
+	using KeyComparator = MemTableRep::KeyComparator;
+	using SliceTransform = rocksdb::SliceTransform;
+	using Allocator = rocksdb::Allocator;
+	using Logger = rocksdb::Logger;
+
+	database *d {nullptr};
+
+	MemTableRep *CreateMemTableRep(const KeyComparator &, Allocator *, const SliceTransform *, Logger *, uint32_t) noexcept override;
+
+	memtable_factory(database *const &, const size_t lookahead = 0);
+	~memtable_factory() noexcept;
 };
 
 //
