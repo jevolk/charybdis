@@ -18,6 +18,8 @@ namespace ircd::db
 	using columns = vector_view<column>;
 	using keys = vector_view<const string_view>;
 	using bufs = vector_view<mutable_buffer>;
+	using views = vector_view<const string_view>;
+	using views_closure = std::function<void (const views)>;
 
 	// Information about a column
 	uint32_t id(const column &) noexcept;
@@ -65,6 +67,7 @@ namespace ircd::db
 
 	// [GET] Parallel copy into your buffers; your mutable_buffer is resized
 	// tight to the result size. Returns bitset for existential report.
+	uint64_t read(const columns &, const keys &, const gopts &, const views_closure &);
 	uint64_t read(const columns &, const keys &, const bufs &, const gopts & = {});
 	uint64_t read(column &, const keys &, const bufs &, const gopts & = {});
 

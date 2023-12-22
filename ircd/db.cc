@@ -2821,6 +2821,24 @@ ircd::db::read(const columns &c,
                const bufs &buf,
                const gopts &gopts)
 {
+	return read(c, key, gopts, [&buf]
+	(const auto &view)
+	{
+		assert(buf.size() == view.size());
+		for(uint i(0); i < buf.size(); ++i)
+			buf[i] = mutable_buffer
+			{
+				buf[i], copy(buf[i], view[i])
+			};
+	});
+}
+
+uint64_t
+ircd::db::read(const columns &c,
+               const keys &key,
+               const gopts &gopts,
+               const views_closure &closure)
+{
 	if(c.empty())
 		return 0UL;
 
@@ -2829,7 +2847,7 @@ ircd::db::read(const columns &c,
 		key.size()
 	};
 
-	if(unlikely(!num || num > 64 || num > buf.size()))
+	if(unlikely(!num || num > 64))
 		throw std::out_of_range
 		{
 			"db::read() :too many columns or vector size mismatch"
@@ -2843,8 +2861,9 @@ ircd::db::read(const columns &c,
 		};
 
 	uint64_t i(0), ret(0);
-	auto opts(make_opts(gopts));
-	_read({op, num}, opts, [&i, &ret, &buf]
+	string_view view[num];
+	const auto opts(make_opts(gopts));
+	_read({op, num}, opts, [&num, &i, &ret, &view, &closure]
 	(column &, const column::delta &d, const rocksdb::Status &s)
 	{
 		const auto &val
@@ -2852,20 +2871,18 @@ ircd::db::read(const columns &c,
 			std::get<column::delta::VAL>(d)
 		};
 
-		buf[i] = mutable_buffer
-		{
-			buf[i], size(val)
-		};
+		view[i] = val;
+		ret |= (uint64_t(s.ok()) << i);
 
-		const auto copied
-		{
-			copy(buf[i], val)
-		};
+		// All results are available until _read() returns. The user is called
+		// here with all results after the last result is set.
+		if(++i == num)
+			closure(views(view, num));
 
-		ret |= (uint64_t(s.ok()) << i++);
 		return true;
 	});
 
+	assert(i == num);
 	return ret;
 }
 
