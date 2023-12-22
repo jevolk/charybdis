@@ -14,6 +14,7 @@ namespace ircd::stats
 	static void each_item(resource::response::chunked &, stats::item<void> &, window_buffer &, const time_t &);
 	static resource::response get_stats(client &, const resource::request &);
 
+	extern conf::item<size_t> chunk_buffer_size;
 	extern resource::method method_get;
 	extern resource stats_resource;
 }
@@ -22,6 +23,13 @@ ircd::mapi::header
 IRCD_MODULE
 {
 	"Prometheus Metrics"
+};
+
+decltype(ircd::stats::chunk_buffer_size)
+ircd::stats::chunk_buffer_size
+{
+	{ "name",     "ircd.stats.chunk_buffer_size" },
+	{ "default",  long(512_KiB)                  },
 };
 
 decltype(ircd::stats::stats_resource)
@@ -45,7 +53,7 @@ ircd::stats::get_stats(client &client,
 {
 	resource::response::chunked response
 	{
-		client, http::OK, "text/plain"
+		client, http::OK, "text/plain", size_t(chunk_buffer_size)
 	};
 
 	window_buffer buf
