@@ -10,7 +10,11 @@
 
 namespace ircd::m::fed::well_known
 {
+	using cache_data = std::tuple<m::event::idx, json::object, milliseconds>;
+
 	static net::hostport make_remote(const string_view &);
+	static cache_data cache_get(const mutable_buffer &, const string_view &, const opts &);
+
 	static void submit(request &);
 	static void receive(request &);
 	static void finish(request &);
@@ -130,31 +134,9 @@ ircd::m::fed::well_known::get(const mutable_buffer &buf,
                               const opts &opts)
 try
 {
-	const m::room::id::buf cache_room_id
+	const auto &[event_idx, content, origin_server_ts]
 	{
-		"dns", m::my_host()
-	};
-
-	const m::room cache_room
-	{
-		cache_room_id
-	};
-
-	const m::event::idx event_idx
-	{
-		likely(opts.cache_check)?
-			cache_room.get(std::nothrow, request::type, target):
-			0UL
-	};
-
-	const milliseconds origin_server_ts
-	{
-		m::get<time_t>(std::nothrow, event_idx, "origin_server_ts", time_t(0))
-	};
-
-	const json::object content
-	{
-		m::get(std::nothrow, event_idx, "content", buf)
+		cache_get(buf, target, opts)
 	};
 
 	const seconds ttl
@@ -321,6 +303,54 @@ catch(const std::exception &e)
 		{
 			data(buf), move(buf, target)
 		}
+	};
+}
+
+ircd::m::fed::well_known::cache_data
+ircd::m::fed::well_known::cache_get(const mutable_buffer &out,
+                                    const string_view &target,
+                                    const opts &opts)
+{
+	static const string_view keys[]
+	{
+		"content", "origin_server_ts",
+	};
+
+	const m::room::id::buf cache_room_id
+	{
+		"dns", m::my_host()
+	};
+
+	const m::room cache_room
+	{
+		cache_room_id
+	};
+
+	const m::event::idx event_idx
+	{
+		likely(opts.cache_check)?
+			cache_room.get(std::nothrow, request::type, target):
+			0UL
+	};
+
+	const m::event::idx _event_idx[]
+	{
+		event_idx, event_idx
+	};
+
+	json::object content;
+	milliseconds origin_server_ts {0ms};
+	m::get(std::nothrow, _event_idx, keys, [&content, &out, &origin_server_ts]
+	(const vector_view<const string_view> &val)
+	{
+		content = string_view(data(out), copy(out, val[0]));
+		if(val[1])
+			origin_server_ts = byte_view<milliseconds>(val[1]);
+	});
+
+	return cache_data
+	{
+		event_idx, content, origin_server_ts,
 	};
 }
 
