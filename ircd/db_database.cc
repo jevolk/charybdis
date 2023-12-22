@@ -2712,10 +2712,9 @@ catch(const std::exception &e)
 // database::stats (db/database/stats.h) internal
 //
 
-namespace ircd::db
-{
-	static thread_local char database_stats_name_buf[128];
-}
+thread_local
+decltype(ircd::db::database::stats::name_buf)
+ircd::db::database::stats::name_buf;
 
 //
 // stats::stats
@@ -2859,7 +2858,8 @@ const
 	assert(this->d);
 	return fmt::sprintf
 	{
-		database_stats_name_buf, "ircd.db.%s.%s.%s",
+		name_buf, "%s.%s.%s.%s",
+		db::confs_prefix,
 		db::name(*d),
 		c? db::name(*c): "db"s,
 		lstrip(ticker_name, "rocksdb."),

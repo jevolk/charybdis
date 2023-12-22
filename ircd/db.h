@@ -116,7 +116,7 @@ namespace ircd::db
 	rocksdb::ReadOptions make_opts(const gopts &) noexcept;
 
 	// Database options as ircd::conf items.
-	static const string_view confs_prefix {"ircd.db"};
+	static const string_view confs_prefix {"rocksdb"};
 	using confs = std::vector<std::unique_ptr<conf::item<std::string>>>;
 	string_view make_conf_name(const mutable_buffer &, const pair<string_view> &, const string_view &);
 	string_view unmake_conf_name_key(const conf::item<void> &);
@@ -424,6 +424,7 @@ ircd::db::database::stats final
 	ircd::stats::item<uint64_t> multiget_copied;
 	ircd::stats::item<uint64_t> multiget_referenced;
 
+	static thread_local char name_buf[128];
 	string_view make_name(const string_view &ticker_name) const; // tls buffer
 
 	uint64_t getTickerCount(const uint32_t tickerType) const noexcept override;
