@@ -72,17 +72,17 @@ handle_edu(client &client,
 	json::get<"content"_>(event) = at<"content"_>(edu);
 	json::get<"type"_>(event) = at<"edu_type"_>(edu);
 	json::get<"depth"_>(event) = json::undefined_number;
-
-	m::vm::opts vmopts;
-	vmopts.nothrows = -1U;
-	vmopts.node_id = request.node_id;
-	vmopts.txn_id = txn_id;
-	vmopts.edu = true;
-	vmopts.notify_clients = false;
-	vmopts.notify_servers = false;
-	m::vm::eval eval
+	m::vm::eval
 	{
-		event, vmopts
+		event, m::vm::opts
+		{
+			.node_id = request.node_id,
+			.txn_id = txn_id,
+			.notify_clients = false,
+			.notify_servers = false,
+			.edu = true,
+			.nothrows = -1U,
+		}
 	};
 }
 
@@ -98,19 +98,22 @@ handle_pdus(client &client,
 		out, "pdus"
 	};
 
-	m::vm::opts vmopts;
-	vmopts.out = &out_pdus;
-	vmopts.warnlog = 0;
-	vmopts.infolog_accept = true;
-	vmopts.nothrows = -1U;
-	vmopts.node_id = request.node_id;
-	vmopts.txn_id = txn_id;
-	vmopts.phase.set(m::vm::phase::FETCH_PREV, bool(fetch_prev));
-	vmopts.phase.set(m::vm::phase::FETCH_STATE, bool(fetch_state));
-	vmopts.fetch_prev_wait_count = -1;
+	decltype(m::vm::opts::phase) phase {-1UL};
+	phase.set(m::vm::phase::FETCH_PREV, bool(fetch_prev));
+	phase.set(m::vm::phase::FETCH_STATE, bool(fetch_state));
 	m::vm::eval eval
 	{
-		pdus, vmopts
+		pdus, m::vm::opts
+		{
+			.node_id = request.node_id,
+			.txn_id = txn_id,
+			.phase = phase,
+			.fetch_prev_wait_count = -1UL,
+			.nothrows = -1U,
+			.warnlog = 0,
+			.infolog_accept = true,
+			.out = &out_pdus,
+		}
 	};
 }
 
