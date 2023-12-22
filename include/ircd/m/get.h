@@ -13,6 +13,10 @@
 
 namespace ircd::m
 {
+	// Fetch the value for multiple properties of multiple events in parallel into the closure.
+	uint64_t get(std::nothrow_t, const vector_view<const event::idx> &, const vector_view<const string_view> &, const event::fetch::views_closure &);
+	void get(const vector_view<const event::idx> &, const vector_view<const string_view> &, const event::fetch::views_closure &);
+
 	// Fetch the value for a single property of multiple events in parallel into the closure.
 	uint64_t get(std::nothrow_t, const vector_view<const event::idx> &, const string_view &key, const event::fetch::views_closure &);
 	void get(const vector_view<const event::idx> &, const string_view &key, const event::fetch::views_closure &);
