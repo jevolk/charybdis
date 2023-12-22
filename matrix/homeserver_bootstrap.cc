@@ -312,6 +312,7 @@ ircd::m::bootstrap_event_vector(homeserver &homeserver)
 
 	// Outputs to infolog for each event; may be noisy;
 	vmopts.infolog_accept = false;
+	vmopts.wopts.log_warns = false;
 
 	// Error control mask
 	vmopts.nothrows = ssize_t(bootstrap_nothrows);

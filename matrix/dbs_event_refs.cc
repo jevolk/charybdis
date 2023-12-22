@@ -281,21 +281,18 @@ ircd::m::dbs::_index_event_refs_prev(db::txn &txn,
 
 	for(size_t i(0); i < prev_id.size(); ++i)
 	{
-		if(opts.appendix.test(appendix::EVENT_HORIZON))
-			if(!prev_idx[i])
-			{
-				_index_event_horizon(txn, event, opts, prev_id[i]);
-				continue;
-			}
-
 		if(!prev_idx[i])
 		{
-			log::dwarning
-			{
-				log, "No index found to ref %s PREV of %s",
-				string_view{prev_id[i]},
-				string_view{event.event_id},
-			};
+			if(opts.appendix.test(appendix::EVENT_HORIZON))
+				_index_event_horizon(txn, event, opts, prev_id[i]);
+
+			else if(opts.log_warns)
+				log::dwarning
+				{
+					log, "No index found to ref %s PREV of %s",
+					string_view{prev_id[i]},
+					string_view{event.event_id},
+				};
 
 			continue;
 		}
@@ -370,18 +367,18 @@ ircd::m::dbs::_index_event_refs_auth(db::txn &txn,
 
 	for(size_t i(0); i < auth_id.size(); ++i)
 	{
-		if(opts.appendix.test(appendix::EVENT_HORIZON))
-			if(unlikely(!auth_idx[i]))
-				_index_event_horizon(txn, event, opts, auth_id[i]);
-
 		if(unlikely(!auth_idx[i]))
 		{
-			log::error
-			{
-				log, "No index found to ref %s AUTH of %s",
-				string_view{auth_id[i]},
-				string_view{event.event_id}
-			};
+			if(opts.appendix.test(appendix::EVENT_HORIZON))
+				_index_event_horizon(txn, event, opts, auth_id[i]);
+
+			if(opts.log_errs)
+				log::error
+				{
+					log, "No index found to ref %s AUTH of %s",
+					string_view{auth_id[i]},
+					string_view{event.event_id}
+				};
 
 			continue;
 		}
@@ -564,21 +561,18 @@ ircd::m::dbs::_index_event_refs_m_receipt_m_read(db::txn &txn,
 		find_event_idx(event_id, opts)
 	};
 
-	if(opts.appendix.test(appendix::EVENT_HORIZON))
-		if(!event_idx)
-		{
-			_index_event_horizon(txn, event, opts, event_id);
-			return;
-		}
-
 	if(!event_idx)
 	{
-		log::dwarning
-		{
-			log, "No index found to ref %s M_RECEIPT__M_READ of %s",
-			string_view{event_id},
-			string_view{event.event_id}
-		};
+		if(opts.appendix.test(appendix::EVENT_HORIZON))
+			_index_event_horizon(txn, event, opts, event_id);
+
+		else if(opts.log_warns)
+			log::dwarning
+			{
+				log, "No index found to ref %s M_RECEIPT__M_READ of %s",
+				string_view{event_id},
+				string_view{event.event_id}
+			};
 
 		return;
 	}
@@ -656,12 +650,13 @@ ircd::m::dbs::_index_event_refs_m_relates(db::txn &txn,
 
 	if(unlikely(!valid(m::id::EVENT, event_id)))
 	{
-		log::derror
-		{
-			log, "Cannot index m.relates_to in %s; '%s' is not an event_id.",
-			string_view{event.event_id},
-			string_view{event_id}
-		};
+		if(opts.log_errs)
+			log::derror
+			{
+				log, "Cannot index m.relates_to in %s; '%s' is not an event_id.",
+				string_view{event.event_id},
+				string_view{event_id}
+			};
 
 		return;
 	}
@@ -671,21 +666,18 @@ ircd::m::dbs::_index_event_refs_m_relates(db::txn &txn,
 		find_event_idx(event_id, opts)
 	};
 
-	if(opts.appendix.test(appendix::EVENT_HORIZON))
-		if(!event_idx)
-		{
-			_index_event_horizon(txn, event, opts, event_id);
-			return;
-		}
-
 	if(!event_idx)
 	{
-		log::derror
-		{
-			log, "Cannot index m.relates_to in %s; referenced %s not found.",
-			string_view{event.event_id},
-			string_view{event_id}
-		};
+		if(opts.appendix.test(appendix::EVENT_HORIZON))
+			_index_event_horizon(txn, event, opts, event_id);
+
+		else if(opts.log_errs)
+			log::derror
+			{
+				log, "Cannot index m.relates_to in %s; referenced %s not found.",
+				string_view{event.event_id},
+				string_view{event_id}
+			};
 
 		return;
 	}
@@ -768,21 +760,18 @@ ircd::m::dbs::_index_event_refs_m_relates_m_reply(db::txn &txn,
 		find_event_idx(event_id, opts)
 	};
 
-	if(opts.appendix.test(appendix::EVENT_HORIZON))
-		if(!event_idx)
-		{
-			_index_event_horizon(txn, event, opts, event_id);
-			return;
-		}
-
 	if(!event_idx)
 	{
-		log::dwarning
-		{
-			log, "Cannot index m.in_reply_to in %s; referenced %s not found.",
-			string_view{event.event_id},
-			string_view{event_id}
-		};
+		if(opts.appendix.test(appendix::EVENT_HORIZON))
+			_index_event_horizon(txn, event, opts, event_id);
+
+		else if(opts.log_warns)
+			log::dwarning
+			{
+				log, "Cannot index m.in_reply_to in %s; referenced %s not found.",
+				string_view{event.event_id},
+				string_view{event_id}
+			};
 
 		return;
 	}
@@ -855,21 +844,18 @@ ircd::m::dbs::_index_event_refs_m_room_redaction(db::txn &txn,
 		find_event_idx(event_id, opts)
 	};
 
-	if(opts.appendix.test(appendix::EVENT_HORIZON))
-		if(!event_idx)
-		{
-			_index_event_horizon(txn, event, opts, event_id);
-			return;
-		}
-
 	if(!event_idx)
 	{
-		log::dwarning
-		{
-			log, "Cannot index m.room.redaction in %s; referenced %s not found.",
-			string_view{event.event_id},
-			string_view{event_id}
-		};
+		if(opts.appendix.test(appendix::EVENT_HORIZON))
+			_index_event_horizon(txn, event, opts, event_id);
+
+		else if(opts.log_warns)
+			log::dwarning
+			{
+				log, "Cannot index m.room.redaction in %s; referenced %s not found.",
+				string_view{event.event_id},
+				string_view{event_id}
+			};
 
 		return;
 	}

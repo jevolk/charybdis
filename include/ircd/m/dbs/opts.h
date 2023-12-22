@@ -69,6 +69,12 @@ struct ircd::m::dbs::opts
 	/// and "blacklist" they must know that `event_id => 0` was *found* to be
 	/// zero.
 	bool blacklist {false};
+
+	/// Toggle warning/dwarning messages.
+	bool log_warns {true};
+
+	/// Toggle error/derror messages.
+	bool log_errs {true};
 };
 
 /// Values which represent some element(s) included in a transaction or

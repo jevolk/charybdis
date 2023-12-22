@@ -208,35 +208,36 @@ ircd::m::dbs::_index_event_horizon_resolve_one(db::txn &txn,
 
 	if(!_event.valid)
 	{
-		log::dwarning
-		{
-			log, "Horizon resolve for %s @%lu not possible @%lu",
-			string_view{event.event_id},
-			opts.event_idx,
-			event_idx,
-		};
+		if(opts.log_warns)
+			log::dwarning
+			{
+				log, "Horizon resolve for %s @%lu not possible @%lu",
+				string_view{event.event_id},
+				opts.event_idx,
+				event_idx,
+			};
 
 		return;
 	}
 
-	log::debug
-	{
-		log, "Horizon resolve for %s @%lu; remisé %s @%lu",
-		string_view{event.event_id},
-		opts.event_idx,
-		string_view{_event.event_id},
-		event_idx,
-	};
+	if(opts.log_warns)
+		log::debug
+		{
+			log, "Horizon resolve for %s @%lu; remisé %s @%lu",
+			string_view{event.event_id},
+			opts.event_idx,
+			string_view{_event.event_id},
+			event_idx,
+		};
 
 	// Make the references on behalf of the future event
-	dbs::opts _opts;
-	_opts.op = opts.op;
-	_opts.event_idx = event_idx;
+	dbs::opts _opts(opts);
 	_opts.appendix.reset();
 	_opts.appendix.set(appendix::EVENT_REFS, opts.appendix[appendix::EVENT_REFS]);
 	_opts.appendix.set(appendix::ROOM_REDACT, opts.appendix[appendix::ROOM_REDACT]);
 	_opts.appendix.set(appendix::ROOM_HEAD_RESOLVE, opts.appendix[appendix::ROOM_HEAD_RESOLVE]);
 	_opts.event_refs = opts.horizon_resolve;
+	_opts.event_idx = event_idx;
 	_opts.interpose = &txn;
 	write(txn, _event, _opts);
 
