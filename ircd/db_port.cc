@@ -73,8 +73,7 @@ void
 rocksdb::port::Mutex::Lock()
 noexcept
 {
-	if(unlikely(!ctx::current))
-		return;
+	assert(ctx::current);
 
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
@@ -93,8 +92,7 @@ void
 rocksdb::port::Mutex::Unlock()
 noexcept
 {
-	if(unlikely(!ctx::current))
-		return;
+	assert(ctx::current);
 
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
@@ -174,9 +172,6 @@ void
 rocksdb::port::RWMutex::ReadLock()
 noexcept
 {
-	if(unlikely(!ctx::current))
-		return;
-
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
@@ -186,6 +181,7 @@ noexcept
 		};
 
 	assert_main_thread();
+	assert(ctx::current);
 	const ctx::uninterruptible::nothrow ui;
 	mu.lock_shared();
 }
@@ -194,9 +190,6 @@ void
 rocksdb::port::RWMutex::WriteLock()
 noexcept
 {
-	if(unlikely(!ctx::current))
-		return;
-
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
@@ -206,6 +199,7 @@ noexcept
 		};
 
 	assert_main_thread();
+	assert(ctx::current);
 	const ctx::uninterruptible::nothrow ui;
 	mu.lock();
 }
@@ -214,9 +208,6 @@ void
 rocksdb::port::RWMutex::ReadUnlock()
 noexcept
 {
-	if(unlikely(!ctx::current))
-		return;
-
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
@@ -226,6 +217,7 @@ noexcept
 		};
 
 	assert_main_thread();
+	assert(ctx::current);
 	const ctx::uninterruptible::nothrow ui;
 	mu.unlock_shared();
 }
@@ -234,9 +226,6 @@ void
 rocksdb::port::RWMutex::WriteUnlock()
 noexcept
 {
-	if(unlikely(!ctx::current))
-		return;
-
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
@@ -246,6 +235,7 @@ noexcept
 		};
 
 	assert_main_thread();
+	assert(ctx::current);
 	const ctx::uninterruptible::nothrow ui;
 	mu.unlock();
 }
@@ -311,8 +301,6 @@ void
 rocksdb::port::CondVar::Wait()
 noexcept
 {
-	assert(ctx::current);
-
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
@@ -325,6 +313,7 @@ noexcept
 
 	assert(mu);
 	assert_main_thread();
+	assert(ctx::current);
 	mu->AssertHeld();
 	const ctx::uninterruptible::nothrow ui;
 	cv.wait(mu->mu);
@@ -335,8 +324,6 @@ bool
 rocksdb::port::CondVar::TimedWait(uint64_t abs_time_us)
 noexcept
 {
-	assert(ctx::current);
-
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
@@ -350,6 +337,7 @@ noexcept
 
 	assert(mu);
 	assert_main_thread();
+	assert(ctx::current);
 	mu->AssertHeld();
 	const std::chrono::microseconds us(abs_time_us);
 	const std::chrono::system_clock::time_point tp(us);
