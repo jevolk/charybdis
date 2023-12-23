@@ -298,10 +298,11 @@ noexcept
 
 		log::debug
 		{
-			db::log, "cond %lu %p %p DTOR",
+			db::log, "cond %lu %p %p DTOR q:%zu",
 			ctx::id(),
 			this,
-			mu
+			mu,
+			cv.size(),
 		};
 	}
 }
@@ -315,10 +316,11 @@ noexcept
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
-			db::log, "cond %lu %p %p WAIT",
+			db::log, "cond %lu %p %p WAIT q:%zu",
 			ctx::id(),
 			this,
-			mu
+			mu,
+			cv.size(),
 		};
 
 	assert(mu);
@@ -338,10 +340,11 @@ noexcept
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
-			db::log, "cond %lu %p %p WAIT_UNTIL %lu",
+			db::log, "cond %lu %p %p WAIT_UNTIL q:%zu abs:%lu",
 			ctx::id(),
 			this,
 			mu,
+			cv.size(),
 			abs_time_us
 		};
 
@@ -351,7 +354,12 @@ noexcept
 	const std::chrono::microseconds us(abs_time_us);
 	const std::chrono::system_clock::time_point tp(us);
 	const ctx::uninterruptible::nothrow ui;
-	return cv.wait_until(mu->mu, tp) == std::cv_status::timeout;
+	const auto ret
+	{
+		cv.wait_until(mu->mu, tp) == std::cv_status::timeout
+	};
+
+	return ret;
 }
 
 void
@@ -361,10 +369,11 @@ noexcept
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
-			db::log, "cond %lu %p %p NOTIFY",
+			db::log, "cond %lu %p %p NOTIFY q:%zu",
 			ctx::id(),
 			this,
-			mu
+			mu,
+			cv.size(),
 		};
 
 	assert_main_thread();
@@ -378,10 +387,11 @@ noexcept
 	if constexpr(RB_DEBUG_DB_PORT)
 		log::debug
 		{
-			db::log, "cond %lu %p %p BROADCAST",
+			db::log, "cond %lu %p %p BROADCAST q:%zu",
 			ctx::id(),
 			this,
-			mu
+			mu,
+			cv.size(),
 		};
 
 	assert_main_thread();
