@@ -40,6 +40,7 @@ namespace rocksdb
 	struct TableProperties;
 	struct LogFile;
 	struct Status;
+	struct WriteBufferManager;
 }
 
 //

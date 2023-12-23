@@ -1067,7 +1067,16 @@ try
 }
 ,memtable_factory
 {
-	std::make_unique<struct memtable_factory>(this)
+	std::make_shared<struct memtable_factory>(this)
+}
+,memtable_mgr
+{
+	std::make_shared<rocksdb::WriteBufferManager>
+	(
+		64_MiB,   // size
+		nullptr,  // mock cache
+		false     // allow_stall
+	)
 }
 ,ssts{rocksdb::NewSstFileManager
 (
@@ -1141,8 +1150,9 @@ try
 		2_MiB: //TODO: conf
 		0;
 
-	opts->max_total_wal_size = 96_MiB;
-	opts->db_write_buffer_size = 96_MiB;
+	opts->write_buffer_manager = this->memtable_mgr;
+	opts->db_write_buffer_size = this->memtable_mgr->buffer_size();
+	opts->max_total_wal_size = this->memtable_mgr->buffer_size();
 
 	//TODO: range_sync
 	opts->bytes_per_sync = 0;
@@ -3420,6 +3430,32 @@ noexcept
 		info.first_seqno,
 		info.num_entries,
 		info.num_deletes,
+	};
+
+	assert(d);
+	assert(d->memtable_mgr);
+	const auto level
+	{
+		d->memtable_mgr->ShouldFlush() && d->memtable_mgr->enabled()?
+			log::level::DWARNING:
+		d->memtable_mgr->ShouldStall() && d->memtable_mgr->enabled()?
+			log::level::WARNING:
+			log::level::DEBUG
+	};
+
+	char pbuf[3][48];
+	log::logf
+	{
+		log, level,
+		"[%s] memory tables%s%s%s%s size:%s usage:%s mutable:%s",
+		d->name,
+		d->memtable_mgr->ShouldFlush()? " FLUSH": "",
+		d->memtable_mgr->ShouldStall()? " STALL": "",
+		d->memtable_mgr->IsStallActive()? " STALLING": "",
+		d->memtable_mgr->IsStallThresholdExceeded()? " EXCEEDED": "",
+		pretty(pbuf[0], iec(d->memtable_mgr->buffer_size())),
+		pretty(pbuf[1], iec(d->memtable_mgr->memory_usage())),
+		pretty(pbuf[2], iec(d->memtable_mgr->mutable_memtable_memory_usage())),
 	};
 }
 

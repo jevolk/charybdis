@@ -131,6 +131,7 @@ struct ircd::db::database
 	std::shared_ptr<struct rate_limiter> rate_limiter;
 	std::shared_ptr<struct allocator> allocator;
 	std::shared_ptr<struct memtable_factory> memtable_factory;
+	std::shared_ptr<rocksdb::WriteBufferManager> memtable_mgr;
 	std::shared_ptr<rocksdb::SstFileManager> ssts;
 	std::shared_ptr<rocksdb::Cache> row_cache;
 	std::vector<descriptor> descriptors;
