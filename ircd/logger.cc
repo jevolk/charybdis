@@ -34,6 +34,9 @@ namespace ircd::log
 	extern conf::item<std::string> unmask_console;
 	extern conf::item<std::string> mask_file;
 	extern conf::item<std::string> mask_console;
+	extern conf::item<std::string> level_file;
+	extern conf::item<std::string> level_console;
+	extern conf::item<std::string> level_;
 	extern std::array<std::ofstream, num_of<level>()> file;
 	extern std::array<ulong, num_of<level>()> console_quiet_stdout;
 	extern std::array<ulong, num_of<level>()> console_quiet_stderr;
@@ -771,14 +774,14 @@ catch(const std::exception &e)
 ircd::log::level
 ircd::log::reflect(const string_view &f)
 {
-	if(f == "CRITICAL")    return level::CRITICAL;
-	if(f == "ERROR")       return level::ERROR;
-	if(f == "DERROR")      return level::DERROR;
-	if(f == "DWARNING")    return level::DWARNING;
-	if(f == "WARNING")     return level::WARNING;
-	if(f == "NOTICE")      return level::NOTICE;
-	if(f == "INFO")        return level::INFO;
-	if(f == "DEBUG")       return level::DEBUG;
+	if(iequals(f, "CRITICAL"_sv))    return level::CRITICAL;
+	if(iequals(f, "ERROR"_sv))       return level::ERROR;
+	if(iequals(f, "DERROR"_sv))      return level::DERROR;
+	if(iequals(f, "DWARNING"_sv))    return level::DWARNING;
+	if(iequals(f, "WARNING"_sv))     return level::WARNING;
+	if(iequals(f, "NOTICE"_sv))      return level::NOTICE;
+	if(iequals(f, "INFO"_sv))        return level::INFO;
+	if(iequals(f, "DEBUG"_sv))       return level::DEBUG;
 
 	throw ircd::error
 	{
@@ -904,6 +907,64 @@ ircd::log::mask_console
 	{
 		if(!empty(string_view(mask_console)))
 			console_mask(tokens<std::vector>(mask_console, ' '));
+	}
+};
+
+[[clang::always_destroy]]
+decltype(ircd::log::level_file)
+ircd::log::level_file
+{
+	{
+		{ "name",     "ircd.log.level.file" },
+		{ "default",  string_view{}         },
+	},
+	[](conf::item<void> &)
+	{
+		const string_view str(level_file);
+		int i, lev(str? int(reflect(str)): -1);
+		for(i = 0; i <= lev; ++i)
+			confs.at(i).file_enable._value = true;
+
+		if(lev >= 0)
+			for(; i < int(num_of<level>()); ++i)
+				confs.at(i).file_enable._value = false;
+	}
+};
+
+[[clang::always_destroy]]
+decltype(ircd::log::level_console)
+ircd::log::level_console
+{
+	{
+		{ "name",     "ircd.log.level.console" },
+		{ "default",  string_view{}            },
+	},
+	[](conf::item<void> &)
+	{
+		const string_view str(level_console);
+		int i, lev(str? int(reflect(str)): -1);
+		for(i = 0; i <= lev; ++i)
+			confs.at(i).console_stdout._value = true;
+
+		if(lev >= 0)
+			for(; i < int(num_of<level>()); ++i)
+				confs.at(i).console_stdout._value = false;
+	}
+};
+
+[[clang::always_destroy]]
+decltype(ircd::log::level_)
+ircd::log::level_
+{
+	{
+		{ "name",     "ircd.log.level" },
+		{ "default",  string_view{}    },
+		{ "persist",  false            },
+	},
+	[](conf::item<void> &)
+	{
+		level_file.set(level_);
+		level_console.set(level_);
 	}
 };
 
