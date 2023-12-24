@@ -1178,6 +1178,72 @@ catch(const std::exception &e)
 	return 0;
 }
 
+#ifdef IRCD_DB_HAS_ENV_RESERVE_THREADS
+int
+ircd::db::database::env::ReserveThreads(int num,
+                                        Priority prio)
+noexcept try
+{
+	const ctx::uninterruptible::nothrow ui;
+
+	if constexpr(RB_DEBUG_DB_ENV)
+		log::debug
+		{
+			log, "[%s] reserve threads num:%d prio:%s",
+			d.name,
+			num,
+			reflect(prio),
+		};
+
+	assert(st);
+	return 0;
+}
+catch(const std::exception &e)
+{
+	log::critical
+	{
+		log, "[%s] reserve threads :%s",
+		d.name,
+		e.what()
+	};
+
+	return 0;
+}
+#endif
+
+#ifdef IRCD_DB_HAS_ENV_RESERVE_THREADS
+int
+ircd::db::database::env::ReleaseThreads(int num,
+                                        Priority prio)
+noexcept try
+{
+	const ctx::uninterruptible::nothrow ui;
+
+	if constexpr(RB_DEBUG_DB_ENV)
+		log::debug
+		{
+			log, "[%s] release threads num:%d prio:%s",
+			d.name,
+			num,
+			reflect(prio),
+		};
+
+	assert(st);
+	return 0;
+}
+catch(const std::exception &e)
+{
+	log::critical
+	{
+		log, "[%s] release threads :%s",
+		d.name,
+		e.what()
+	};
+
+	return 0;
+}
+#endif
+
 int8_t
 ircd::db::database::env::make_nice(const Priority &prio)
 {

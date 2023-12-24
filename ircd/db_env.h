@@ -89,6 +89,10 @@ ircd::db::database::env final
 	ThreadStatusUpdater* GetThreadStatusUpdater() const noexcept override;
 	uint64_t GetThreadID() const noexcept override;
 	int GetBackgroundThreads(Priority pri) noexcept override;
+	#ifdef IRCD_DB_HAS_ENV_RESERVE_THREADS
+	int ReserveThreads(int, Priority) noexcept override;
+	int ReleaseThreads(int, Priority) noexcept override;
+	#endif
 
 	env(database *const &d);
 	~env() noexcept;
