@@ -21,6 +21,7 @@ ircd::db::database::env final
 	struct random_rw_file;
 	struct directory;
 	struct file_lock;
+	struct system_clock;
 	struct state;
 
 	using Status = rocksdb::Status;
@@ -75,6 +76,7 @@ ircd::db::database::env final
 	unsigned int GetThreadPoolQueueLen(Priority pri = LOW) const noexcept override;
 	Status GetTestDirectory(std::string* path) noexcept override;
 	Status NewLogger(const std::string& fname, std::shared_ptr<Logger>* result) noexcept override;
+	uint64_t NowCPUNanos() noexcept override;
 	uint64_t NowNanos() noexcept override;
 	uint64_t NowMicros() noexcept override;
 	void SleepForMicroseconds(int micros) noexcept override;
@@ -97,6 +99,28 @@ ircd::db::database::env final
 	env(database *const &d);
 	~env() noexcept;
 };
+
+#ifdef IRCD_DB_HAS_ENV_SYSTEM_CLOCK
+struct [[gnu::visibility("hidden")]]
+ircd::db::database::env::system_clock final
+:rocksdb::SystemClock
+{
+	database &d;
+
+	const char *Name() const noexcept override;
+	uint64_t NowMicros() noexcept override;
+	uint64_t NowNanos() noexcept override;
+	uint64_t CPUMicros() noexcept override;
+	uint64_t CPUNanos() noexcept override;
+	void SleepForMicroseconds(int) noexcept override;
+	bool TimedWait(rocksdb::port::CondVar *, microseconds) noexcept override;
+	Status GetCurrentTime(int64_t *) noexcept override;
+	std::string TimeToString(uint64_t) noexcept override;
+
+	system_clock(database *const &d);
+	~system_clock() noexcept;
+};
+#endif
 
 struct [[gnu::visibility("hidden")]]
 ircd::db::database::env::directory final

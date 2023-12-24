@@ -21,9 +21,19 @@ ircd::db::database::env::log
 //
 
 ircd::db::database::env::env(database *const &d)
-:d{*d},
-st{std::make_unique<state>(d)}
+:d
 {
+	*d
+}
+,st
+{
+	std::make_unique<state>(d)
+}
+{
+	#ifdef IRCD_DB_HAS_ENV_SYSTEM_CLOCK
+	//NOTE: rocksdb::Env constructor is broken; we assign system_clock here.
+	this->rocksdb::Env::system_clock_ = std::make_shared<system_clock>(d);
+	#endif
 }
 
 ircd::db::database::env::~env()
@@ -712,11 +722,20 @@ noexcept
 	return ircd::now<nanoseconds>().count();
 }
 
+[[gnu::hot]]
+uint64_t
+ircd::db::database::env::NowCPUNanos()
+noexcept
+{
+	return ircd::prof::cycles();
+}
+
 rocksdb::Status
 ircd::db::database::env::GetCurrentTime(int64_t *const unix_time)
 noexcept try
 {
-	return defaults.GetCurrentTime(unix_time);
+	ircd::time(unix_time);
+	return Status::OK();
 }
 catch(const std::exception &e)
 {
@@ -1266,6 +1285,121 @@ ircd::db::database::env::make_nice(const IOPriority &prio)
 		default:                      return 0;
 	}
 }
+
+//
+// system_clock
+//
+#ifdef IRCD_DB_HAS_ENV_SYSTEM_CLOCK
+
+ircd::db::database::env::system_clock::system_clock(database *const &d)
+:d{*d}
+{
+}
+
+ircd::db::database::env::system_clock::~system_clock()
+noexcept
+{
+}
+
+uint64_t
+ircd::db::database::env::system_clock::NowMicros()
+noexcept
+{
+	return ircd::time<microseconds>();
+}
+
+uint64_t
+ircd::db::database::env::system_clock::NowNanos()
+noexcept
+{
+	return ircd::now<nanoseconds>().count();
+}
+
+uint64_t
+ircd::db::database::env::system_clock::CPUMicros()
+noexcept
+{
+	return ctx::this_ctx::cycles() / 1000;
+}
+
+uint64_t
+ircd::db::database::env::system_clock::CPUNanos()
+noexcept
+{
+	return ctx::this_ctx::cycles();
+}
+
+void
+ircd::db::database::env::system_clock::SleepForMicroseconds(int micros)
+noexcept try
+{
+	const ctx::uninterruptible::nothrow ui;
+
+	if constexpr(RB_DEBUG_DB_ENV)
+		log::debug
+		{
+			"[%s] sleep for %d microseconds",
+			d.name,
+			micros
+		};
+
+	ctx::sleep(microseconds(micros));
+}
+catch(const std::exception &e)
+{
+	log::critical
+	{
+		log, "[%s] sleep micros:%d :%s",
+		d.name,
+		micros,
+		e.what()
+	};
+}
+
+bool
+ircd::db::database::env::system_clock::TimedWait(rocksdb::port::CondVar *const cond,
+                                                 microseconds deadline)
+noexcept
+{
+	const ctx::uninterruptible::nothrow ui;
+
+	if constexpr(RB_DEBUG_DB_ENV)
+		log::debug
+		{
+			"[%s] timed wait cond:%p deadline:%ld",
+			d.name,
+			cond,
+			deadline.count(),
+		};
+
+	assert(cond);
+	return cond->TimedWait(deadline.count());
+}
+
+rocksdb::Status
+ircd::db::database::env::system_clock::GetCurrentTime(int64_t *const t)
+noexcept
+{
+	assert(t);
+	ircd::time<seconds>(t);
+	return Status::OK();
+}
+
+std::string
+ircd::db::database::env::system_clock::TimeToString(uint64_t t)
+noexcept
+{
+	return Default()->TimeToString(t);
+}
+
+const char *
+ircd::db::database::env::system_clock::Name()
+const noexcept
+{
+	return db::name(d).c_str();
+}
+
+#endif IRCD_DB_HAS_ENV_SYSTEM_CLOCK
 
 //
 // writable_file
