@@ -92,10 +92,10 @@ ircd::m::dbs::desc::event_idx
 	.expect_queries_hit = false,
 	.block_size = size_t(event_idx__block__size),
 	.meta_block_size = size_t(event_idx__meta_block__size),
+	.readahead_blocks = 0,
 	.compression = bool(compress_enable)? string_view{event_idx__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 	.target_file_size = { size_t(event_idx__file__size__max), 1UL },
-	.readahead_blocks = 0,
 };
 
 //

@@ -61,11 +61,18 @@ ircd::m::dbs::desc::event_json__file__size__max
 	{ "default",  long(1024_MiB - 32_MiB)                },
 };
 
+decltype(ircd::m::dbs::desc::event_json__write_buffer__blocks)
+ircd::m::dbs::desc::event_json__write_buffer__blocks
+{
+	{ "name",     "ircd.m.dbs._event_json.write_buffer.blocks" },
+	{ "default",  8192                                         },
+};
+
 decltype(ircd::m::dbs::desc::event_json__compaction_trigger)
 ircd::m::dbs::desc::event_json__compaction_trigger
 {
 	{ "name",     "ircd.m.dbs._event_json.compaction.trigger" },
-	{ "default",  8                                           },
+	{ "default",  4                                           },
 };
 
 const ircd::db::descriptor
@@ -88,10 +95,11 @@ ircd::m::dbs::desc::event_json
 	.expect_queries_hit = true,
 	.block_size = size_t(event_json__block__size),
 	.meta_block_size = size_t(event_json__meta_block__size),
+	.write_buffer_blocks = size_t(event_json__write_buffer__blocks),
+	.compaction_trigger = size_t(event_json__compaction_trigger),
 	.compression = bool(compress_enable)? string_view{event_json__comp}: string_view{},
 	.compaction_pri = "Universal"s,
 	.target_file_size = { size_t(event_json__file__size__max), 1L, },
-	.compaction_trigger = size_t(event_json__compaction_trigger),
 };
 
 //

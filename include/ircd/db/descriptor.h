@@ -49,27 +49,27 @@ struct ircd::db::descriptor
 	/// with most of the essential fields preceding this value to open db.
 	///
 	/// !!! Setting this to true deletes all data for this column !!!
-	bool drop { false };
+	bool drop {false};
 
 	/// Size of the LRU cache for uncompressed blocks
-	ssize_t cache_size { -1 };
+	ssize_t cache_size {-1};
 
 	/// Bloom filter bits. Filter is still useful even if queries are expected
 	/// to always hit on this column; see `expect_queries_hit` option.
-	size_t bloom_bits { 0 };
+	size_t bloom_bits {0};
 
 	/// Set this option to true if queries to this column are expected to
 	/// find keys that exist. This is useful for columns with keys that
 	/// were first found from values in another column, where if the first
 	/// column missed there'd be no reason to query this column.
-	bool expect_queries_hit { false };
+	bool expect_queries_hit {false};
 
 	/// Data block size for uncompressed data. Compression will make the
 	/// block smaller when it IO's to and from disk. Smaller blocks may be
 	/// more space and query overhead if values exceed this size. Larger
 	/// blocks will read and cache unrelated data if values are smaller
 	/// than this size.
-	size_t block_size { 512 };
+	size_t block_size {512};
 
 	/// Data block size for metadata blocks. Other configuration which may
 	/// not yet be in this descriptor affects the best choice of this param;
@@ -77,7 +77,30 @@ struct ircd::db::descriptor
 	/// participate in the block cache. At the time this comment was written
 	/// top-level metadata blocks are preloaded and leaf blocks are put in
 	/// the cache.
-	size_t meta_block_size { 512 };
+	size_t meta_block_size {512};
+
+	/// The number of blocks to prefetch on iteration. This should be zero
+	/// when the column is only used for point queries. Override on a per-
+	/// iteration basis with db::gopts::readahead. Unlike the former, this
+	/// value is only a maximum; actual prefetch is decided internally based
+	/// on query pattern.
+	size_t readahead_blocks {4096};
+
+	/// The number of blocks to accumulate in memory (memtable) prior to L0
+	/// flush. The size of this buffer is `write_buffer_blocks * block_size`.
+	/// Too small buffers will frequently create many L0 files necessitating
+	/// compaction leading to write-amplification and increased IOPS.
+	size_t write_buffer_blocks {4096};
+
+	/// The maximum number of write buffers to keep in memory. When a buffer
+	/// becomes full it is flushed while the next buffer takes over. If all
+	/// buffers fill up without flushing to L0 fast enough that is a stall.
+	size_t write_buffers_max {4};
+
+	/// The number of level0 files allowed to buffer before compacting. Too
+	/// much data at level0 will slow down queries, but too much compaction
+	/// will increase IOPS for the server with constant reorganization.
+	size_t compaction_trigger {2};
 
 	/// Compression algorithm for this column. Empty string is equal to
 	/// kNoCompression. List is semicolon separated to allow fallbacks in
@@ -122,21 +145,6 @@ struct ircd::db::descriptor
 	{
 		60s * 60 * 24 * 21 // 21 day period
 	};
-
-	/// The size of a write buffer is `block_size * write_buffer_blocks`
-	size_t write_buffer_blocks {8192};
-
-	/// The number of blocks to prefetch on iteration. This should be zero
-	/// when the column is only used for point queries. Override on a per-
-	/// iteration basis with db::gopts::readahead. Unlike the former, this
-	/// value is only a maximum; actual prefetch is decided internally based
-	/// on query pattern.
-	size_t readahead_blocks {4096};
-
-	/// The number of level0 files allowed to buffer before compacting. Too
-	/// much data at level0 will slow down queries, but too much compaction
-	/// will increase IOPS for the server with constant reorganization.
-	size_t compaction_trigger {2};
 
 	/// Circuit-breaker to disable automatic compaction specifically for this
 	/// column from this descriptor.

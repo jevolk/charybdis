@@ -219,6 +219,13 @@ ircd::m::dbs::desc::content__file__size__max
 	{ "default",  long(512_MiB - 16_MiB)              },
 };
 
+decltype(ircd::m::dbs::desc::content__write_buffer__blocks)
+ircd::m::dbs::desc::content__write_buffer__blocks
+{
+	{ "name",     "ircd.m.dbs.content.write_buffer.blocks" },
+	{ "default",  8192                                     },
+};
+
 decltype(ircd::m::dbs::desc::content__compaction_trigger)
 ircd::m::dbs::desc::content__compaction_trigger
 {
@@ -253,10 +260,11 @@ ircd::m::dbs::desc::content
 	.expect_queries_hit = true,
 	.block_size = size_t(content__block__size),
 	.meta_block_size = size_t(content__meta_block__size),
+	.write_buffer_blocks = size_t(content__write_buffer__blocks),
+	.compaction_trigger = size_t(content__compaction_trigger),
 	.compression = bool(compress_enable)? string_view{content__comp}: string_view{},
 	.compaction_pri = "Universal"s,
 	.target_file_size = { size_t(content__file__size__max), 1L, },
-	.compaction_trigger = size_t(content__compaction_trigger),
 };
 
 //

@@ -1134,16 +1134,16 @@ try
 	// MUST be 0 or std::threads are spawned in rocksdb.
 	opts->max_file_opening_threads = 0;
 
-	opts->max_background_jobs = 64;
-	opts->max_background_flushes = 32;
-	opts->max_background_compactions = 32;
+	opts->max_background_jobs = 256;
+	opts->max_background_flushes = 128;
+	opts->max_background_compactions = 96;
 	opts->max_subcompactions = 1;
 
 	// For the write-side of a compaction process: writes will be of approx
 	// this size. The compaction process is composing a buffer of this size
 	// between those writes. Too large a buffer will hog the CPU and starve
 	// other ircd::ctx's. Too small a buffer will be inefficient.
-	opts->writable_file_max_buffer_size = 2_MiB; //TODO: conf
+	opts->writable_file_max_buffer_size = 512_KiB; //TODO: conf
 
 	// For the read-side of the compaction process.
 	opts->compaction_readahead_size = !opts->use_direct_reads?
@@ -2031,8 +2031,8 @@ ircd::db::database::column::column(database &d,
 		write_buffer_size_limit[1]
 	);
 
-	this->options.max_write_buffer_number = 12;
-	this->options.min_write_buffer_number_to_merge = 2;
+	this->options.max_write_buffer_number = this->descriptor->write_buffers_max;
+	this->options.min_write_buffer_number_to_merge = 1;
 	#if ROCKSDB_MAJOR > 6 \
 	|| (ROCKSDB_MAJOR == 6 && ROCKSDB_MINOR > 5) \
 	|| (ROCKSDB_MAJOR == 6 && ROCKSDB_MINOR == 5 && ROCKSDB_PATCH >= 2)
@@ -2079,19 +2079,13 @@ ircd::db::database::column::column(database &d,
 
 	// RocksDB sez:
 	// stop_writes_trigger >= slowdown_writes_trigger >= file_num_compaction_trigger
-
-	this->options.level0_stop_writes_trigger =
-		this->options.compaction_style == rocksdb::kCompactionStyleUniversal?
-			(this->options.max_write_buffer_number * 8):
-			64;
+	this->options.level0_file_num_compaction_trigger = this->descriptor->compaction_trigger;
 
 	this->options.level0_slowdown_writes_trigger =
-		this->options.compaction_style == rocksdb::kCompactionStyleUniversal?
-			(this->options.max_write_buffer_number * 6):
-			48;
+		this->options.level0_file_num_compaction_trigger * 4;
 
-	//TODO: bulk ingest/bootstrap: (this->options.max_write_buffer_number * 2):
-	this->options.level0_file_num_compaction_trigger = this->descriptor->compaction_trigger;
+	this->options.level0_stop_writes_trigger =
+		this->options.level0_file_num_compaction_trigger * 6;
 
 	// Universal compaction mode options
 	auto &universal(this->options.compaction_options_universal);
@@ -2100,9 +2094,9 @@ ircd::db::database::column::column(database &d,
 	universal.allow_trivial_move = false;
 	universal.compression_size_percent = -1;
 	universal.max_size_amplification_percent = 6667;
-	universal.size_ratio = 36;
-	universal.min_merge_width = 8;
-	universal.max_merge_width = 4 * universal.min_merge_width;
+	universal.min_merge_width = this->options.level0_file_num_compaction_trigger;
+	universal.max_merge_width = 8 * universal.min_merge_width;
+	universal.size_ratio = 1;
 
 	// Level compaction mode options
 	this->options.num_levels = 7;
@@ -3003,12 +2997,14 @@ noexcept
 			break;
 
 		case FlushReason::kWalFull:
-		case FlushReason::kWriteBufferFull:
+		case FlushReason::kDeleteFiles:
+		case FlushReason::kGetLiveFiles:
 			level = log::level::DWARNING;
 			break;
 
 		case FlushReason::kManualFlush:
 		case FlushReason::kManualCompaction:
+		case FlushReason::kWriteBufferFull:
 			level = log::level::DEBUG;
 			break;
 
@@ -3083,7 +3079,7 @@ noexcept
 		info.compaction_reason == CompactionReason::kUniversalSizeAmplification?
 			log::level::WARNING:
 		info.compaction_reason == CompactionReason::kUniversalSortedRunNum?
-			log::level::WARNING:
+			log::level::DWARNING:
 			log::level::INFO
 	};
 
@@ -3660,7 +3656,7 @@ noexcept
 	};
 
 	assert(column.stall == info.condition.cur);
-	//assert(column.stall != WriteStallCondition::kStopped);
+	assert(column.stall != WriteStallCondition::kStopped);
 }
 
 #ifdef IRCD_DB_HAS_LISTENER_FILEIO

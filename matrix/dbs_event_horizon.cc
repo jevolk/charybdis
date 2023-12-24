@@ -112,10 +112,10 @@ ircd::m::dbs::desc::event_horizon
 	.expect_queries_hit = false,
 	.block_size = size_t(event_horizon__block__size),
 	.meta_block_size = size_t(event_horizon__meta_block__size),
+	.readahead_blocks = 0,
 	.compression = bool(compress_enable)? string_view{event_horizon__comp}: string_view{},
 	.compaction_pri = "kOldestSmallestSeqFirst"s,
 	.target_file_size = { size_t(event_horizon__file__size__max), 1UL },
-	.readahead_blocks = 0,
 };
 
 //
