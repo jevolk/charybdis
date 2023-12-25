@@ -15,6 +15,7 @@ namespace ircd::m
 
 	extern hookfn<vm::eval &> room_message_media_hook;
 	extern hookfn<vm::eval &> room_message_info_hook;
+	extern conf::item<bool> room_message_info_enable;
 	extern log::log room_message_log;
 }
 
@@ -28,6 +29,13 @@ decltype(ircd::m::room_message_log)
 ircd::m::room_message_log
 {
 	"m.message"
+};
+
+decltype(ircd::m::room_message_info_enable)
+ircd::m::room_message_info_enable
+{
+	{ "name",     "ircd.m.room.message.info" },
+	{ "default",  false                      },
 };
 
 decltype(ircd::m::room_message_info_hook)
@@ -54,6 +62,9 @@ void
 ircd::m::room_message_info(const event &event,
                            vm::eval &eval)
 {
+	if(!room_message_info_enable)
+		return;
+
 	const m::room::message msg
 	{
 		json::get<"content"_>(event)
