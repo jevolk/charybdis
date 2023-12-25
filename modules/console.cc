@@ -13084,6 +13084,102 @@ console_cmd__room__restrap(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__room__recover(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"room_id", "host", "user_id"
+	}};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::room room
+	{
+		room_id
+	};
+
+	const net::hostport &host_
+	{
+		param.at("host")
+	};
+
+	const unique_mutable_buffer buf
+	{
+		16_KiB
+	};
+
+	const m::event::id::buf head_id
+	{
+		m::room::head::fetch::one(room_id, param["host"])
+	};
+
+	m::fed::state::opts opts;
+	opts.remote = param["host"];
+	opts.event_id = head_id;
+	m::fed::state request
+	{
+		room_id, buf, std::move(opts)
+	};
+
+	const auto code
+	{
+		request.get(out.timeout)
+	};
+
+	const json::object response
+	{
+		request
+	};
+
+	std::vector<m::event> ev;
+	for(const json::object event : json::array(response["pdus"]))
+	{
+		const json::string state_key
+		{
+			event["state_key"]
+		};
+
+		if(!valid(m::id::USER, state_key))
+			continue;
+
+		if(!my(m::user::id(state_key)))
+			continue;
+
+		if(json::string(event["type"]) != "m.room.member")
+			continue;
+
+		if(param["user_id"] && state_key != param["user_id"])
+			continue;
+
+		ev.emplace_back(event);
+	}
+
+	m::vm::eval
+	{
+		ev, m::vm::opts
+		{
+			.node_id = param["host"],
+			.phase = ~(0
+				| m::vm::EMPTION
+				| m::vm::FETCH_PREV
+				| m::vm::FETCH_STATE
+			),
+			.notify_clients = false,
+			.notify_servers = false,
+			.nothrows = -1U,
+		}
+	};
+
+	out
+	<< "evaluated " << ev.size() << "."
+	<< std::endl;
+	return true;
+}
+
+bool
 console_cmd__room__power(opt &out, const string_view &line)
 {
 	const params param{line, " ",
