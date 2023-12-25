@@ -9899,7 +9899,7 @@ console_cmd__room(opt &out, const string_view &line)
 	};
 
 	ssize_t missing_count(3);
-	missing.rfor_each({0, 0}, [&out, &missing_count, &top]
+	missing.for_each({-1, 0}, [&out, &missing_count, &top]
 	(const auto &event_id, const auto &ref_depth, const auto &ref_idx)
 	{
 		out
@@ -9920,7 +9920,7 @@ console_cmd__room(opt &out, const string_view &line)
 	out << "oldest missing: " << std::endl;
 
 	missing_count = 3;
-	missing.for_each({0, 0}, [&out, &missing_count, &top]
+	missing.for_each({0, -1}, [&out, &missing_count, &top]
 	(const auto &event_id, const auto &ref_depth, const auto &ref_idx)
 	{
 		out
@@ -11822,7 +11822,7 @@ console_cmd__room__events__missing(opt &out, const string_view &line)
 {
 	const params param{line, " ",
 	{
-		"room_id", "limit", "min_depth", "max_depth", "event_id"
+		"room_id", "min_depth", "max_depth", "limit", "event_id"
 	}};
 
 	const auto &room_id
@@ -11830,19 +11830,19 @@ console_cmd__room__events__missing(opt &out, const string_view &line)
 		m::room_id(param.at("room_id"))
 	};
 
-	auto limit
-	{
-		param.at("limit", 16L)
-	};
-
 	const auto &min_depth
 	{
-		param.at("min_depth", 0L)
+		param.at("min_depth", -1L)
 	};
 
 	const auto &max_depth
 	{
 		param.at("max_depth", 0L)
+	};
+
+	auto limit
+	{
+		param.at("limit", 32L)
 	};
 
 	const auto &event_id

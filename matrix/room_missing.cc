@@ -24,52 +24,32 @@ const
 }
 
 bool
-ircd::m::room::missing::for_each(const closure &closure)
-const
-{
-	return for_each({0L, 0L}, closure);
-}
-
-bool
 ircd::m::room::missing::for_each(const pair<int64_t> &depth,
                                  const closure &closure)
 const
 {
+	const pair<uint64_t> range
+	{
+		uint64_t(depth.first), uint64_t(depth.second)
+	};
+
+	const bool fwd
+	{
+		range.second >= range.first
+	};
+
 	room::events it
 	{
-		room, uint64_t(depth.first)
+		room, range.first
 	};
 
 	m::event::fetch event;
-	for(; it; ++it)
+	for(; it; fwd? ++it: --it)
 	{
-		if(depth.second && int64_t(it.depth()) > depth.second)
+		if(fwd && it.depth() >= range.second)
 			break;
 
-		if(!_each(it, event, closure))
-			return false;
-	}
-
-	return true;
-}
-
-bool
-ircd::m::room::missing::rfor_each(const pair<int64_t> &depth,
-                                  const closure &closure)
-const
-{
-	room::events it
-	{
-		room, depth.second?: -1UL
-	};
-
-	m::event::fetch event;
-	for(; it; --it)
-	{
-		if(depth.second && int64_t(it.depth()) > depth.second)
-			continue;
-
-		if(int64_t(it.depth()) < depth.first)
+		if(!fwd && int64_t(it.depth()) <= depth.second)
 			break;
 
 		if(!_each(it, event, closure))

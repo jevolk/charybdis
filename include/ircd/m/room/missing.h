@@ -31,7 +31,6 @@ struct ircd::m::room::missing
 	bool _each(m::room::events &, m::event::fetch &, const closure &) const;
 
   public:
-	bool rfor_each(const pair<int64_t> &depth, const closure &) const;
 	bool for_each(const pair<int64_t> &depth, const closure &) const;
 	bool for_each(const closure &) const;
 	size_t count() const;
@@ -41,3 +40,11 @@ struct ircd::m::room::missing
 	:room{room}
 	{}
 };
+
+inline bool
+ircd::m::room::missing::for_each(const closure &closure)
+const
+{
+	const pair<int64_t> range{0L, 0L};
+	return for_each(range, closure);
+}
