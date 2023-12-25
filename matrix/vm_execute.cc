@@ -392,6 +392,8 @@ try
 	}
 	catch(const vm::error &e)
 	{
+		const ctx::exception_handler eh;
+
 		return handle_fault
 		(
 			*eval.opts, e.code, event.event_id,
