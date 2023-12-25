@@ -382,21 +382,23 @@ ircd::net::dns::cache::get(const hostport &hp,
 		state.get(std::nothrow, type, state_key)
 	};
 
+	bool ret(false);
 	if(!event_idx)
-		return false;
+		return ret;
 
-	time_t origin_server_ts;
-	if(!m::get<time_t>(event_idx, "origin_server_ts", origin_server_ts))
-		return false;
-
-	bool ret{false};
-	const time_t ts{origin_server_ts / 1000L};
-	m::get(std::nothrow, event_idx, "content", [&hp, &closure, &ret, &ts]
-	(const json::object &content)
+	static const string_view _keys[] { "content", "origin_server_ts", };
+	const m::event::idx _event_idx[] { event_idx, event_idx,          };
+	m::get(std::nothrow, _event_idx, _keys, [&hp, &closure, &ret]
+	(const vector_view<const string_view> val)
 	{
 		const json::array &rrs
 		{
-			content.get("")
+			json::object(val[0]).get("")
+		};
+
+		const time_t ts
+		{
+			val[1]? byte_view<time_t>(val[1]) / 1000L: 0L
 		};
 
 		// If all records are expired then skip; otherwise since this closure
@@ -444,19 +446,26 @@ ircd::net::dns::cache::for_each(const hostport &hp,
 		state.get(std::nothrow, type, state_key)
 	};
 
+	bool ret(true);
 	if(!event_idx)
-		return false;
+		return ret;
 
-	time_t origin_server_ts;
-	if(!m::get<time_t>(event_idx, "origin_server_ts", origin_server_ts))
-		return false;
-
-	bool ret{true};
-	const time_t ts{origin_server_ts / 1000L};
-	m::get(std::nothrow, event_idx, "content", [&state_key, &closure, &ret, &ts]
-	(const json::object &content)
+	static const string_view _keys[] { "content", "origin_server_ts", };
+	const m::event::idx _event_idx[] { event_idx, event_idx,          };
+	m::get(std::nothrow, _event_idx, _keys, [&hp, &closure, &state_key, &ret]
+	(const vector_view<const string_view> val)
 	{
-		for(const json::object rr : json::array(content.get("")))
+		const json::array &rrs
+		{
+			json::object(val[0]).get("")
+		};
+
+		const time_t ts
+		{
+			val[1]? byte_view<time_t>(val[1]) / 1000L: 0L
+		};
+
+		for(const json::object rr : rrs)
 		{
 			if(expired(rr, ts))
 				continue;
@@ -488,16 +497,23 @@ ircd::net::dns::cache::for_each(const string_view &type,
 	return state.for_each(full_type, [&closure]
 	(const string_view &, const string_view &state_key, const m::event::idx &event_idx)
 	{
-		time_t origin_server_ts;
-		if(!m::get<time_t>(event_idx, "origin_server_ts", origin_server_ts))
-			return true;
-
 		bool ret{true};
-		const time_t ts{origin_server_ts / 1000L};
-		m::get(std::nothrow, event_idx, "content", [&state_key, &closure, &ret, &ts]
-		(const json::object &content)
+		static const string_view _keys[] { "content", "origin_server_ts", };
+		const m::event::idx _event_idx[] { event_idx, event_idx,          };
+		m::get(std::nothrow, _event_idx, _keys, [&closure, &state_key, &ret]
+		(const vector_view<const string_view> val)
 		{
-			for(const json::object rr : json::array(content.get("")))
+			const json::array &rrs
+			{
+				json::object(val[0]).get("")
+			};
+
+			const time_t ts
+			{
+				val[1]? byte_view<time_t>(val[1]) / 1000L: 0L
+			};
+
+			for(const json::object rr : rrs)
 			{
 				if(expired(rr, ts))
 					continue;
