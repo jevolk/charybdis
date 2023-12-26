@@ -3925,12 +3925,15 @@ ircd::server::tag::read_head(const const_buffer &buffer,
 	if(dynamic)
 	{
 		assert(req.opt);
-		const size_t alloc_size
-		{
-			std::min(state.content_length, req.opt->content_length_maxalloc)
-		};
+		if(state.content_length > req.opt->content_length_maxalloc)
+			throw error
+			{
+				"Content length:%zu exceeds maximum:%zu",
+				state.content_length,
+				req.opt->content_length_maxalloc,
+			};
 
-		req.in.dynamic = unique_buffer<mutable_buffer>{alloc_size};
+		req.in.dynamic = unique_buffer<mutable_buffer>{state.content_length};
 		req.in.content = req.in.dynamic;
 	}
 
@@ -4393,6 +4396,15 @@ ircd::server::tag::read_chunk_dynamic_head(const const_buffer &buffer,
 	const http::response::chunk chunk{pc};
 	assert(state.chunk_length == size_t(-1));
 	state.chunk_length = chunk.size + size(http::line::terminator);
+
+	assert(req.opt);
+	if(state.chunk_length > req.opt->content_length_maxalloc)
+		throw error
+		{
+			"Chunk length:%zu exceeds maximum:%zu",
+			state.chunk_length,
+			req.opt->content_length_maxalloc,
+		};
 
 	// Increment the content_length to now include this chunk
 	state.content_length += state.chunk_length;
