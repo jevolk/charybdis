@@ -1307,11 +1307,16 @@ console_cmd__mem(opt &out, const string_view &line)
 		"opts"
 	}};
 
+	static const string_view default_opts
+	{
+		"x" // omit mutex statistics
+	};
+
 	// Optional options string passed to implementation; might not be available
 	// or ignored. See jemalloc(3) etc.
 	const string_view &opts
 	{
-		param["opts"]
+		param["opts"]?: default_opts
 	};
 
 	auto &this_thread
@@ -1321,20 +1326,22 @@ console_cmd__mem(opt &out, const string_view &line)
 
 	char pbuf[2][48];
 	if(this_thread.alloc_count)
-		out << "IRCd thread allocations:" << std::endl
-		    << "alloc count:  " << this_thread.alloc_count << std::endl
-		    << "freed count:  " << this_thread.free_count << std::endl
-		    << "alloc bytes:  " << pretty(pbuf[0], iec(this_thread.alloc_bytes)) << std::endl
-		    << "freed bytes:  " << pretty(pbuf[1], iec(this_thread.free_bytes)) << std::endl
-		    << std::endl;
+		out
+		<< "IRCd thread allocations:" << '\n'
+		<< "alloc count:  " << this_thread.alloc_count << '\n'
+		<< "freed count:  " << this_thread.free_count << '\n'
+		<< "alloc bytes:  " << pretty(pbuf[0], iec(this_thread.alloc_bytes)) << '\n'
+		<< "freed bytes:  " << pretty(pbuf[1], iec(this_thread.free_bytes)) << '\n'
+		;
 
 	if(opts == "ircd")
 		return true;
 
-	thread_local char buf[48_KiB];
-	out << "Allocator information:" << std::endl
-	    << allocator::info(buf, opts) << std::endl
-	    ;
+	thread_local char buf[64_KiB];
+	out
+	<< "Allocator information:" << '\n'
+	<< allocator::info(buf, opts) << '\n'
+	;
 
 	return true;
 }
