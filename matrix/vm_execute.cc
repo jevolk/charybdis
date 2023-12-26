@@ -38,6 +38,7 @@ namespace ircd::m::vm
 	extern hook::site<eval &> notify_hook;       ///< Called to broadcast successful eval
 	extern hook::site<eval &> effect_hook;       ///< Called to apply effects post-notify
 
+	extern conf::item<bool> write_commit_cork;
 	extern conf::item<bool> log_accept_debug;
 	extern conf::item<bool> log_accept_info;
 	extern log::log log_accept;
@@ -67,6 +68,13 @@ ircd::m::vm::log_accept_info
 {
 	{ "name",     "ircd.m.vm.log.accept.info" },
 	{ "default",  false                       },
+};
+
+decltype(ircd::m::vm::write_commit_cork)
+ircd::m::vm::write_commit_cork
+{
+	{ "name",     "ircd.m.vm.write.commit.cork" },
+	{ "default",  true                          },
 };
 
 decltype(ircd::m::vm::issue_hook)
@@ -1221,16 +1229,14 @@ ircd::m::vm::write_commit(eval &eval)
 
 	assert(eval.txn);
 	assert(eval.txn.use_count() == 1);
-	auto &txn
-	{
-		*eval.txn
-	};
+	auto &txn{*eval.txn};
 
 	assert(eval.opts);
-	const auto &sopts
-	{
-		eval.opts->wopts.sopts
-	};
+	auto sopts{eval.opts->wopts.sopts};
+	const bool enabled(write_commit_cork);
+	const bool not_child(!eval.parent);
+	const bool not_last(eval.evaluated + 1 < eval.pdus.size());
+	sopts.cork |= enabled & not_child & not_last;
 
 	uint64_t db_seq[2] {0};
 	if constexpr(RB_LOG_LEVEL >= log::level::DEBUG)
