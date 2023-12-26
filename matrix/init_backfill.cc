@@ -26,6 +26,12 @@ namespace ircd::m::init::backfill
 	extern conf::item<bool> reset_state_space;
 	extern conf::item<size_t> viewports;
 	extern conf::item<size_t> attempt_max;
+	extern conf::item<size_t> worker_stack_size;
+	extern conf::item<int> worker_ionice;
+	extern conf::item<int> worker_nice;
+	extern conf::item<size_t> pool_stack_size;
+	extern conf::item<int> pool_ionice;
+	extern conf::item<int> pool_nice;
 	extern conf::item<size_t> pool_size;
 	extern conf::item<bool> enable;
 	extern log::log log;
@@ -47,8 +53,50 @@ ircd::m::init::backfill::enable
 decltype(ircd::m::init::backfill::pool_size)
 ircd::m::init::backfill::pool_size
 {
-	{ "name",     "ircd.m.init.backfill.pool_size" },
+	{ "name",     "ircd.m.init.backfill.pool.size" },
 	{ "default",  32L                              },
+};
+
+decltype(ircd::m::init::backfill::pool_nice)
+ircd::m::init::backfill::pool_nice
+{
+	{ "name",     "ircd.m.init.backfill.pool.nice" },
+	{ "default",  3L                               },
+};
+
+decltype(ircd::m::init::backfill::pool_ionice)
+ircd::m::init::backfill::pool_ionice
+{
+	{ "name",     "ircd.m.init.backfill.pool.ionice" },
+	{ "default",  3L                                 },
+};
+
+decltype(ircd::m::init::backfill::pool_stack_size)
+ircd::m::init::backfill::pool_stack_size
+{
+	{ "name",     "ircd.m.init.backfill.pool.stack.size" },
+	{ "default",  long(512_KiB)                          },
+};
+
+decltype(ircd::m::init::backfill::worker_nice)
+ircd::m::init::backfill::worker_nice
+{
+	{ "name",     "ircd.m.init.backfill.worker.nice" },
+	{ "default",  4L                                 },
+};
+
+decltype(ircd::m::init::backfill::worker_ionice)
+ircd::m::init::backfill::worker_ionice
+{
+	{ "name",     "ircd.m.init.backfill.worker.ionice" },
+	{ "default",  4L                                   },
+};
+
+decltype(ircd::m::init::backfill::worker_stack_size)
+ircd::m::init::backfill::worker_stack_size
+{
+	{ "name",     "ircd.m.init.backfill.worker.stack.size" },
+	{ "default",  long(512_KiB)                            },
 };
 
 decltype(ircd::m::init::backfill::local_joined_only)
@@ -162,7 +210,7 @@ ircd::m::init::backfill::init()
 	ctx::context context
 	{
 		"m.init.backfill",
-		512_KiB,
+		size_t(worker_stack_size),
 		&worker,
 		context::POST
 	};
@@ -235,8 +283,8 @@ try
 	run::barrier<ctx::interrupted>{};
 
 	// Set a low priority for this context; see related pool_opts
-	ionice(ctx::cur(), 4);
-	nice(ctx::cur(), 4);
+	ionice(ctx::cur(), int8_t(worker_ionice));
+	nice(ctx::cur(), int8_t(worker_nice));
 
 	// Prepare to iterate all of the rooms this server is aware of which
 	// contain at least one member from another server in any state, and
@@ -266,12 +314,12 @@ try
 
 	// Prepare a pool of child contexts to process rooms concurrently.
 	// The context pool lives directly in this frame.
-	static const ctx::pool::opts pool_opts
+	const ctx::pool::opts pool_opts
 	{
-		.stack_size = 512_KiB,
+		.stack_size = size_t(pool_stack_size),
 		.initial_ctxs = size_t(pool_size),
-		.ionice = 3,
-		.nice = 3,
+		.ionice = int8_t(pool_ionice),
+		.nice = int8_t(pool_nice),
 	};
 
 	ctx::pool pool
