@@ -2424,7 +2424,20 @@ ircd::net::socket::desc_timeout
 		};
 
 		// Ensure there aren't more timers in flight than we have buffers for.
-		assert(this_sock->timer_sem[0] + bufs >= this_sock->timer_sem[1]);
+		if(unlikely(this_sock->timer_sem[0] + bufs < this_sock->timer_sem[1]))
+		{
+			log::critical
+			{
+				log, "socket(%p) timer_sem[%lu][%lu] exceeded timers limit:%zu",
+				this_sock,
+				this_sock->timer_sem[0],
+				this_sock->timer_sem[1],
+				bufs,
+			};
+
+			throw std::bad_alloc {};
+		}
+
 		const size_t i
 		{
 			this_sock->timer_sem[1] % bufs
