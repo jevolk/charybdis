@@ -238,6 +238,7 @@ void
 __attribute__((noreturn))
 ircd::net::dns::resolver::sendq_worker()
 {
+	assert(ns.is_open());
 	while(1) try
 	{
 		dock.wait([this]() noexcept
@@ -303,6 +304,7 @@ catch(const std::out_of_range &e)
 }
 
 void
+__attribute__((noreturn))
 ircd::net::dns::resolver::timeout_worker()
 {
 	while(1) try
@@ -534,6 +536,7 @@ ircd::net::dns::resolver::recv_worker()
 		64_KiB
 	};
 
+	assert(ns.is_open());
 	while(ns.is_open()) try
 	{
 		const auto &[from, reply]
