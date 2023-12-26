@@ -312,6 +312,10 @@ ircd::m::vm::fetch::auth(const event &event,
 		// have themselves been fetched and auth'ed recursively.
 		auth_chain(event, eval, room);
 	}
+	catch(const ctx::interrupted &e)
+	{
+		throw;
+	}
 	catch(const std::exception &e)
 	{
 		const ctx::exception_handler eh;
@@ -400,6 +404,10 @@ try
 	stats::auth_evals++;
 }
 catch(const vm::error &e)
+{
+	throw;
+}
+catch(const ctx::interrupted &e)
 {
 	throw;
 }
