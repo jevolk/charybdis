@@ -155,7 +155,7 @@ decltype(ircd::allocator::je::cork::decay_mib)
 ircd::allocator::je::cork::decay_mib
 {
 	#if defined(IRCD_ALLOCATOR_JEMALLOC)
-	lookup(mib[2], "arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".decay")
+	lookup(mib[3], "arena." IRCD_STRING(MALLCTL_ARENAS_ALL) ".decay")
 	#endif
 };
 
@@ -323,7 +323,6 @@ catch(const std::system_error &e)
 
 	throw;
 }
-
 #endif
 
 ircd::string_view

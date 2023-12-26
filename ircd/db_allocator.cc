@@ -103,6 +103,7 @@ ircd::db::database::allocator::init()
 	cache_arena_hooks.purge_forced = cache_arena_handle_purge_forced;
 	cache_arena_hooks.split = cache_arena_handle_split;
 	cache_arena_hooks.merge = cache_arena_handle_merge;
+
 	ircd::allocator::set(cache_arena_hooks_key, &cache_arena_hooks, their_cache_arena_hooks);
 	assert(their_cache_arena_hooks);
 	#endif
