@@ -76,6 +76,7 @@ ircd::m::acquire::acquire::acquire(const struct opts &opts)
 	{
 		history_vmopts.notify_servers = false;
 		history_vmopts.phase.set(m::vm::phase::NOTIFY, false);
+		history_vmopts.phase.set(m::vm::phase::FETCH_AUTH, false);
 		history_vmopts.phase.set(m::vm::phase::FETCH_PREV, false);
 		history_vmopts.phase.set(m::vm::phase::FETCH_STATE, false);
 		history_vmopts.wopts.appendix.set(dbs::appendix::ROOM_HEAD, false);
