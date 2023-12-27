@@ -3092,16 +3092,12 @@ noexcept
 			log::level::INFO
 	};
 
-	char prebuf[128];
-	const string_view prefix
+	const fmt::bsprintf<128> prefix
 	{
-		fmt::sprintf
-		{
-			prebuf, "[%s] job:%d ctx:%lu compact",
-			d->name,
-			info.job_id,
-			info.thread_id,
-		}
+		"[%s] job:%d ctx:%lu compact",
+		d->name,
+		info.job_id,
+		info.thread_id,
 	};
 
 	uint64_t datasz(0), idxsz(0), tidxsz(0);
@@ -3123,7 +3119,7 @@ noexcept
 	{
 		log, level,
 		"%s lev[%d -> %d] files:%zu idxs:%zu blks:%zu keys:%zu dels:%zu data[%s] %s '%s'",
-		prefix,
+		string_view{prefix},
 		info.base_input_level,
 		info.output_level,
 		info.input_files.size(),
@@ -3156,23 +3152,19 @@ noexcept
 			log::level::INFO
 	};
 
-	char prebuf[128];
-	const string_view prefix
+	const fmt::bsprintf<128> prefix
 	{
-		fmt::sprintf
-		{
-			prebuf, "[%s] job:%d ctx:%lu compact",
-			d->name,
-			info.job_id,
-			info.thread_id,
-		}
+		"[%s] job:%d ctx:%lu compact",
+		d->name,
+		info.job_id,
+		info.thread_id,
 	};
 
 	log::logf
 	{
 		log, level,
 		"%s lev[%d -> %d] files[%zu -> %zu] %s '%s' (%d): %s",
-		prefix,
+		string_view{prefix},
 		info.base_input_level,
 		info.output_level,
 		info.input_files.size(),
@@ -3193,7 +3185,7 @@ noexcept
 		log::info
 		{
 			log, "%s key[%zu -> %zu (%zu)] %s -> %s | falloc:%s write:%s rsync:%s fsync:%s total:%s",
-			prefix,
+			string_view{prefix},
 			info.stats.num_input_records,
 			info.stats.num_output_records,
 			info.stats.num_records_replaced,
@@ -3232,23 +3224,19 @@ noexcept
 			log::level::DEBUG
 	};
 
-	char prebuf[128];
-	const string_view prefix
+	const fmt::bsprintf<128> prefix
 	{
-		fmt::sprintf
-		{
-			prebuf, "[%s] job:%d ctx:%lu compact",
-			d->name,
-			info.job_id,
-			info.thread_id,
-		}
+		"[%s] job:%d ctx:%lu compact",
+		d->name,
+		info.job_id,
+		info.thread_id,
 	};
 
 	log::logf
 	{
 		log, level,
 		"%s lev[%d -> %d] sub:%d enter '%s'",
-		prefix,
+		string_view{prefix},
 		info.base_input_level,
 		info.output_level,
 		info.subcompaction_job_id,
@@ -3274,23 +3262,19 @@ noexcept
 			log::level::DEBUG
 	};
 
-	char prebuf[128];
-	const string_view prefix
+	const fmt::bsprintf<128> prefix
 	{
-		fmt::sprintf
-		{
-			prebuf, "[%s] job:%d ctx:%lu compact",
-			d->name,
-			info.job_id,
-			info.thread_id,
-		}
+		"[%s] job:%d ctx:%lu compact",
+		d->name,
+		info.job_id,
+		info.thread_id,
 	};
 
 	log::logf
 	{
 		log, level,
 		"%s lev[%d -> %d] sub:%d leave '%s' (%d): %s",
-		prefix,
+		string_view{prefix},
 		info.base_input_level,
 		info.output_level,
 		info.subcompaction_job_id,
