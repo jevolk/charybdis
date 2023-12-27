@@ -236,10 +236,10 @@ ircd::db::database::allocator final
 	void Deallocate(void *) noexcept override;
 	size_t UsableSize(void *, size_t) const noexcept override;
 
-	allocator(database *const &,
-	          database::column *const &  = nullptr,
-	          const unsigned &arena      = 0,
-	          const size_t &alignment    = ALIGN_DEFAULT);
+	allocator(database *,
+	          database::column *      = nullptr,
+	          const unsigned arena    = 0,
+	          const size_t alignment  = ALIGN_DEFAULT);
 
 	~allocator() noexcept;
 
