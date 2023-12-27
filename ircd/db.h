@@ -249,7 +249,7 @@ ircd::db::database::allocator final
 
 struct [[gnu::visibility("hidden")]]
 ircd::db::database::cache final
-#ifdef IRCD_DB_HAS_CACHE_WRAPPER
+#ifdef IRCD_DB_HAS_CACHE_WRAPPER_FIX
 :rocksdb::CacheWrapper
 #else
 :rocksdb::Cache

@@ -21,6 +21,7 @@ namespace ircd::db
 	extern conf::item<bool> auto_compact;
 	extern conf::item<bool> auto_deletion;
 	extern conf::item<bool> open_stats;
+	extern conf::item<bool> bgio_stats;
 	extern conf::item<bool> paranoid;
 	extern conf::item<bool> paranoid_checks;
 	extern conf::item<bool> paranoid_size;

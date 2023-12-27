@@ -92,6 +92,17 @@ ircd::db::open_stats
 	{ "persist",  false                },
 };
 
+/// Collect statistics during flush and compaction. This is disabled by default
+/// because it relies on clock_gettime(2) for thread-specific timing and due to
+/// a bug as of rocksdb 8.9.1 we cannot override this for ircd::ctx.
+decltype(ircd::db::bgio_stats)
+ircd::db::bgio_stats
+{
+	{ "name",     "ircd.db.bgio.stats" },
+	{ "default",  false                },
+	{ "persist",  false                },
+};
+
 /// Paranoid suite toggle. This allows coarse control over the rest of the
 /// configuration from here. If this is set to false, all other paranoid confs
 /// will default to false; note that each conf can still be explicitly set.
@@ -1977,7 +1988,7 @@ ircd::db::database::column::column(database &d,
 ,options_preconfiguration{[this]
 {
 	// Setup sundry
-	this->options.report_bg_io_stats = true;
+	this->options.report_bg_io_stats = bool(bgio_stats);
 	this->options.paranoid_file_checks = bool(paranoid_sst);
 	this->options.force_consistency_checks = bool(paranoid_lsm);
 
@@ -3902,7 +3913,7 @@ ircd::db::database::cache::cache(database *const &d,
                                  std::string name,
                                  const ssize_t initial_capacity,
                                  const bool secondary)
-#if defined(IRCD_DB_HAS_CACHE_WRAPPER)
+#if defined(IRCD_DB_HAS_CACHE_WRAPPER_FIX)
 :rocksdb::CacheWrapper{nullptr}
 ,d{d}
 #elif defined(IRCD_DB_HAS_ALLOCATOR)
@@ -3938,7 +3949,7 @@ ircd::db::database::cache::cache(database *const &d,
 	return ret;
 }())}
 {
-	#ifdef IRCD_DB_HAS_CACHE_WRAPPER
+	#ifdef IRCD_DB_HAS_CACHE_WRAPPER_FIX
 	this->CacheWrapper::target_ = this->c;
 	#endif
 

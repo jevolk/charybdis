@@ -252,3 +252,6 @@
 	#define IRCD_DB_HAS_CACHE_TIERED 1
 	#define IRCD_DB_HAS_ENV_SYSTEM_CLOCK 1
 #endif
+
+// As of rocksdb 8.9.1 usage of the cache wrapper ignores our allocator.
+//#define IRCD_DB_HAS_CACHE_WRAPPER_FIX 1
