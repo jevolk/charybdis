@@ -777,6 +777,9 @@ ircd::m::vm::fetch::prev_fetch(const event &event,
 		if(m::exists(prev_id))
 			continue;
 
+		if(m::bad(prev_id))
+			continue;
+
 		const long depth_gap
 		{
 			std::max(std::abs(at<"depth"_>(event) - room_depth), 1L)

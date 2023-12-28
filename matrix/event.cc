@@ -1091,28 +1091,7 @@ bool
 ircd::m::bad(const id::event &event_id)
 {
 	bool ret {false};
-	index(std::nothrow, event_id, [&ret]
-	(const event::idx &event_idx) noexcept
-	{
-		ret = event_idx == 0;
-	});
-
 	return ret;
-}
-
-bool
-ircd::m::good(const id::event &event_id)
-{
-	return bool(event_id) && index(std::nothrow, event_id) != 0;
-}
-
-bool
-ircd::m::exists(const id::event &event_id,
-                const bool &good)
-{
-	return good?
-		m::good(event_id):
-		m::exists(event_id);
 }
 
 bool

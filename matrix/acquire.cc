@@ -619,7 +619,7 @@ ircd::m::acquire::submit(const m::event::id &event_id,
 
 	const bool ret
 	{
-		!started(event_id)?
+		!started(event_id) && !m::bad(event_id)?
 			start(event_id, hint, hint_only, limit, vmopts):
 			false
 	};

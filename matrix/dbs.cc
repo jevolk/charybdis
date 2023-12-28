@@ -116,7 +116,6 @@ namespace ircd::m::dbs
 {
 	static size_t _prefetch(const event &, const opts &);
 	static size_t _index(db::txn &, const event &, const opts &);
-	static size_t blacklist(db::txn &txn, const event::id &, const opts &);
 }
 
 size_t
@@ -125,9 +124,6 @@ ircd::m::dbs::write(db::txn &txn,
                     const opts &opts)
 try
 {
-	if(opts.event_idx == 0 && opts.blacklist)
-		return blacklist(txn, event.event_id, opts);
-
 	if(unlikely(opts.event_idx == 0))
 		throw panic
 		{
@@ -168,36 +164,6 @@ catch(const std::exception &e)
 	};
 
 	return false;
-}
-
-size_t
-ircd::m::dbs::blacklist(db::txn &txn,
-                        const event::id &event_id,
-                        const opts &opts)
-{
-	// An entry in the event_idx column with a value 0 is blacklisting
-	// because 0 is not a valid event_idx. Thus a value here can only
-	// have the value zero.
-	assert(opts.event_idx == 0);
-	assert(!event_id.empty());
-
-	static const m::event::idx &zero_idx{0UL};
-	static const byte_view<string_view> zero_value
-	{
-		zero_idx
-	};
-
-	db::txn::append
-	{
-		txn, event_idx,
-		{
-			opts.op,
-			string_view{event_id},
-			zero_value
-		}
-	};
-
-	return true;
 }
 
 //

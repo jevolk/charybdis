@@ -19,9 +19,7 @@ namespace ircd::m
 	bool my(const id::event &);
 	bool my(const event &);
 	bool exists(const id::event &);
-	bool exists(const id::event &, const bool &good);
 	bool cached(const id::event &);
-	bool good(const id::event &);
 	bool bad(const id::event &);
 
 	// parallel util; returns bitset
