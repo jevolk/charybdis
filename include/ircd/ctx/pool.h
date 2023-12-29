@@ -56,13 +56,13 @@ struct ircd::ctx::pool
 	void operator()(closure);
 
 	// control panel
-	void add(const size_t & = 1);
-	void del(const size_t & = 1);
-	void set(const size_t &);
-	void min(const size_t &);
-	void terminate();
-	void interrupt();
-	void join();
+	size_t add(const size_t = 1);
+	size_t del(const size_t = 1);
+	size_t set(const size_t = -1);
+	size_t min(const size_t = -1);
+	size_t terminate();
+	size_t interrupt();
+	size_t join();
 
 	pool(const string_view &name = default_name,
 	     const opts & = default_opts);

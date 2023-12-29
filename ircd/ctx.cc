@@ -1430,44 +1430,70 @@ noexcept
 	assert(q.empty());
 }
 
-void
+size_t
 ircd::ctx::pool::join()
 {
-	set(0);
+	return set(0);
 }
 
-void
+size_t
 ircd::ctx::pool::interrupt()
 {
+	size_t ret(0);
 	for(auto &context : ctxs)
+	{
 		context.interrupt();
+		++ret;
+	}
+
+	return ret;
 }
 
-void
+size_t
 ircd::ctx::pool::terminate()
 {
+	size_t ret(0);
 	for(auto &context : ctxs)
+	{
 		context.terminate();
+		++ret;
+	}
+
+	return ret;
 }
 
-void
-ircd::ctx::pool::min(const size_t &num)
+size_t
+ircd::ctx::pool::min(const size_t num_)
 {
-	if(size() < num)
-		set(num);
+	assert(opt);
+	const auto num
+	{
+		num_ >= 0? num_: opt->initial_ctxs
+	};
+
+	if(size() >= num)
+		return 0;
+
+	return set(num);
 }
 
-void
-ircd::ctx::pool::set(const size_t &num)
+size_t
+ircd::ctx::pool::set(const size_t num_)
 {
+	assert(opt);
+	const auto num
+	{
+		num_ >= 0? num_: opt->initial_ctxs
+	};
+
 	if(size() > num)
-		del(size() - num);
+		return del(size() - num);
 	else
-		add(num - size());
+		return add(num - size());
 }
 
-void
-ircd::ctx::pool::del(const size_t &num)
+size_t
+ircd::ctx::pool::del(const size_t num)
 {
 	const auto requested
 	{
@@ -1479,22 +1505,27 @@ ircd::ctx::pool::del(const size_t &num)
 		size_t(std::max(requested, 0L))
 	};
 
-	while(ctxs.size() > target)
+	size_t ret(0);
+	for(; ctxs.size() > target; ++ret)
 		ctxs.pop_back();
+
+	return ret;
 }
 
-void
-ircd::ctx::pool::add(const size_t &num)
+size_t
+ircd::ctx::pool::add(const size_t num)
 {
-	assert(opt);
+	size_t ret(0);
 	for(size_t i(0); i < num; ++i)
 	{
-		ctxs.emplace_back(name, opt->stack_size, context::POST, std::bind(&pool::main, this));
-
 		assert(opt);
+		ctxs.emplace_back(name, opt->stack_size, context::POST, std::bind(&pool::main, this));
 		ionice(ctxs.back(), opt->ionice);
 		nice(ctxs.back(), opt->nice);
+		++ret;
 	}
+
+	return ret;
 }
 
 void
