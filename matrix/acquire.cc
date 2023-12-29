@@ -744,6 +744,9 @@ try
 		body["pdus"]
 	};
 
+	if(pdus.empty())
+		return true;
+
 	log::debug
 	{
 		log, "evals from '%s' pdus:%zu for %s in %s",
@@ -778,6 +781,18 @@ try
 catch(const ctx::interrupted &e)
 {
 	throw;
+}
+catch(const m::NOT_FOUND &e)
+{
+	log::derror
+	{
+		log, "evals %s in %s :%s",
+		string_view{result.event_id},
+		string_view{opts.room.room_id},
+		e.what(),
+	};
+
+	return true;
 }
 catch(const std::exception &e)
 {

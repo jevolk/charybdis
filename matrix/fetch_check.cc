@@ -19,12 +19,20 @@ namespace ircd::m::fetch
 	static void check_response__auth(const request &, const json::object &);
 	extern void check_response(const request &, const json::object &);
 
+	extern conf::item<bool> enable_check_empty;
 	extern conf::item<bool> enable_check_event_id;
 	extern conf::item<bool> enable_check_conforms;
 	extern conf::item<bool> enable_check_signature;
 	extern conf::item<bool> enable_check_hashes;
 	extern conf::item<bool> enable_check_authoritative_redaction;
 }
+
+decltype(ircd::m::fetch::enable_check_empty)
+ircd::m::fetch::enable_check_empty
+{
+	{ "name",     "ircd.m.fetch.check.empty" },
+	{ "default",  true                       },
+};
 
 decltype(ircd::m::fetch::enable_check_event_id)
 ircd::m::fetch::enable_check_event_id
@@ -109,6 +117,12 @@ ircd::m::fetch::check_response__auth(const request &request,
 		response.at("auth_chain")
 	};
 
+	if(enable_check_empty && auth_chain.empty())
+		throw ircd::error
+		{
+			"no events in response auth_chain.",
+		};
+
 	for(const json::object auth_event : auth_chain)
 	{
 		m::event::id::buf event_id;
@@ -146,6 +160,12 @@ ircd::m::fetch::check_response__backfill(const request &request,
 	{
 		response.at("pdus")
 	};
+
+	if(enable_check_empty && pdus.empty())
+		throw ircd::error
+		{
+			"no events in response backfill.",
+		};
 
 	for(const json::object event : pdus)
 	{
