@@ -60,6 +60,7 @@ struct ircd::ctx::pool
 	size_t del(const size_t = 1);
 	size_t set(const size_t = -1);
 	size_t min(const size_t = -1);
+	size_t evict(const bool all = false, const bool now = false);
 	size_t terminate();
 	size_t interrupt();
 	size_t join();

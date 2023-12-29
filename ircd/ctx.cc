@@ -1463,6 +1463,17 @@ ircd::ctx::pool::terminate()
 }
 
 size_t
+ircd::ctx::pool::evict(const bool all,
+                       const bool now)
+{
+	size_t ret(0);
+	for(auto &context : ctxs)
+		ret += ircd::ctx::evict(stack::get(context), all, now);
+
+	return ret;
+}
+
+size_t
 ircd::ctx::pool::min(const size_t num_)
 {
 	assert(opt);
