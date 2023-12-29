@@ -8,19 +8,31 @@
 // copyright notice and this permission notice is present in all copies. The
 // full license for this software is available in the LICENSE file.
 
-namespace ircd::m::sync
-{
-	extern const ctx::pool::opts pool_opts;
-}
-
 decltype(ircd::m::sync::log)
 ircd::m::sync::log
 {
 	"m.sync", 's'
 };
 
+decltype(ircd::m::sync::pool_init)
+ircd::m::sync::pool_init
+{
+	{ "name",     "ircd.client.sync.pool.init" },
+	{ "default",  0L                           },
+};
+
+decltype(ircd::m::sync::pool_min)
+ircd::m::sync::pool_min
+{
+	{ "name",     "ircd.client.sync.pool.min" },
+	{ "default",  64L                         },
+};
+
 decltype(ircd::m::sync::pool_opts)
-ircd::m::sync::pool_opts;
+ircd::m::sync::pool_opts
+{
+	.initial_ctxs = size_t(pool_init),
+};
 
 decltype(ircd::m::sync::pool)
 ircd::m::sync::pool

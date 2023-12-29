@@ -24,6 +24,9 @@
 /// provided by the tree of modules.
 namespace ircd::m::sync
 {
+	extern conf::item<size_t> pool_init;
+	extern conf::item<size_t> pool_min;
+	extern const ctx::pool::opts pool_opts;
 	extern ctx::pool pool;
 	extern log::log log;
 }

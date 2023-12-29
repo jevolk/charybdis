@@ -335,18 +335,16 @@ bool
 ircd::m::sync::room_state_polylog_events(data &data)
 {
 	bool ret{false};
-	ctx::mutex mutex;
 	json::stack::array array
 	{
 		*data.out, "events"
 	};
 
-	static const auto num(64); //TODO: XXX
-	sync::pool.min(num);
-
+	ctx::mutex mutex;
+	sync::pool.min(size_t(pool_min));
 	unsigned long long a_mask[2] {0};
-	allocator::state a(num, a_mask);
-	std::vector<m::event::fetch> events(num);
+	allocator::state a(sync::pool.size(), a_mask);
+	std::vector<m::event::fetch> events(sync::pool.size());
 	ctx::concurrent<event::idx> concurrent
 	{
 		sync::pool, [&data, &ret, &mutex, &array, &events, &a](const auto &event_idx)
