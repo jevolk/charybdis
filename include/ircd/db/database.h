@@ -123,6 +123,7 @@ struct ircd::db::database
 	std::string optstr;
 	bool fsck, slave, read_only;
 	bool opened, bgwork, mcpwork;
+	milliseconds commit_delay;
 	std::shared_ptr<struct env> env;
 	std::shared_ptr<struct stats> stats;
 	std::shared_ptr<struct logger> logger;

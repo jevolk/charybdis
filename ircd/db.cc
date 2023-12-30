@@ -4666,7 +4666,15 @@ ircd::db::commit(database &d,
 		RB_LOG_LEVEL >= log::level::DEBUG
 	};
 
-	const std::lock_guard lock{d.write_mutex};
+	const std::lock_guard lock
+	{
+		d.write_mutex
+	};
+
+	const auto delay{d.commit_delay};
+	const auto delayed{delay > 0ms};
+	ctx::sleep(delay);
+
 	const ctx::uninterruptible ui;
 	const ctx::stack_usage_assertion sua;
 	throw_on_error
@@ -4684,15 +4692,17 @@ ircd::db::commit(database &d,
 			timer.at<nanoseconds>()
 		};
 
-		char dbuf[192], pbuf[48];
+		char dbuf[192], pbuf[2][48];
 		log::debug
 		{
-			log, "[%s] %lu COMMIT %s to %s in %s",
+			log, "[%s] %lu COMMIT %s to %s in %s%s%s",
 			d.name,
 			sequence(d),
 			debug(dbuf, batch),
 			cork? "memory"_sv: "system"_sv,
-			pretty(pbuf, took, 1),
+			pretty(pbuf[0], took, 1),
+			delayed? " stall "_sv: string_view{},
+			delayed? pretty(pbuf[1], delay, 1): string_view{},
 		};
 	}
 }

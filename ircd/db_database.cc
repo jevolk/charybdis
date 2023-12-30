@@ -1042,6 +1042,10 @@ try
 {
 	true
 }
+,commit_delay
+{
+	0ms
+}
 ,env
 {
 	std::make_shared<struct env>(this)
@@ -3434,6 +3438,17 @@ noexcept
 
 	assert(d);
 	assert(d->memtable_mgr);
+	const bool inc_delay
+	{
+		true
+		&& d->memtable_mgr->enabled()
+		&& d->memtable_mgr->ShouldStall()
+		&& d->memtable_mgr->IsStallActive()
+	};
+
+	if(inc_delay)
+		d->commit_delay += 1ms;
+
 	const auto level
 	{
 		d->memtable_mgr->ShouldFlush() && d->memtable_mgr->enabled()?
@@ -3443,11 +3458,11 @@ noexcept
 			log::level::DEBUG
 	};
 
-	char pbuf[3][48];
+	char pbuf[4][48];
 	log::logf
 	{
 		log, level,
-		"[%s] memory tables%s%s%s%s size:%s usage:%s mutable:%s",
+		"[%s] memory tables%s%s%s%s size:%s usage:%s mutable:%s delay:%s",
 		d->name,
 		d->memtable_mgr->ShouldFlush()? " FLUSH": "",
 		d->memtable_mgr->ShouldStall()? " STALL": "",
@@ -3456,6 +3471,7 @@ noexcept
 		pretty(pbuf[0], iec(d->memtable_mgr->buffer_size())),
 		pretty(pbuf[1], iec(d->memtable_mgr->memory_usage())),
 		pretty(pbuf[2], iec(d->memtable_mgr->mutable_memtable_memory_usage())),
+		pretty(pbuf[3], d->commit_delay, 1),
 	};
 }
 
@@ -3638,6 +3654,20 @@ noexcept
 
 	if(!changed)
 		return;
+
+	switch(column.stall)
+	{
+		case WriteStallCondition::kNormal:
+			d->commit_delay = 0ms;
+			break;
+
+		case WriteStallCondition::kDelayed:
+			d->commit_delay += 1ms;
+			break;
+
+		default:
+			break;
+	}
 
 	const auto level
 	{
