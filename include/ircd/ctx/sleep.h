@@ -14,15 +14,15 @@
 namespace ircd::ctx { inline namespace this_ctx
 {
 	// Ignores notes. Throws if interrupted.
-	void sleep_until(const system_point &tp);
-	template<class duration> void sleep(const duration &);
-	void sleep(const int &secs);
+	void sleep_until(const system_point tp);
+	template<class duration> void sleep(const duration);
+	void sleep(const int secs);
 }}
 
 /// This overload matches ::sleep() and acts as a drop-in for ircd contexts.
 /// interruption point.
 inline void
-ircd::ctx::this_ctx::sleep(const int &secs)
+ircd::ctx::this_ctx::sleep(const int secs)
 {
 	sleep(seconds(secs));
 }
@@ -32,8 +32,9 @@ ircd::ctx::this_ctx::sleep(const int &secs)
 /// note.
 /// interruption point.
 template<class duration>
-void
-ircd::ctx::this_ctx::sleep(const duration &d)
+inline void
+ircd::ctx::this_ctx::sleep(const duration d)
 {
-	sleep_until(system_clock::now() + d);
+	if(likely(d > duration::zero()))
+		sleep_until(system_clock::now() + d);
 }

@@ -615,18 +615,20 @@ noexcept
 	strlcpy(ctx.name, name);
 }
 
+[[gnu::hot]]
 int8_t
 ircd::ctx::nice(ctx &ctx,
-                const int8_t &val)
+                const int8_t val)
 noexcept
 {
 	ctx.nice = val;
 	return ctx.nice;
 }
 
+[[gnu::hot]]
 int8_t
 ircd::ctx::ionice(ctx &ctx,
-                  const int8_t &val)
+                  const int8_t val)
 noexcept
 {
 	ctx.ionice = val;
@@ -763,7 +765,7 @@ ircd::ctx::current;
 
 /// Yield the currently running context until `time_point` ignoring notes
 void
-ircd::ctx::this_ctx::sleep_until(const system_point &tp)
+ircd::ctx::this_ctx::sleep_until(const system_point tp)
 {
 	while(!wait_until(tp, std::nothrow));
 }
@@ -773,8 +775,8 @@ ircd::ctx::this_ctx::sleep_until(const system_point &tp)
 /// Returns the duration remaining if notified, or <= 0 if suspended for
 /// the full duration, or unchanged if no suspend ever took place.
 ircd::microseconds
-ircd::ctx::this_ctx::wait(const microseconds &duration,
-                          const std::nothrow_t &)
+ircd::ctx::this_ctx::wait(const microseconds duration,
+                          const std::nothrow_t)
 {
 	const boost::posix_time::microseconds ptime_duration
 	{
@@ -800,8 +802,8 @@ ircd::ctx::this_ctx::wait(const microseconds &duration,
 /// Returns true if this function returned because `time_point` was hit or
 /// false because this context was notified.
 bool
-ircd::ctx::this_ctx::wait_until(const system_point &tp,
-                                const std::nothrow_t &)
+ircd::ctx::this_ctx::wait_until(const system_point tp,
+                                const std::nothrow_t)
 {
 	const auto &diff
 	{
@@ -1196,7 +1198,7 @@ ircd::ctx::context::context()
 ircd::ctx::context::context(const string_view &name,
                             const size_t &stack_size,
                             function func,
-                            const flags &flags)
+                            const flags flags)
 :context
 {
 	name, stack_size, flags, std::move(func)
@@ -1205,7 +1207,7 @@ ircd::ctx::context::context(const string_view &name,
 }
 
 ircd::ctx::context::context(const string_view &name,
-                            const flags &flags,
+                            const flags flags,
                             function func)
 :context
 {
@@ -1216,7 +1218,7 @@ ircd::ctx::context::context(const string_view &name,
 
 ircd::ctx::context::context(const string_view &name,
                             function func,
-                            const flags &flags)
+                            const flags flags)
 :context
 {
 	name, DEFAULT_STACK_SIZE, flags, std::move(func)
@@ -1225,7 +1227,7 @@ ircd::ctx::context::context(const string_view &name,
 }
 
 ircd::ctx::context::context(function func,
-                            const flags &flags)
+                            const flags flags)
 :context
 {
 	"<noname>", DEFAULT_STACK_SIZE, flags, std::move(func)
@@ -1235,7 +1237,7 @@ ircd::ctx::context::context(function func,
 
 ircd::ctx::context::context(const string_view &name,
                             const size_t &stack_sz,
-                            const flags &flags,
+                            const flags flags,
                             function func)
 :context
 {
@@ -1246,7 +1248,7 @@ ircd::ctx::context::context(const string_view &name,
 
 ircd::ctx::context::context(const string_view &name,
                             const mutable_buffer &stack,
-                            const flags &flags,
+                            const flags flags,
                             function func)
 :c
 {
@@ -1704,7 +1706,7 @@ namespace ircd::ctx::prof
 	static void handle_cur_continue() noexcept;
 	static void handle_cur_enter() noexcept;
 
-	static void inc_ticker(const event &e) noexcept;
+	static void inc_ticker(const event) noexcept;
 }
 
 decltype(ircd::ctx::prof::watchdog)
@@ -1757,7 +1759,7 @@ ircd::ctx::prof::settings::slice_assertion
 
 [[using gnu: flatten, always_inline]]
 inline void
-ircd::ctx::prof::mark(const event &e)
+ircd::ctx::prof::mark(const event e)
 {
 	inc_ticker(e);
 
@@ -1772,7 +1774,7 @@ ircd::ctx::prof::mark(const event &e)
 }
 
 void
-ircd::ctx::prof::inc_ticker(const event &e)
+ircd::ctx::prof::inc_ticker(const event e)
 noexcept
 {
 	assert(uint8_t(e) < num_of<event>());
@@ -1936,7 +1938,7 @@ ircd::ctx::prof::check_stack()
 #endif // NDEBUG
 
 bool
-ircd::ctx::prof::stack_exceeded_assertion(const size_t &stack_at)
+ircd::ctx::prof::stack_exceeded_assertion(const size_t stack_at)
 noexcept
 {
 	const auto &c(cur());
@@ -1948,7 +1950,7 @@ noexcept
 }
 
 bool
-ircd::ctx::prof::stack_exceeded_warning(const size_t &stack_at)
+ircd::ctx::prof::stack_exceeded_warning(const size_t stack_at)
 noexcept
 {
 	const auto &c(cur());
@@ -1960,7 +1962,7 @@ noexcept
 }
 
 bool
-ircd::ctx::prof::slice_exceeded_interrupt(const ulong &cycles)
+ircd::ctx::prof::slice_exceeded_interrupt(const ulong cycles)
 noexcept
 {
 	const ulong &threshold(settings::slice_interrupt);
@@ -1968,7 +1970,7 @@ noexcept
 }
 
 bool
-ircd::ctx::prof::slice_exceeded_assertion(const ulong &cycles)
+ircd::ctx::prof::slice_exceeded_assertion(const ulong cycles)
 noexcept
 {
 	const ulong &threshold(settings::slice_assertion);
@@ -1976,7 +1978,7 @@ noexcept
 }
 
 bool
-ircd::ctx::prof::slice_exceeded_warning(const ulong &cycles)
+ircd::ctx::prof::slice_exceeded_warning(const ulong cycles)
 noexcept
 {
 	const ulong &threshold(settings::slice_warning);
@@ -1994,7 +1996,7 @@ noexcept
 [[gnu::hot]]
 const uint64_t &
 ircd::ctx::prof::get(const ctx &c,
-                     const event &e)
+                     const event e)
 {
 	return get(c).event.at(uint8_t(e));
 }
@@ -2009,7 +2011,7 @@ noexcept
 
 [[gnu::hot]]
 const uint64_t &
-ircd::ctx::prof::get(const event &e)
+ircd::ctx::prof::get(const event e)
 {
 	return get().event.at(uint8_t(e));
 }
@@ -2023,7 +2025,7 @@ noexcept
 }
 
 ircd::string_view
-ircd::ctx::prof::reflect(const event &e)
+ircd::ctx::prof::reflect(const event e)
 {
 	switch(e)
 	{
@@ -2381,7 +2383,7 @@ ircd::ctx::invalidate_futures(promise_base &p)
 /// the shared_state's reference to its promise.
 void
 ircd::ctx::set(shared_state_base &st,
-               const future_state &state)
+               const future_state state)
 {
 	switch(state)
 	{
@@ -2407,7 +2409,7 @@ ircd::ctx::set(shared_state_base &st,
 /// An INVALID state shares a zero/null value in the unionized data.
 bool
 ircd::ctx::is(const shared_state_base &st,
-              const future_state &state_)
+              const future_state state_)
 noexcept
 {
 	switch(st.st)

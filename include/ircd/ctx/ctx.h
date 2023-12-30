@@ -59,10 +59,10 @@ namespace ircd::ctx
 	bool queued(const ctx &) noexcept;                 // !running() && notes() > 0
 
 	uint32_t &flags(ctx &) noexcept;                   // Direct flags access
-	int8_t ionice(ctx &, const int8_t &) noexcept;     // IO priority nice-value
-	int8_t nice(ctx &, const int8_t &) noexcept;       // Scheduling priority nice-value
+	int8_t ionice(ctx &, const int8_t) noexcept;       // IO priority nice-value
+	int8_t nice(ctx &, const int8_t) noexcept;         // Scheduling priority nice-value
 	void name(ctx &, const string_view &) noexcept;    // Change the name (truncates to 15 chars)
-	void interruptible(ctx &, const bool &) noexcept;  // False for interrupt suppression.
+	void interruptible(ctx &, const bool) noexcept;    // False for interrupt suppression.
 	void interrupt(ctx &);                             // Interrupt the context.
 	void terminate(ctx &);                             // Interrupt for termination.
 	void signal(ctx &, std::function<void ()>);        // Post function to context strand
@@ -141,7 +141,7 @@ namespace ircd
 /// the next interruption point will throw as expected.
 inline void
 ircd::ctx::interruptible(ctx &ctx,
-                         const bool &b)
+                         const bool b)
 noexcept
 {
 	flags(ctx) ^= (flags(ctx) ^ (ulong(b) - 1)) & context::NOINTERRUPT;

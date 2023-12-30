@@ -33,26 +33,26 @@ namespace ircd::ctx::prof
 	struct ticker;
 
 	ulong cycles() noexcept;
-	string_view reflect(const event &);
+	string_view reflect(const event);
 
 	// totals
 	const ticker &get() noexcept;
-	const uint64_t &get(const event &);
+	const uint64_t &get(const event);
 
 	// specific context
 	const ticker &get(const ctx &c) noexcept;
-	const uint64_t &get(const ctx &c, const event &);
+	const uint64_t &get(const ctx &c, const event);
 
 	// current slice state
 	ulong cur_slice_start() noexcept;
 	ulong cur_slice_cycles() noexcept;
 
 	// test accessors
-	bool slice_exceeded_warning(const ulong &cycles) noexcept;
-	bool slice_exceeded_assertion(const ulong &cycles) noexcept;
-	bool slice_exceeded_interrupt(const ulong &cycles) noexcept;
-	bool stack_exceeded_warning(const size_t &size) noexcept;
-	bool stack_exceeded_assertion(const size_t &size) noexcept;
+	bool slice_exceeded_warning(const ulong cycles) noexcept;
+	bool slice_exceeded_assertion(const ulong cycles) noexcept;
+	bool slice_exceeded_interrupt(const ulong cycles) noexcept;
+	bool stack_exceeded_warning(const size_t size) noexcept;
+	bool stack_exceeded_assertion(const size_t size) noexcept;
 
 	extern log::log watchdog;
 }

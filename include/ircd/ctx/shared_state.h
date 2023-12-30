@@ -24,8 +24,8 @@ namespace ircd::ctx
 	IRCD_OVERLOAD(already)
 
 	future_state state(const shared_state_base &) noexcept;
-	bool is(const shared_state_base &, const future_state &) noexcept;
-	void set(shared_state_base &, const future_state &);
+	bool is(const shared_state_base &, const future_state) noexcept;
+	void set(shared_state_base &, const future_state);
 }
 
 /// Internal state enumeration for the promise / future / related. These can

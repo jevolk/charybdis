@@ -17,27 +17,27 @@ namespace ircd::ctx { inline namespace this_ctx
 	void wait();
 
 	// Return remaining time if notified; or <= 0 if not, and timeout thrown on throw overloads
-	microseconds wait(const microseconds &, const std::nothrow_t &);
+	microseconds wait(const microseconds, const std::nothrow_t);
 
 	template<class E,
 	         class duration>
-	nothrow_overload<E, duration> wait(const duration &);
+	nothrow_overload<E, duration> wait(const duration);
 
 	// timeout thrown if time point reached
 	template<class E = timeout,
 	         class duration>
-	throw_overload<E, duration> wait(const duration &);
+	throw_overload<E, duration> wait(const duration);
 
 	// Returns false if notified; true if time point reached
-	bool wait_until(const system_point &tp, const std::nothrow_t &);
+	bool wait_until(const system_point tp, const std::nothrow_t);
 
 	// Returns false if notified; true if time point reached
 	template<class E>
-	nothrow_overload<E, bool> wait_until(const system_point &tp);
+	nothrow_overload<E, bool> wait_until(const system_point tp);
 
 	// timeout thrown if time point reached
 	template<class E = timeout>
-	throw_overload<E> wait_until(const system_point &tp);
+	throw_overload<E> wait_until(const system_point tp);
 }}
 
 /// Wait for a notification until a point in time. If there is a notification
@@ -46,7 +46,7 @@ namespace ircd::ctx { inline namespace this_ctx
 /// interruption point.
 template<class E>
 inline ircd::throw_overload<E>
-ircd::ctx::this_ctx::wait_until(const system_point &tp)
+ircd::ctx::this_ctx::wait_until(const system_point tp)
 {
 	if(unlikely(wait_until<std::nothrow_t>(tp)))
 		throw E{};
@@ -57,7 +57,7 @@ ircd::ctx::this_ctx::wait_until(const system_point &tp)
 /// interruption point. this is not noexcept.
 template<class E>
 inline ircd::nothrow_overload<E, bool>
-ircd::ctx::this_ctx::wait_until(const system_point &tp)
+ircd::ctx::this_ctx::wait_until(const system_point tp)
 {
 	return wait_until(tp, std::nothrow);
 }
@@ -69,7 +69,7 @@ ircd::ctx::this_ctx::wait_until(const system_point &tp)
 template<class E,
          class duration>
 inline ircd::throw_overload<E, duration>
-ircd::ctx::this_ctx::wait(const duration &d)
+ircd::ctx::this_ctx::wait(const duration d)
 {
 	const auto ret
 	{
@@ -89,7 +89,7 @@ ircd::ctx::this_ctx::wait(const duration &d)
 template<class E,
          class duration>
 inline ircd::nothrow_overload<E, duration>
-ircd::ctx::this_ctx::wait(const duration &d)
+ircd::ctx::this_ctx::wait(const duration d)
 {
 	const auto ret
 	{
