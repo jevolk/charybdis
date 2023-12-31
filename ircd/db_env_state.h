@@ -38,6 +38,8 @@ ircd::db::database::env::state::pool
 	using IOPriority = rocksdb::Env::IOPriority;
 
 	static conf::item<size_t> stack_size;
+	static conf::item<ssize_t> hysteresis_high;
+	static conf::item<ssize_t> hysteresis_low;
 
 	database &d;
 	Priority pri;

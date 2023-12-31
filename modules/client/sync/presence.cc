@@ -163,7 +163,6 @@ ircd::m::sync::presence_polylog(data &data)
 	}};
 
 	// Setup for concurrentization.
-	sync::pool.min(size_t(pool_min));
 	ctx::concurrent<std::string> concurrent
 	{
 		sync::pool, [&data, &append_event](std::string user_id)

@@ -14,24 +14,26 @@ ircd::m::sync::log
 	"m.sync", 's'
 };
 
-decltype(ircd::m::sync::pool_init)
-ircd::m::sync::pool_init
+decltype(ircd::m::sync::pool_limit)
+ircd::m::sync::pool_limit
 {
-	{ "name",     "ircd.client.sync.pool.init" },
-	{ "default",  0L                           },
+	{ "name",     "ircd.client.sync.pool.limit" },
+	{ "default",  64L                           },
 };
 
-decltype(ircd::m::sync::pool_min)
-ircd::m::sync::pool_min
+decltype(ircd::m::sync::pool_hyst)
+ircd::m::sync::pool_hyst
 {
-	{ "name",     "ircd.client.sync.pool.min" },
-	{ "default",  64L                         },
+	{ "name",     "ircd.client.sync.pool.hyst" },
+	{ "default",  -1L                          },
 };
 
 decltype(ircd::m::sync::pool_opts)
 ircd::m::sync::pool_opts
 {
-	.initial = size_t(pool_init),
+	.limit = size_t(pool_limit),
+	.hysteresis = size_t(pool_hyst),
+	.dynamic = true,
 };
 
 decltype(ircd::m::sync::pool)

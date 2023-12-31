@@ -340,16 +340,21 @@ ircd::m::sync::room_state_polylog_events(data &data)
 		*data.out, "events"
 	};
 
+	unsigned long long a_mask[4] {0};
+	const size_t a_size
+	{
+		std::clamp(size_t(pool_limit), 1UL, bitsof(a_mask))
+	};
+
 	ctx::mutex mutex;
-	sync::pool.min(size_t(pool_min));
-	unsigned long long a_mask[2] {0};
-	allocator::state a(sync::pool.size(), a_mask);
-	std::vector<m::event::fetch> events(sync::pool.size());
+	allocator::state a(a_size, a_mask);
+	std::vector<m::event::fetch> events(a_size);
 	ctx::concurrent<event::idx> concurrent
 	{
 		sync::pool, [&data, &ret, &mutex, &array, &events, &a](const auto &event_idx)
 		{
-			const auto i(a.allocate(1)); const unwind i_{[&a, &i]
+			const auto i(a.allocate(1));
+			const unwind _i{[&a, &i]
 			{
 				a.deallocate(i, 1);
 			}};

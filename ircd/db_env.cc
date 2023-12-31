@@ -983,6 +983,9 @@ noexcept try
 		*st->pool.at(prio)
 	};
 
+	assert(num > 0);
+	pool.popts.limit = num;
+	pool.popts.dynamic = false;
 	pool.p.set(num);
 }
 catch(const std::exception &e)
@@ -1019,7 +1022,8 @@ noexcept try
 		*st->pool.at(prio)
 	};
 
-	pool.p.add(num);
+	assert(num > 0);
+	pool.popts.limit = num;
 }
 catch(const std::exception &e)
 {
@@ -4542,6 +4546,20 @@ ircd::db::database::env::state::pool::stack_size
 	{ "default",  long(128_KiB)                 },
 };
 
+decltype(ircd::db::database::env::state::pool::hysteresis_high)
+ircd::db::database::env::state::pool::hysteresis_high
+{
+	{ "name",     "ircd.db.env.pool.hyst.high" },
+	{ "default",  -1L                          },
+};
+
+decltype(ircd::db::database::env::state::pool::hysteresis_low)
+ircd::db::database::env::state::pool::hysteresis_low
+{
+	{ "name",     "ircd.db.env.pool.hyst.low" },
+	{ "default",  -1L                         },
+};
+
 //
 // state::pool::pool
 //
@@ -4558,20 +4576,25 @@ ircd::db::database::env::state::pool::pool(database &d,
 {
 	fmt::sprintf
 	{
-		namebuf, "db.%s", reflect(pri)
+		namebuf, "db.%s", reflect(this->pri)
 	}
 }
 ,popts
 {
 	.stack_size = size_t(stack_size),
-	.queue_max_soft = -1,
-	.ionice = make_nice(iopri),
+	.limit = 1, // usually raised later by rocksdb callback
+	.hysteresis = this->pri >= Priority::HIGH?
+		size_t(hysteresis_high):
+		size_t(hysteresis_low),
+	.queue_max_soft = -1UL,
+	.queue_max_blocking = false, // never stalls rocksdb
+	.dynamic = true,
 	.nice = make_nice(this->pri),
+	.ionice = make_nice(iopri),
 }
 ,p
 {
-	this->name,    // name of pool
-	this->popts    // pool options
+	this->name, this->popts
 }
 {
 }

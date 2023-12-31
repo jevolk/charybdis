@@ -317,9 +317,10 @@ try
 	const ctx::pool::opts pool_opts
 	{
 		.stack_size = size_t(pool_stack_size),
-		.initial = size_t(pool_size),
-		.ionice = int8_t(pool_ionice),
+		.limit = size_t(pool_size),
+		.dynamic = true,
 		.nice = int8_t(pool_nice),
+		.ionice = int8_t(pool_ionice),
 	};
 
 	ctx::pool pool
