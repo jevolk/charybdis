@@ -4566,70 +4566,6 @@ ircd::db::database::env::state::pool::wait()
 	});
 }
 
-void
-ircd::db::database::env::state::pool::operator()(task &&task)
-{
-	assert(task._id == 0);
-	task._id = ++taskctr;
-	tasks.emplace_back(std::move(task));
-
-	log::debug
-	{
-		log, "[%s] pool:%s queue:%zu QUEUE task:%lu func:%p arg:%p",
-		this->d.name,
-		ctx::name(p),
-		tasks.size(),
-		tasks.back()._id,
-		tasks.back().func,
-		tasks.back().arg,
-	};
-
-	p([this]
-	{
-		if(tasks.empty())
-			return;
-
-		const ctx::uninterruptible::nothrow ui;
-		const auto task{std::move(tasks.front())};
-		tasks.pop_front();
-
-		log::debug
-		{
-			log, "[%s] pool:%s queue:%zu ENTER task:%lu func:%p arg:%p",
-			this->d.name,
-			ctx::name(p),
-			tasks.size(),
-			task._id,
-			task.func,
-			task.arg,
-		};
-
-		const ctx::slice_usage_warning message
-		{
-			"[%s] pool:%s task:%p",
-			this->d.name,
-			ctx::name(p),
-			task.func
-		};
-
-		// Execute the task
-		task.func(task.arg);
-
-		log::debug
-		{
-			log, "[%s] pool:%s queue:%zu LEAVE task:%zu func:%p arg:%p",
-			this->d.name,
-			ctx::name(p),
-			tasks.size(),
-			task._id,
-			task.func,
-			task.arg,
-		};
-
-		dock.notify_all();
-	});
-}
-
 size_t
 ircd::db::database::env::state::pool::cancel(void *const &tag)
 {
@@ -4659,4 +4595,76 @@ ircd::db::database::env::state::pool::cancel(void *const &tag)
 
 	dock.notify_all();
 	return i;
+}
+
+void
+ircd::db::database::env::state::pool::operator()(task &&task)
+{
+	assert(task._id == 0);
+	task._id = ++taskctr;
+	tasks.emplace_back(std::move(task));
+
+	log::debug
+	{
+		log, "[%s] pool:%s queue:%zu QUEUE task:%lu func:%p arg:%p",
+		this->d.name,
+		ctx::name(p),
+		tasks.size(),
+		tasks.back()._id,
+		tasks.back().func,
+		tasks.back().arg,
+	};
+
+	auto handle
+	{
+		std::bind(&pool::worker, this)
+	};
+
+	p(std::move(handle));
+}
+
+void
+ircd::db::database::env::state::pool::worker()
+{
+	if(tasks.empty())
+		return;
+
+	const ctx::uninterruptible::nothrow ui;
+	const auto task{std::move(tasks.front())};
+	tasks.pop_front();
+
+	log::debug
+	{
+		log, "[%s] pool:%s queue:%zu ENTER task:%lu func:%p arg:%p",
+		this->d.name,
+		ctx::name(p),
+		tasks.size(),
+		task._id,
+		task.func,
+		task.arg,
+	};
+
+	const ctx::slice_usage_warning message
+	{
+		"[%s] pool:%s task:%p",
+		this->d.name,
+		ctx::name(p),
+		task.func
+	};
+
+	// Execute the task
+	task.func(task.arg);
+
+	log::debug
+	{
+		log, "[%s] pool:%s queue:%zu LEAVE task:%zu func:%p arg:%p",
+		this->d.name,
+		ctx::name(p),
+		tasks.size(),
+		task._id,
+		task.func,
+		task.arg,
+	};
+
+	dock.notify_all();
 }

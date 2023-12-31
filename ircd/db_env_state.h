@@ -50,8 +50,9 @@ ircd::db::database::env::state::pool
 	ctx::pool::opts popts;
 	ctx::pool p;
 
-	size_t cancel(void *const &tag);
+	void worker();
 	void operator()(task &&);
+	size_t cancel(void *const &tag);
 
 	void wait();
 	void join();
