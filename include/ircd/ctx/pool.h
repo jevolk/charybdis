@@ -85,7 +85,7 @@ struct ircd::ctx::pool::opts
 
 	/// When the pool is constructed this will be how many contexts it spawns
 	/// This value may be ignored for static duration instances.
-	size_t initial_ctxs {0};
+	size_t initial {0};
 
 	/// Hard-limit for jobs queued. A submit to the pool over this limit throws
 	/// an exception. Default is -1, effectively unlimited.

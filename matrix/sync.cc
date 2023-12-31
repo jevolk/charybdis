@@ -31,7 +31,7 @@ ircd::m::sync::pool_min
 decltype(ircd::m::sync::pool_opts)
 ircd::m::sync::pool_opts
 {
-	.initial_ctxs = size_t(pool_init),
+	.initial = size_t(pool_init),
 };
 
 decltype(ircd::m::sync::pool)

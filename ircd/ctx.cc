@@ -1419,9 +1419,9 @@ ircd::ctx::pool::pool(const string_view &name,
 ,opt{&opt}
 {
 	// Can't spawn contexts when the ios isn't available. This may be the
-	// case for some static instances of pool: initial_ctxs value is ignored.
+	// case for some static instances of pool: opts.initial value is ignored.
 	if(ircd::ios::available())
-		add(this->opt->initial_ctxs);
+		add(this->opt->initial);
 }
 
 ircd::ctx::pool::~pool()
@@ -1483,7 +1483,7 @@ ircd::ctx::pool::min(const size_t num_)
 	assert(opt);
 	const auto num
 	{
-		num_ >= 0? num_: opt->initial_ctxs
+		num_ >= 0? num_: opt->initial
 	};
 
 	if(size() >= num)
@@ -1498,7 +1498,7 @@ ircd::ctx::pool::set(const size_t num_)
 	assert(opt);
 	const auto num
 	{
-		num_ >= 0? num_: opt->initial_ctxs
+		num_ >= 0? num_: opt->initial
 	};
 
 	if(size() > num)

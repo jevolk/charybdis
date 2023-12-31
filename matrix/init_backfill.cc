@@ -317,7 +317,7 @@ try
 	const ctx::pool::opts pool_opts
 	{
 		.stack_size = size_t(pool_stack_size),
-		.initial_ctxs = size_t(pool_size),
+		.initial = size_t(pool_size),
 		.ionice = int8_t(pool_ionice),
 		.nice = int8_t(pool_nice),
 	};

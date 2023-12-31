@@ -73,10 +73,7 @@ decltype(ircd::db::request_pool_opts)
 ircd::db::request_pool_opts
 {
 	.stack_size = size_t(request_pool_stack_size),
-	.initial_ctxs = size_t(request_pool_size),
-	.queue_max_hard = -1,
-	.queue_max_soft = 0,         // Soft limit at any queued
-	.queue_max_blocking = true,  // Yield before hitting soft limit
+	.initial = size_t(request_pool_size),
 };
 
 /// Concurrent request pool. Requests to seek may be executed on this

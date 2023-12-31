@@ -4495,11 +4495,7 @@ ircd::db::database::env::state::pool::pool(database &d,
 ,popts
 {
 	.stack_size = size_t(stack_size),
-	.initial_ctxs = 0,
-	.queue_max_hard = -1,
 	.queue_max_soft = -1,
-	.queue_max_blocking = true,
-	.queue_max_dwarning = true,
 	.ionice = make_nice(iopri),
 	.nice = make_nice(this->pri),
 }

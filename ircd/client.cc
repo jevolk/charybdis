@@ -97,7 +97,7 @@ decltype(ircd::client::pool_opts)
 ircd::client::pool_opts
 {
 	.stack_size = size_t(settings.stack_size),
-	.initial_ctxs = size_t(settings.pool_size),
+	.initial = size_t(settings.pool_size),
 	.dispatch = ctx::dock::opts(size_t(settings.pool_disp)),
 };
 
