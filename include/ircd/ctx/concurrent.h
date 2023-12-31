@@ -37,6 +37,7 @@ struct ircd::ctx::concurrent
 };
 
 template<class value>
+inline
 ircd::ctx::concurrent<value>::concurrent(pool &p,
                                          closure c)
 
@@ -45,6 +46,7 @@ ircd::ctx::concurrent<value>::concurrent(pool &p,
 {}
 
 template<class value>
+inline
 ircd::ctx::concurrent<value>::~concurrent()
 noexcept
 {
@@ -53,7 +55,7 @@ noexcept
 }
 
 template<class value>
-void
+inline void
 ircd::ctx::concurrent<value>::wait()
 {
 	d.wait([this]() noexcept
@@ -64,7 +66,7 @@ ircd::ctx::concurrent<value>::wait()
 
 template<class value>
 template<class V>
-void
+inline void
 ircd::ctx::concurrent<value>::operator()(V&& v)
 {
 	++snd;
