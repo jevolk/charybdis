@@ -36,8 +36,12 @@ ircd::db::database::env final
 	using ThreadStatus = rocksdb::ThreadStatus;
 	using ThreadStatusUpdater = rocksdb::ThreadStatusUpdater;
 
-	static int8_t make_nice(const IOPriority &);
-	static int8_t make_nice(const Priority &);
+	static int8_t make_nice(const IOPriority) noexcept;
+	static int8_t make_nice(const Priority) noexcept;
+	static IOPriority unmake_ionice(const int8_t) noexcept;
+	static Priority unmake_nice(const int8_t) noexcept;
+	static IOPriority make_ioprio(const Priority) noexcept;
+	static Priority make_prio(const IOPriority) noexcept;
 
 	static ircd::log::log log;
 

@@ -1263,27 +1263,100 @@ catch(const std::exception &e)
 }
 #endif
 
-int8_t
-ircd::db::database::env::make_nice(const Priority &prio)
+rocksdb::Env::Priority
+ircd::db::database::env::make_prio(const IOPriority prio)
+noexcept
 {
-	switch(prio)
-	{
-		case Priority::HIGH:     return -5;
-		case Priority::LOW:      return 5;
-		case Priority::BOTTOM:   return 20;
-		default:     	         return 0;
-	}
+	return unmake_nice(make_nice(prio));
+}
+
+rocksdb::Env::IOPriority
+ircd::db::database::env::make_ioprio(const Priority prio)
+noexcept
+{
+	return unmake_ionice(make_nice(prio));
+}
+
+rocksdb::Env::Priority
+ircd::db::database::env::unmake_nice(const int8_t nice)
+noexcept
+{
+	if(nice >= make_nice(Priority::BOTTOM))
+		return Priority::BOTTOM;
+
+	if(nice >= make_nice(Priority::LOW))
+		return Priority::LOW;
+
+	if(nice >= make_nice(Priority::HIGH))
+		return Priority::HIGH;
+
+	#ifdef IRCD_DB_HAS_ENV_PRIO_USER
+	return Priority::USER;
+	#else
+	return Priority::HIGH;
+	#endif
+}
+
+rocksdb::Env::IOPriority
+ircd::db::database::env::unmake_ionice(const int8_t nice)
+noexcept
+{
+	if(nice >= make_nice(IOPriority::IO_LOW))
+		return IOPriority::IO_LOW;
+
+	#ifdef IRCD_DB_HAS_IO_MID
+	if(nice >= make_nice(IOPriority::IO_MID))
+		return IOPriority::IO_MID;
+	#endif
+
+	if(nice >= make_nice(IOPriority::IO_HIGH))
+		return IOPriority::IO_HIGH;
+
+	#ifdef IRCD_DB_HAS_IO_USER
+	return IOPriority::IO_USER;
+	#else
+	return IOPriority::IO_HIGH;
+	#endif
 }
 
 int8_t
-ircd::db::database::env::make_nice(const IOPriority &prio)
+ircd::db::database::env::make_nice(const Priority prio)
+noexcept
 {
 	switch(prio)
 	{
-		case IOPriority::IO_HIGH:     return -5;
-		case IOPriority::IO_LOW:      return 5;
-		default:                      return 0;
+		case Priority::BOTTOM:   return 20;
+		case Priority::LOW:      return 10;
+		case Priority::HIGH:     return 5;
+		#ifdef IRCD_DB_HAS_ENV_PRIO_USER
+		case Priority::USER:     return 0;
+		#endif
+
+		case Priority::TOTAL:    assert(0);
 	}
+
+	return 0;
+}
+
+int8_t
+ircd::db::database::env::make_nice(const IOPriority prio)
+noexcept
+{
+	switch(prio)
+	{
+		case IOPriority::IO_LOW:    return 20;
+		#ifdef IRCD_DB_HAS_IO_MID
+		case IOPriority::IO_MID:    return 10;
+		#endif
+		case IOPriority::IO_HIGH:   return 5;
+		#ifdef IRCD_DB_HAS_IO_USER
+		case IOPriority::IO_USER:   return 0;
+		#endif
+
+		case IOPriority::IO_TOTAL:  assert(0);
+	}
+
+	return 0;
 }
 
 //
@@ -4479,11 +4552,7 @@ ircd::db::database::env::state::pool::pool(database &d,
 ,pri{pri}
 ,iopri
 {
-	pri == Priority::HIGH?
-		IOPriority::IO_HIGH:
-	pri == Priority::BOTTOM?
-		IOPriority::IO_LOW:
-		IOPriority::IO_LOW
+	make_ioprio(this->pri)
 }
 ,name
 {
