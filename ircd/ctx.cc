@@ -1478,12 +1478,17 @@ ircd::ctx::pool::evict(const bool all,
 }
 
 size_t
-ircd::ctx::pool::min(const size_t num_)
+ircd::ctx::pool::min(const size_t req_)
 {
 	assert(opt);
+	const auto req
+	{
+		req_ != -1UL? req_: opt->initial
+	};
+
 	const auto num
 	{
-		num_ >= 0? num_: opt->initial
+		std::min(req, opt->limit)
 	};
 
 	if(size() >= num)
@@ -1493,12 +1498,17 @@ ircd::ctx::pool::min(const size_t num_)
 }
 
 size_t
-ircd::ctx::pool::set(const size_t num_)
+ircd::ctx::pool::set(const size_t req_)
 {
 	assert(opt);
+	const auto req
+	{
+		req_ != -1UL? req_: opt->initial
+	};
+
 	const auto num
 	{
-		num_ >= 0? num_: opt->initial
+		std::min(req, opt->limit)
 	};
 
 	if(size() > num)
@@ -1531,7 +1541,7 @@ size_t
 ircd::ctx::pool::add(const size_t num)
 {
 	size_t ret(0);
-	for(size_t i(0); i < num; ++i)
+	for(size_t i(0); i < num && ctxs.size() < opt->limit; ++i)
 	{
 		assert(opt);
 		ctxs.emplace_back(name, opt->stack_size, context::POST, std::bind(&pool::main, this));
@@ -1547,36 +1557,39 @@ void
 ircd::ctx::pool::operator()(closure closure)
 {
 	assert(opt);
-	if(!avail() && q.size() > size_t(opt->queue_max_soft) && opt->queue_max_dwarning)
+	if(!avail() && opt->dynamic)
+		add(1);
+
+	if(!avail() && q.size() > opt->queue_max_soft)
 		log::dwarning
 		{
-			log, "pool(%p '%s') ctx(%p): size:%zu active:%zu queue:%zu exceeded soft max:%zu",
+			log, "pool(%p '%s') ctx(%p) size:%zu active:%zu queue:%zu exceeded soft max:%zd",
 			this,
 			name,
 			current,
 			size(),
 			active(),
 			q.size(),
-			opt->queue_max_soft
+			opt->queue_max_soft,
 		};
 
-	if(current && opt->queue_max_soft >= 0 && opt->queue_max_blocking)
+	if(opt->queue_max_blocking && ssize_t(opt->queue_max_soft) >= 0 && current)
 		q_max.wait([this]
 		{
 			return !wouldblock();
 		});
 
-	if(unlikely(q.size() >= size_t(opt->queue_max_hard)))
+	if(unlikely(q.size() >= opt->queue_max_hard))
 		throw error
 		{
-			"pool(%p '%s') ctx(%p): size:%zu avail:%zu queue:%zu exceeded hard max:%zu",
+			"pool(%p '%s') ctx(%p) size:%zu avail:%zu queue:%zu exceeded hard max:%zd",
 			this,
 			name,
 			current,
 			size(),
 			avail(),
 			q.size(),
-			opt->queue_max_hard
+			opt->queue_max_hard,
 		};
 
 	q.push(std::move(closure));
@@ -1600,28 +1613,75 @@ void
 ircd::ctx::pool::main()
 noexcept try
 {
+	const unwind leaving
+	{
+		std::bind(&pool::leave, this)
+	};
+
 	const scope_count running
 	{
 		this->running
 	};
 
-	q_max.notify();
-	while(!termination(cur()))
+	q_max.notify_all(); do
+	{
 		work();
+	}
+	while(!done());
 }
 catch(const interrupted &e)
 {
-//	log::debug
-//	{
-//		log, "pool(%p) ctx(%p): %s", this, &cur(), e.what()
-//	};
+	if constexpr(false)
+		log::debug
+		{
+			log, "pool(%p) ctx(%p) :%s",
+			this,
+			&cur(),
+			e.what(),
+		};
 }
 catch(const terminated &e)
 {
-//	log::debug
-//	{
-//		log, "pool(%p) ctx(%p): terminated", this, &cur()
-//	};
+	if constexpr(false)
+		log::debug
+		{
+			log, "pool(%p) ctx(%p) :terminated",
+			this,
+			&cur(),
+		};
+}
+
+void
+ircd::ctx::pool::leave()
+noexcept
+{
+	// When another context has sent us a termination signal we don't need to
+	// do the cleanup (they are doing it).
+	if(termination(cur()))
+		return;
+
+	auto it
+	{
+		std::find_if(ctxs.begin(), ctxs.end(), []
+		(const auto &context)
+		{
+			return id(context) == id(cur());
+		})
+	};
+
+	// We should be able to find ourselves in the list, but if we were cleaned
+	// up somehow already then oh well...
+	assert(it != ctxs.end());
+	if(it == ctxs.end())
+		return;
+
+	auto c
+	{
+		it->detach()
+	};
+
+	assert(c == current);
+	it = ctxs.erase(it);
 }
 
 void
@@ -1664,7 +1724,7 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "pool(%p '%s') ctx(%p '%s' id:%u): unhandled: %s",
+		log, "pool(%p '%s') ctx(%p '%s' id:%u): unhandled :%s",
 		this,
 		name,
 		current,
@@ -1674,19 +1734,19 @@ catch(const std::exception &e)
 	};
 }
 
-void
-ircd::ctx::debug_stats(const pool &pool)
+bool
+ircd::ctx::pool::done()
+const
 {
-	log::debug
-	{
-		log, "pool '%s' total: %zu avail: %zu queued: %zu active: %zu pending: %zu",
-		pool.name,
-		pool.size(),
-		pool.avail(),
-		pool.queued(),
-		pool.active(),
-		pool.pending()
-	};
+	if(termination(cur()))
+		return true;
+
+	assert(opt);
+	if(opt->dynamic && ssize_t(opt->hysteresis) >= 0)
+		if(avail() > opt->hysteresis + queued() + blocked())
+			return true;
+
+	return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

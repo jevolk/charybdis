@@ -16,7 +16,6 @@ namespace ircd::ctx
 	struct pool;
 
 	const string_view &name(const pool &);
-	void debug_stats(const pool &);
 }
 
 struct ircd::ctx::pool
@@ -33,10 +32,12 @@ struct ircd::ctx::pool
 	size_t working {0};
 	dock q_max;
 	queue<closure> q;
-	std::vector<context> ctxs;
+	std::list<context> ctxs;
 
   private:
+	bool done() const;
 	void work();
+	void leave() noexcept;
 	void main() noexcept;
 
   public:
@@ -48,6 +49,7 @@ struct ircd::ctx::pool
 	auto active() const                { return working;                       }
 	auto avail() const                 { return running - active();            }
 	auto pending() const               { return active() + queued();           }
+	auto blocked() const               { return q_max.size();                  }
 	bool wouldblock() const;
 
 	// dispatch to pool
@@ -87,15 +89,26 @@ struct ircd::ctx::pool::opts
 	/// This value may be ignored for static duration instances.
 	size_t initial {0};
 
+	/// Limit the number of spawned contexts to handle work. When set, calls to
+	/// increase pool size will saturate at the limit.
+	size_t limit {-1UL};
+
+	/// Controls pool downsizing when `dynamic=true`. This is the number of
+	/// idle contexts which are not removed during downscaling to prevent
+	/// overzealous respawning. The default is 1. Setting to 0 allows for all
+	/// contexts to be removed when there is no work running or queued. Setting
+	/// to -1 disables automatic downsizing.
+	size_t hysteresis {1};
+
 	/// Hard-limit for jobs queued. A submit to the pool over this limit throws
 	/// an exception. Default is -1, effectively unlimited.
-	ssize_t queue_max_hard {-1};
+	size_t queue_max_hard {-1UL};
 
 	/// Soft-limit for jobs queued. The behavior of the limit is configurable.
 	/// The default is 0, meaning if there is no context available to service
 	/// the request being submitted then the soft limit is immediately reached.
 	/// See the specific behavior options following this.
-	ssize_t queue_max_soft {0};
+	size_t queue_max_soft {0};
 
 	/// Yield a context submitting to the pool if it will violate the soft
 	/// limit. This is true by default. Note the default of 0 for the
@@ -105,23 +118,22 @@ struct ircd::ctx::pool::opts
 	/// This option has no effect if the submitter is not on any ircd::ctx.
 	bool queue_max_blocking {true};
 
-	/// Log a DWARNING (developer-warning level) when the soft limit is
-	/// exceeded. The soft-limit is never actually exceeded when contexts
-	/// are blocked from submitting (see: queue_max_blocking). This warning
-	/// will still be seen for submissions outside any ircd::ctx.
-	bool queue_max_dwarning {true};
-
-	/// IO priority nice value for contexts in this pool.
-	int8_t ionice {0};
-
-	/// Scheduler priority nice value for contexts in this pool.
-	int8_t nice {0};
+	/// Dynamic pool sizing. When true, contexts may be spanwed on demand when
+	/// jobs are submitted to the pool provided other options and limits are
+	/// satisfied. Default is false.
+	bool dynamic {false};
 
 	/// Worker dispatch strategy.
 	/// - FIFO: Dispatch fairly (round-robin).
 	/// - LIFO: Dispatch the last to finish.
 	/// - SORT: Like LIFO but lower ID's are given partial precedence.
 	dock::opts dispatch {dock::opts::LIFO};
+
+	/// Scheduler priority nice value for contexts in this pool.
+	int8_t nice {0};
+
+	/// IO priority nice value for contexts in this pool.
+	int8_t ionice {0};
 };
 
 template<class F,
