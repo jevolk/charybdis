@@ -239,7 +239,7 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "ctx('%s' id:%u): unhandled: %s",
+		log, "ctx('%s' id:%u) unhandled :%s",
 		name,
 		id,
 		e.what()
@@ -390,7 +390,9 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "ctx::wake(%p): %s", this, e.what()
+		log, "ctx::wake(%p) :%s",
+		this,
+		e.what()
 	};
 
 	return false;

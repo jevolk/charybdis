@@ -658,7 +658,8 @@ catch(const std::exception &e)
 {
 	log::critical
 	{
-		log, "server::loghead(): %s", e.what()
+		log, "server::loghead() :%s",
+		e.what()
 	};
 
 	return "<critical error>";
@@ -1180,7 +1181,7 @@ ircd::server::peer::handle_open_error(link &link,
 	char rembuf[64];
 	log::derror
 	{
-		log, "%s [%s]: open :%s",
+		log, "%s [%s] open :%s",
 		loghead(link),
 		string(rembuf, remote),
 		what(eptr)
@@ -1246,7 +1247,7 @@ ircd::server::peer::handle_close_error(link &link,
 	char rembuf[64];
 	log::derror
 	{
-		log, "%s [%s]: close :%s",
+		log, "%s [%s] close :%s",
 		loghead(link),
 		string(rembuf, remote),
 		what(eptr),
@@ -1805,7 +1806,7 @@ catch(const std::exception &e)
 {
 	log::derror
 	{
-		log, "peer:%lu '%s' resolve '%s' AAAA: %s",
+		log, "peer:%lu '%s' resolve '%s' AAAA :%s",
 		id,
 		this->hostcanon,
 		host(target),
