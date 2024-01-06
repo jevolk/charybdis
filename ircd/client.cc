@@ -842,7 +842,7 @@ try
 		resource::log, "%s HTTP %s `%s' content-length:%zu have:%zu",
 		loghead(*this),
 		head.method,
-		head.path,
+		head.uri,
 		head.content_length,
 		content_consumed
 	};
