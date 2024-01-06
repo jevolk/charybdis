@@ -1020,15 +1020,18 @@ noexcept
 		buf, fmt, ap
 	}};
 
+	char pbuf[3][32];
 	const ulong &threshold{prof::settings::slice_warning};
 	log::dwarning
 	{
-		prof::watchdog, "timeslice excessive; lim:%lu this:%lu pct:%.2lf span:%lu :%s",
-		threshold,
-		total,
+		prof::watchdog, "timeslice excessive %s/%s (%.2lf%%) span:%lu total:%s epoch:%lu :%s",
+		pretty(pbuf[0], si(total), 2),
+		pretty(pbuf[1], si(threshold), 2),
 		(double(total) / double(threshold)) * 100.0,
 		span,
-		reason
+		pretty(pbuf[2], si(prof::get(cur(), prof::event::CYCLES))),
+		prof::get(cur(), prof::event::YIELD),
+		reason,
 	};
 }
 #endif
@@ -1933,28 +1936,45 @@ ircd::ctx::prof::check_slice()
 		ctx::ios_desc.stats->slice_last
 	};
 
-	// Slice warning
-	if(unlikely(slice_exceeded_warning(last_slice) && !slice_exempt))
+	const bool slice_warning
+	{
+		slice_exceeded_warning(last_slice) && !slice_exempt
+	};
+
+	if(unlikely(slice_warning))
+	{
+		char pbuf[3][32];
 		log::dwarning
 		{
-			watchdog, "timeslice excessive; lim:%lu last:%lu pct:%.2lf",
-			ulong(settings::slice_warning),
-			last_slice,
-			((double(last_slice) / double(ulong(settings::slice_warning))) * 100.0)
+			watchdog, "timeslice excessive %s/%s (%.2lf%%) total:%s epoch:%lu",
+			pretty(pbuf[0], si(last_slice), 2),
+			pretty(pbuf[1], si(ulong(settings::slice_warning)), 2),
+			(double(last_slice) / double(ulong(settings::slice_warning))) * 100.0,
+			pretty(pbuf[2], si(prof::get(c, prof::event::CYCLES))),
+			prof::get(c, prof::event::YIELD),
 		};
+	}
 
-	// Slice assertion
-	assert(!slice_exceeded_assertion(last_slice) || slice_exempt);
+	const bool slice_assertion
+	{
+		!slice_exceeded_assertion(last_slice) || slice_exempt
+	};
 
-	// Slice interrupt
-	if(unlikely(slice_exceeded_interrupt(last_slice) && !slice_exempt))
+	assert(slice_assertion);
+
+	const bool slice_interrupt
+	{
+		slice_exceeded_interrupt(last_slice) && !slice_exempt
+	};
+
+	if(unlikely(slice_interrupt))
 		throw interrupted
 		{
-			"[%s] context id:%lu watchdog interrupt; lim:%lu last:%lu total:%lu",
+			"[%s] context id:%lu watchdog interrupt; %lu/%lu total:%lu",
 			name(c),
 			id(c),
-			ulong(settings::slice_interrupt),
 			last_slice,
+			ulong(settings::slice_interrupt),
 			cycles(c),
 		};
 }
