@@ -39,6 +39,10 @@ namespace ircd::magick
 	extern conf::item<uint64_t> limit_cycles;
 	extern conf::item<uint64_t> yield_threshold;
 	extern conf::item<uint64_t> yield_interval;
+	extern conf::item<std::string> thumbnail_filter;
+	extern conf::item<double> thumbnail_blur;
+	extern conf::item<std::string> thumbcrop_filter;
+	extern conf::item<double> thumbcrop_blur;
 	extern log::log log;
 }
 
@@ -89,6 +93,34 @@ ircd::magick::yield_interval
 {
 	{ "name",    "ircd.magick.yield.interval" },
 	{ "default", 768L                         },
+};
+
+decltype(ircd::magick::thumbnail_filter)
+ircd::magick::thumbnail_filter
+{
+	{ "name",    "ircd.magick.thumbnail.filter" },
+	{ "default", "LanczosFilter"                },
+};
+
+decltype(ircd::magick::thumbnail_blur)
+ircd::magick::thumbnail_blur
+{
+	{ "name",    "ircd.magick.thumbnail.blur" },
+	{ "default", 1.0                          },
+};
+
+decltype(ircd::magick::thumbcrop_filter)
+ircd::magick::thumbcrop_filter
+{
+	{ "name",    "ircd.magick.thumbcrop.filter" },
+	{ "default", "BoxFilter"                    },
+};
+
+decltype(ircd::magick::thumbcrop_blur)
+ircd::magick::thumbcrop_blur
+{
+	{ "name",    "ircd.magick.thumbcrop.blur" },
+	{ "default", 1.0                          },
 };
 
 // It is likely that we can't have two contexts enter libmagick
@@ -307,6 +339,24 @@ ircd::magick::thumbcrop::thumbcrop(const const_buffer &in,
 			aspect? 0 : (scaled.second - req_y) / 2.0,
 		};
 
+		const auto filter_conf
+		{
+			::StringToFilterTypes(string_view(thumbcrop_filter).c_str())
+		};
+
+		const scope_restore image_filter
+		{
+			img_p->filter,
+			filter_conf != UndefinedFilter?
+				filter_conf:
+				DefaultThumbnailFilter
+		};
+
+		const scope_restore image_blur
+		{
+			img_p->blur, double(thumbcrop_blur)
+		};
+
 		return callex<Image *>(ThumbnailImage, img_p, scaled.first, scaled.second);
 	}};
 
@@ -356,6 +406,24 @@ ircd::magick::thumbnail::thumbnail(const const_buffer &in,
 			{
 				aspect? req_y * img_x / img_y : req_x,
 				aspect? req_y : req_x * img_y / img_x,
+			};
+
+			const auto filter_conf
+			{
+				::StringToFilterTypes(string_view(thumbnail_filter).c_str())
+			};
+
+			const scope_restore image_filter
+			{
+				img_p->filter,
+				filter_conf != UndefinedFilter?
+					filter_conf:
+					DefaultResizeFilter
+			};
+
+			const scope_restore image_blur
+			{
+				img_p->blur, double(thumbnail_blur)
 			};
 
 			return callex<Image *>(ThumbnailImage, img_p, scaled.first, scaled.second);
