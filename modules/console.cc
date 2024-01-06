@@ -9858,7 +9858,6 @@ console_cmd__room(opt &out, const string_view &line)
 	state.for_each(m::room::state::type_prefix{"m."}, [&out, &state]
 	(const string_view &type, const string_view &state_key, const m::event::idx &event_idx)
 	{
-		assert(startswith(type, "m.room."));
 		if(type == "m.room.member")
 			return true;
 
@@ -12198,6 +12197,7 @@ console_cmd__room__acquire(opt &out, const string_view &line)
 	opts.gap.first = gap_min;
 	opts.vmopts.phase.set(m::vm::phase::EFFECTS, false);
 	opts.vmopts.phase.set(m::vm::phase::EMPTION, false);
+	opts.vmopts.nothrows = -1U;
 	m::acquire
 	{
 		opts
@@ -18420,7 +18420,7 @@ console_cmd__vm(opt &out, const string_view &line)
 {
 	out
 	<< std::right << std::setw(8) << "ID" << " "
-	<< std::right << std::setw(4) << "CTX" << " "
+	<< std::right << std::setw(5) << "CTX" << " "
 	<< std::left << std::setw(8) << " " << " "
 	<< std::left << std::setw(23) << "USER" << " "
 	<< std::right << std::setw(4) << "PDUS" << " "
@@ -18457,7 +18457,7 @@ console_cmd__vm(opt &out, const string_view &line)
 		char pbuf[1][48];
 		out
 		<< std::right << std::setw(8) << eval.id << " "
-		<< std::right << std::setw(4) << (eval.ctx? ctx::id(*eval.ctx) : 0UL) << " "
+		<< std::right << std::setw(5) << (eval.ctx? ctx::id(*eval.ctx) : 0UL) << " "
 		<< std::left << std::setw(8) << (eval.ctx? trunc(ctx::name(*eval.ctx), 8) : string_view{}) << " "
 		<< std::left << std::setw(23) << trunc(eval.opts->node_id?: eval.opts->user_id, 23) << " "
 		<< std::right << std::setw(4) << eval.pdus.size() << " "
