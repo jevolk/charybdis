@@ -50,7 +50,7 @@ struct ircd::magick::display
 
 struct ircd::magick::transform
 {
-	using input = std::tuple<const ImageInfo &, const Image *>;
+	using input = std::tuple<const ImageInfo &, Image *>;
 	using output = std::function<void (const const_buffer &)>;
 	using transformer = std::function<Image *(const input &)>;
 
@@ -282,7 +282,7 @@ ircd::magick::thumbcrop::thumbcrop(const const_buffer &in,
 	{
 		const auto &img_p
 		{
-			std::get<const Image *>(image)
+			std::get<Image *>(image)
 		};
 
 		const auto &img_x(img_p->columns);
@@ -339,7 +339,7 @@ ircd::magick::thumbnail::thumbnail(const const_buffer &in,
 		{
 			const auto &img_p
 			{
-				std::get<const Image *>(image)
+				std::get<Image *>(image)
 			};
 
 			const auto &img_x(img_p->columns);
@@ -375,7 +375,7 @@ ircd::magick::scale::scale(const const_buffer &in,
 	{
 		in, out, [&dim](const auto &image)
 		{
-			return callex<Image *>(ScaleImage, std::get<const Image *>(image), dim.first, dim.second);
+			return callex<Image *>(ScaleImage, std::get<Image *>(image), dim.first, dim.second);
 		}
 	};
 }
@@ -401,7 +401,7 @@ ircd::magick::shave::shave(const const_buffer &in,
 	{
 		in, out, [&geometry](const auto &image)
 		{
-			return callex<Image *>(ShaveImage, std::get<const Image *>(image), &geometry);
+			return callex<Image *>(ShaveImage, std::get<Image *>(image), &geometry);
 		}
 	};
 }
@@ -427,7 +427,7 @@ ircd::magick::crop::crop(const const_buffer &in,
 	{
 		in, out, [&geometry](const auto &image)
 		{
-			return callex<Image *>(CropImage, std::get<const Image *>(image), &geometry);
+			return callex<Image *>(CropImage, std::get<Image *>(image), &geometry);
 		}
 	};
 }
