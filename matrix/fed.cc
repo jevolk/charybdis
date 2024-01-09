@@ -1474,10 +1474,11 @@ ircd::m::fed::key::keys::keys(const server_key &server_key,
 	{
 		if(!empty(key_id))
 		{
+			thread_local char key_id_buf[256];
 			json::get<"uri"_>(opts.request) = fmt::sprintf
 			{
 				buf, "/_matrix/key/v2/server/%s",
-				key_id
+				url::encode(key_id_buf, key_id)
 			};
 
 			consume(buf, size(json::get<"uri"_>(opts.request)));
