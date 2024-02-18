@@ -88,6 +88,8 @@ constexpr const char *const ircd::m::name::user_id;
 constexpr const char *const ircd::m::name::last_active_ago;
 constexpr const char *const ircd::m::name::currently_active;
 constexpr const char *const ircd::m::name::status_msg;
+constexpr const char *const ircd::m::name::displayname;
+constexpr const char *const ircd::m::name::avatar_url;
 
 constexpr const char *const ircd::m::name::ts;
 constexpr const char *const ircd::m::name::data;

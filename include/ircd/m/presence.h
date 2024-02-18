@@ -19,11 +19,13 @@ namespace ircd::m
 struct ircd::m::edu::m_presence
 :json::tuple
 <
-	json::property<name::user_id, json::string>,
+	json::property<name::avatar_url, json::string>,
+	json::property<name::currently_active, bool>,
+	json::property<name::displayname, json::string>,
+	json::property<name::last_active_ago, time_t>,
 	json::property<name::presence, json::string>,
 	json::property<name::status_msg, json::string>,
-	json::property<name::last_active_ago, time_t>,
-	json::property<name::currently_active, bool>
+	json::property<name::user_id, json::string>
 >
 {
 	using super_type::tuple;

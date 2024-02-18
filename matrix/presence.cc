@@ -47,10 +47,10 @@ ircd::m::presence::set(const user &user,
 {
 	return set(m::presence
 	{
-		{ "user_id",           user.user_id         },
+		{ "currently_active",  presence == "online" },
 		{ "presence",          presence             },
 		{ "status_msg",        status_msg           },
-		{ "currently_active",  presence == "online" },
+		{ "user_id",           user.user_id         },
 	});
 }
 
@@ -61,7 +61,8 @@ ircd::m::presence::get(const user &user,
 	if(!get(std::nothrow, user, closure))
 		throw m::NOT_FOUND
 		{
-			"No presence found for %s", string_view{user.user_id}
+			"No presence found for %s",
+			string_view{user.user_id}
 		};
 }
 
@@ -95,7 +96,8 @@ ircd::m::presence::get(const user &user)
 	if(!ret)
 		throw m::NOT_FOUND
 		{
-			"No presence found for %s", string_view{user.user_id}
+			"No presence found for %s",
+			string_view{user.user_id}
 		};
 
 	return ret;

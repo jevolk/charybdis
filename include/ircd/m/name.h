@@ -109,6 +109,8 @@ struct ircd::m::name
 	static constexpr const char *const last_active_ago {"last_active_ago"};
 	static constexpr const char *const currently_active {"currently_active"};
 	static constexpr const char *const status_msg {"status_msg"};
+	static constexpr const char *const displayname {"displayname"};
+	static constexpr const char *const avatar_url {"avatar_url"};
 
 	static constexpr const char *const ts {"ts"};
 	static constexpr const char *const data {"data"};
