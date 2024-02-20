@@ -173,7 +173,6 @@ struct boost::spirit::qi::rule<const char *, T1, T2, T3, T4>
 	/// Renaming constructor. This supports a special case when this rule is
 	/// constructed from a single other rule, but a name is still provided as
 	/// the second argument; prevents forced indirection and bad codegen.
-	template<class Expr>
 	explicit rule(const rule &o, const char *const name) noexcept;
 
 	/// Copy construction is supported through the rename-ctor, just using the
@@ -216,7 +215,6 @@ template<class T1,
          class T2,
          class T3,
          class T4>
-template<class Expr>
 inline
 boost::spirit::qi::rule<const char *, T1, T2, T3, T4>::rule(const rule &o,
                                                             const char *const name)
