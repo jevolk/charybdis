@@ -71,7 +71,7 @@ decltype(ircd::magick::limit_ticks)
 ircd::magick::limit_ticks
 {
 	{ "name",    "ircd.magick.limit.ticks" },
-	{ "default", 10000L                    },
+	{ "default", 32768L                    },
 };
 
 decltype(ircd::magick::limit_cycles)
