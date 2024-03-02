@@ -27,6 +27,8 @@ namespace ircd::mods
 ///
 class ircd::mods::paths
 {
+	static conf::item<std::string> list;
+
 	std::vector<std::string> p;
 
   public:

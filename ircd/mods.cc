@@ -1231,6 +1231,20 @@ ircd::mods::prefix_if_relative(std::string path)
 // paths::paths
 //
 
+decltype(ircd::mods::paths::list)
+ircd::mods::paths::list
+{
+	{
+		{ "name",     "ircd.mods.paths.list" },
+		{ "default",  string_view{}          },
+	},
+	[](const auto &)
+	{
+		if(string_view(paths::list))
+			mods::paths.p = tokens<std::vector, std::string>(paths::list, ',');
+	}
+};
+
 ircd::mods::paths::paths()
 :p
 {{
