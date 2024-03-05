@@ -935,7 +935,7 @@ ircd::m::room::state::rebuild::rebuild(const room::id &room_id)
 		const auto &[pass, fail]
 		{
 			check_auth?
-				auth::check_present(event):
+				auth::check_relative(event):
 				room::auth::passfail{true, {}}
 		};
 
