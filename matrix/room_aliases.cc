@@ -363,7 +363,7 @@ try
 	m::fed::query::directory request
 	{
 		alias, buf, std::move(opts)
-    };
+	};
 
 	const http::code &code
 	{
