@@ -51,6 +51,12 @@ post__upload(client &client,
 		server, randstr
 	};
 
+	char uribuf[256];
+	const string_view content_uri
+	{
+		mxc.uri(uribuf)
+	};
+
 	const m::room::id::buf room_id
 	{
 		m::media::file::room_id(mxc)
@@ -60,6 +66,16 @@ post__upload(client &client,
 	const m::room room
 	{
 		room_id, &vmopts
+	};
+
+	log::debug
+	{
+		m::media::log, "%s uploading %zu bytes uri: `%s' file_room %s :%s",
+		request.user_id,
+		request.head.content_length,
+		content_uri,
+		string_view{room.room_id},
+		filename,
 	};
 
 	create(room, request.user_id, "file");
@@ -76,12 +92,6 @@ post__upload(client &client,
 	const size_t written
 	{
 		m::media::file::write(room, request.user_id, buf, content_type, filename)
-	};
-
-	char uribuf[256];
-	const string_view content_uri
-	{
-		mxc.uri(uribuf)
 	};
 
 	log::debug
