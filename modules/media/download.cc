@@ -162,6 +162,6 @@ method_get
 	get__download,
 	{
 		m::resource::method::flag(0),  // flags
-		45s,                           // timeout
+		-1s,                           // timeout
 	}
 };

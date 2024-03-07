@@ -8,6 +8,11 @@
 // copyright notice and this permission notice is present in all copies. The
 // full license for this software is available in the LICENSE file.
 
+namespace ircd::m::media
+{
+	extern conf::item<long> m_upload_size;
+}
+
 namespace ircd::m::media::thumbnail
 {
 	extern conf::item<bool> enable;

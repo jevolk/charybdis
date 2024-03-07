@@ -121,7 +121,7 @@ method_post_opts
 
 	-1s, // TODO: no coarse timer
 
-	8_MiB //TODO: conf; (this is the payload max option)
+	size_t(m::media::m_upload_size)
 };
 
 static m::resource::method

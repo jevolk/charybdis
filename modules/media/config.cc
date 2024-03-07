@@ -12,7 +12,6 @@
 
 namespace ircd::m::media
 {
-	extern conf::item<long> m_upload_size;
 	static resource::response get_config(client &, const resource::request &);
 	extern resource::method config_get;
 	extern resource config_resource;
@@ -37,7 +36,7 @@ decltype(ircd::m::media::m_upload_size)
 ircd::m::media::m_upload_size
 {
 	{ "name",      "ircd.m.media.m.upload.size" },
-	{ "default",   long(64_MiB)                 },
+	{ "default",   long(128_MiB)                },
 };
 
 ircd::m::resource::response
