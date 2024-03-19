@@ -206,8 +206,7 @@ ircd::db::sync(database &d)
 	};
 }
 
-/// Flushes all columns. Note that if blocking=true, blocking may occur for
-/// each column individually.
+/// Calls rocksdb FlushWAL()
 void
 ircd::db::flush(database &d,
                 const bool &sync)
@@ -1216,25 +1215,14 @@ try
 	opts->verify_sst_unique_id_in_manifest = bool(paranoid_uuid);
 	#endif
 
-	// Default corruption tolerance is zero-tolerance; db fails to open with
-	// error by default to inform the user. The rest of the options are
-	// various relaxations for how to proceed.
 	opts->wal_recovery_mode = rocksdb::WALRecoveryMode::kAbsoluteConsistency;
 
-	// When corrupted after crash, the DB is rolled back before the first
-	// corruption and erases everything after it, giving a consistent
-	// state up at that point, though losing some recent data.
 	if(iequals(string_view(open_recover), "point"))
 		opts->wal_recovery_mode = rocksdb::WALRecoveryMode::kPointInTimeRecovery;
 
-	// Skipping corrupted records will create gaps in the DB timeline where the
-	// application (like a matrix timeline) cannot tolerate the unexpected gap.
 	if(iequals(string_view(open_recover), "skip"))
 		opts->wal_recovery_mode = rocksdb::WALRecoveryMode::kSkipAnyCorruptedRecords;
 
-	// Tolerating corrupted records is very last-ditch for getting the database to
-	// open in a catastrophe. We have no use for this option but should use it for
-	//TODO: emergency salvage-mode.
 	if(iequals(string_view(open_recover), "tolerate"))
 		opts->wal_recovery_mode = rocksdb::WALRecoveryMode::kTolerateCorruptedTailRecords;
 
