@@ -2609,11 +2609,12 @@ noexcept
 	if(likely(!pass))
 		return;
 
-	thread_local char buf[1024]; const auto len
-	{
-		vsnprintf(buf, sizeof(buf), fmt, ap)
-	};
+	int len;
+	thread_local char buf[1024];
+	if((len = vsnprintf(buf, sizeof(buf), fmt, ap)) <= 0)
+		return;
 
+	len = std::min(size_t(len), sizeof(buf) - 1);
 	const auto str
 	{
 		// RocksDB adds annoying leading whitespace to attempt to right-justify things and idc

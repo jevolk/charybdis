@@ -4728,7 +4728,7 @@ ircd::db::debug(const mutable_buffer &buf,
 
 	return string_view
 	{
-		data(buf), len
+		data(buf), std::min(len, size(buf))
 	};
 }
 
