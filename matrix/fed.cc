@@ -1499,6 +1499,8 @@ namespace ircd::m::fed
 	static const_buffer
 	_make_server_keys(const vector_view<const key::server_key> &,
 	                  const mutable_buffer &);
+
+	thread_local allocator::monotonic<16_KiB> keys_query_alloca;
 }
 
 ircd::m::fed::key::query::query(const vector_view<const server_key> &keys,
@@ -1537,7 +1539,7 @@ ircd::m::fed::key::query::query(const vector_view<const server_key> &keys,
 }
 
 static ircd::const_buffer
-ircd::m::fed::_make_server_keys(const vector_view<const key::server_key> &keys,
+ircd::m::fed::_make_server_keys(const vector_view<const key::server_key> &keys_,
                                 const mutable_buffer &buf)
 {
 	json::stack out{buf};
@@ -1547,15 +1549,30 @@ ircd::m::fed::_make_server_keys(const vector_view<const key::server_key> &keys,
 		top, "server_keys"
 	};
 
-	for(const auto &[server_name, key_id] : keys)
+	std::pmr::vector<key::server_key> keys
+	(
+		begin(keys_), end(keys_),
+		&keys_query_alloca
+	);
+
+	std::sort(begin(keys), end(keys));
+	auto it(begin(keys)); while(it != end(keys))
 	{
+		auto server_name(std::get<0>(*it));
 		json::stack::object server_object
 		{
 			server_keys, server_name
 		};
 
-		if(key_id)
+		for(; it != end(keys); ++it)
 		{
+			const auto &[_server_name, key_id] {*it};
+			if(std::exchange(server_name, _server_name) != _server_name)
+				break;
+
+			if(!key_id)
+				continue;
+
 			json::stack::object key_object
 			{
 				server_object, key_id
