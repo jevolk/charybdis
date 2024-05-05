@@ -332,9 +332,10 @@ get__thumbnail_local(client &client,
 				"Unknown reason",
 		};
 
-	static const auto &addl_headers
+	static const string_view addl_headers
 	{
-		"Cache-Control: public, max-age=31536000, immutable\r\n"_sv
+		"Cache-Control: public, max-age=31536000, immutable\r\n"
+		"Content-Disposition: attachment\r\n"
 	};
 
 	if(fallback)
