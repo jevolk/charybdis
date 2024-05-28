@@ -16724,6 +16724,218 @@ console_cmd__fed__send(opt &out, const string_view &line)
 }
 
 bool
+console_cmd__fed__typing(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"remote", "room_id", "user_id", "typing"
+	}};
+
+	const string_view remote
+	{
+		param.at("remote")
+	};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::user::id &user_id
+	{
+		param.at("user_id")
+	};
+
+	const auto typing
+	{
+		param.at("typing", true)
+	};
+
+	json::iov event, content;
+	const json::iov::push push[]
+	{
+		{ content,  { "user_id",   string_view{user_id}        } },
+		{ content,  { "room_id",   string_view{room_id}        } },
+		{ content,  { "typing",    typing                      } },
+		{ event,    { "edu_type",  "m.typing"                  } },
+	};
+
+	const json::strung _content{content};
+	const json::iov::push push_content
+	{
+		event, { "content", _content },
+	};
+
+	const unique_mutable_buffer edubuf
+	{
+		4_KiB
+	};
+
+	const json::value edu
+	{
+		json::stringify(mutable_buffer{edubuf}, event)
+	};
+
+	const vector_view<const json::value> pdus;
+	const vector_view<const json::value> edus
+	{
+		&edu, &edu + 1
+	};
+
+	const auto txn
+	{
+		m::txn::create(pdus, edus)
+	};
+
+	char idbuf[128];
+	const auto txnid
+	{
+		m::txn::create_id(idbuf, txn)
+	};
+
+	const unique_buffer<mutable_buffer> bufs
+	{
+		16_KiB
+	};
+
+	m::fed::send::opts opts;
+	opts.remote = remote;
+	m::fed::send request
+	{
+		txnid, const_buffer{txn}, bufs, std::move(opts)
+	};
+
+	const auto code
+	{
+		request.get(out.timeout)
+	};
+
+	const json::object response
+	{
+		request
+	};
+
+	out << string_view{response} << std::endl;
+	return true;
+}
+
+bool
+console_cmd__fed__read(opt &out, const string_view &line)
+{
+	const params param{line, " ",
+	{
+		"remote", "room_id", "user_id", "event_id"
+	}};
+
+	const string_view remote
+	{
+		param.at("remote")
+	};
+
+	const auto room_id
+	{
+		m::room_id(param.at("room_id"))
+	};
+
+	const m::user::id &user_id
+	{
+		param.at("user_id")
+	};
+
+	const m::event::id &event_id
+	{
+		param.at("event_id")
+	};
+
+	const time_t ms
+	{
+		ircd::time<milliseconds>()
+	};
+
+	const json::value event_ids[]
+	{
+		{ event_id }
+	};
+
+	const json::members m_read
+	{
+		{ "data",      { { "ts", ms } } },
+		{ "event_ids", { event_ids, 1 } },
+	};
+
+	json::iov event, content;
+	const json::iov::push push[]
+	{
+		{ event,     { "edu_type", "m.receipt" } },
+		{ content,   { room_id,
+		{
+			{ "m.read",
+			{
+				{ user_id, m_read }
+			}}
+		}}}
+	};
+
+	const json::strung _content{content};
+	const json::iov::push push_content
+	{
+		event, { "content", _content },
+	};
+
+	const unique_mutable_buffer edubuf
+	{
+		4_KiB
+	};
+
+	const json::value edu
+	{
+		json::stringify(mutable_buffer{edubuf}, event)
+	};
+
+	const vector_view<const json::value> pdus;
+	const vector_view<const json::value> edus
+	{
+		&edu, &edu + 1
+	};
+
+	const auto txn
+	{
+		m::txn::create(pdus, edus)
+	};
+
+	char idbuf[128];
+	const auto txnid
+	{
+		m::txn::create_id(idbuf, txn)
+	};
+
+	const unique_buffer<mutable_buffer> bufs
+	{
+		16_KiB
+	};
+
+	m::fed::send::opts opts;
+	opts.remote = remote;
+	m::fed::send request
+	{
+		txnid, const_buffer{txn}, bufs, std::move(opts)
+	};
+
+	const auto code
+	{
+		request.get(out.timeout)
+	};
+
+	const json::object response
+	{
+		request
+	};
+
+	out << string_view{response} << std::endl;
+	return true;
+}
+
+bool
 console_cmd__fed__join(opt &out, const string_view &line)
 {
 	const params param{line, " ",
